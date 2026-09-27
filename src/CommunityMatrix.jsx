@@ -3,8 +3,126 @@ import {
   Users, Wallet, Globe, ArrowUpRight, ArrowDownLeft, Plus, 
   Sparkles, MessageSquare, Send, CheckCircle2, TrendingUp, 
   DollarSign, Coins, Target, Calendar, ChevronRight, Filter, 
-  ShieldCheck, Share2, Layers, HeartHandshake, Eye, EyeOff
+  ShieldCheck, Share2, Layers, HeartHandshake, Trash2, AlertCircle
 } from 'lucide-react';
+
+// ==========================================
+// PARSER INTELIGENTE DE LENGUAJE COLOQUIAL (WHATSAPP)
+// ==========================================
+function parseWhatsAppExpenses(rawText, defaultSenderId) {
+  if (!rawText || !rawText.trim()) return [];
+  const text = rawText.trim();
+
+  // Helper para convertir cualquier número en formato argentino/latinoamericano
+  // Soporta: "30.000" -> 30000, "15000" -> 15000, "10 mil" -> 10000, "10k" -> 10000, "45 usd" -> 45
+  const parseAmount = (str) => {
+    if (!str) return 0;
+    let s = str.trim().toLowerCase();
+    let multiplier = 1;
+    if (s.includes('mil') || s.endsWith('k')) {
+      multiplier = 1000;
+      s = s.replace(/mil/gi, '').replace(/k/gi, '').trim();
+    }
+    // Si tiene punto como separador de miles argentino (ej: 30.000 o 1.500.000)
+    if (/\d+\.\d{3}/.test(s)) {
+      s = s.replace(/\./g, '');
+    } else if (/\d+,\d{3}/.test(s)) {
+      s = s.replace(/,/g, '');
+    } else {
+      s = s.replace(',', '.');
+    }
+    const cleanDigits = s.replace(/[^\d.]/g, '');
+    const num = parseFloat(cleanDigits);
+    return isNaN(num) ? 0 : num * multiplier;
+  };
+
+  // Separar en cláusulas lógicas cuando el mensaje trae múltiples gastos
+  // Ej: "gaste en alimentos 30.000 y en nafte 15000 con el clio y 10 mil en nafta con el etios y puse 20.000 para ferreteria y arepas"
+  const splitRegex = /(?:\r?\n+|;\s*|,\s*(?=[a-zñáéíóú\s]*\d)|\s+y\s+(?:en\s+|puse\s+|gast[eé]\s+|para\s+|de\s+)?|\s+adem[aá]s\s+|\s+tambi[eé]n\s+)/i;
+  
+  let rawClauses = text.split(splitRegex).map(c => c.trim()).filter(Boolean);
+
+  // Si no se dividió bien pero contiene " y ", intentamos dividir por " y "
+  if (rawClauses.length <= 1 && /\s+y\s+/i.test(text)) {
+    rawClauses = text.split(/\s+y\s+/i).map(c => c.trim()).filter(Boolean);
+  }
+
+  const parsedItems = [];
+
+  rawClauses.forEach((clause) => {
+    // Regex para capturar números con separadores de miles y sufijos como "mil" o "k"
+    const numberRegex = /(\d+(?:[.,]\d{3})*(?:[.,]\d+)?\s*(?:mil|k)?)/i;
+    const numMatch = clause.match(numberRegex);
+
+    if (numMatch) {
+      const rawNumStr = numMatch[0];
+      const amount = parseAmount(rawNumStr);
+
+      if (amount > 0) {
+        const lowerClause = clause.toLowerCase();
+
+        // 1. Detectar moneda
+        let currency = 'ARS';
+        if (lowerClause.includes('usd') || lowerClause.includes('dolar') || lowerClause.includes('dólar') || lowerClause.includes('u$s')) {
+          currency = 'USD';
+        } else if (lowerClause.includes('abeja') || lowerClause.includes('hora') || lowerClause.includes('semilla')) {
+          currency = 'ABEJA';
+        }
+
+        // 2. Detectar ámbito (Comunitario vs Individual)
+        let scope = 'comunitario';
+        if (lowerClause.includes('personal') || lowerClause.includes('propio') || lowerClause.includes('mío') || lowerClause.includes('mio') || lowerClause.includes('mía')) {
+          scope = 'individual';
+        }
+
+        // 3. Detectar categoría específica
+        let category = 'Despensa & Alimentos';
+        if (lowerClause.includes('clio')) {
+          category = 'Movilidad (Clio)';
+        } else if (lowerClause.includes('etios')) {
+          category = 'Movilidad (Etios)';
+        } else if (lowerClause.includes('nafta') || lowerClause.includes('nafte') || lowerClause.includes('combustible') || lowerClause.includes('auto') || lowerClause.includes('gasoil')) {
+          category = 'Movilidad';
+        } else if (lowerClause.includes('ferreteria') || lowerClause.includes('ferretería') || lowerClause.includes('bomba') || lowerClause.includes('herramienta') || lowerClause.includes('huerta') || lowerClause.includes('tierra') || lowerClause.includes('obra')) {
+          category = 'Hábitat & Mantenimiento';
+        } else if (lowerClause.includes('luz') || lowerClause.includes('gas') || lowerClause.includes('internet') || lowerClause.includes('starlink') || lowerClause.includes('agua') || lowerClause.includes('seguro')) {
+          category = 'Servicios';
+        } else if (lowerClause.includes('alimento') || lowerClause.includes('verdura') || lowerClause.includes('comida') || lowerClause.includes('arepa') || lowerClause.includes('super') || lowerClause.includes('pan')) {
+          category = 'Despensa & Alimentos';
+        }
+
+        // 4. Limpiar concepto descriptivo legible
+        let concept = clause
+          .replace(rawNumStr, '')
+          .replace(/^(gast[eé]\s+en|gast[eé]|puse\s+para|puse|compr[eé]\s+en|compr[eé]|para|en|de)\s+/i, '')
+          .replace(/\s+(con|para|en)$/i, '')
+          .replace(/\s*(usd|dolares|dólares|u\$s|pesos|abejas|horas)\s*/gi, '')
+          .trim();
+
+        if (lowerClause.includes('clio') && (!concept || concept.length < 3)) concept = 'Nafta con el Clio';
+        if (lowerClause.includes('etios') && (!concept || concept.length < 3)) concept = 'Nafta con el Etios';
+        if (!concept || concept.length < 3) concept = category;
+
+        // Capitalizar primer letra
+        concept = concept.charAt(0).toUpperCase() + concept.slice(1);
+
+        parsedItems.push({
+          id: `tx-wa-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+          date: new Date().toLocaleDateString('es-AR'),
+          memberId: defaultSenderId,
+          concept,
+          scope,
+          category,
+          currency,
+          amount,
+          channel: 'whatsapp'
+        });
+      }
+    }
+  });
+
+  return parsedItems;
+}
 
 export default function CommunityMatrix() {
   // 1. Matriz de Nodos en la Red "En Conjunto"
@@ -43,7 +161,7 @@ export default function CommunityMatrix() {
       date: new Date().toLocaleDateString('es-AR'),
       memberId: 'cristian',
       concept: 'Verdulería agroecológica semana',
-      scope: 'comunitario', // 'comunitario' | 'individual'
+      scope: 'comunitario',
       category: 'Despensa & Alimentos',
       currency: 'ARS',
       amount: 32000,
@@ -55,7 +173,7 @@ export default function CommunityMatrix() {
       memberId: 'ramiro',
       concept: 'Repuesto bomba de agua huerta',
       scope: 'comunitario',
-      category: 'Hábitat & Infraestructura',
+      category: 'Hábitat & Mantenimiento',
       currency: 'ARS',
       amount: 45000,
       channel: 'web'
@@ -97,7 +215,14 @@ export default function CommunityMatrix() {
 
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('matrix_transactions');
-    return saved ? JSON.parse(saved) : defaultTransactions;
+    if (!saved) return defaultTransactions;
+    try {
+      const parsed = JSON.parse(saved);
+      // Limpiar automáticamente el registro erróneo previo con 30 pesos si existe
+      return parsed.filter(t => !(t.amount === 30 && t.concept && t.concept.includes('gaste en alimentos')));
+    } catch (e) {
+      return defaultTransactions;
+    }
   });
 
   // 5. Inversiones Previstas & Gastos Futuros
@@ -139,15 +264,15 @@ export default function CommunityMatrix() {
     return saved ? JSON.parse(saved) : defaultProjects;
   });
 
-  // 6. Estado de Formularios y Simulador de WhatsApp
+  // Estados de interfaz
   const [whatsappInput, setWhatsappInput] = useState('');
   const [whatsappSender, setWhatsappSender] = useState('ramiro');
   const [showNewTxModal, setShowNewTxModal] = useState(false);
   const [showNewGoalModal, setShowNewGoalModal] = useState(false);
   const [filterScope, setFilterScope] = useState('todos'); // 'todos' | 'comunitario' | 'individual'
-  const [filterMember, setFilterMember] = useState('todos');
+  const [feedbackBanner, setFeedbackBanner] = useState(null);
 
-  // Formulario de nueva transacción manual
+  // Formulario manual de movimiento
   const [formTx, setFormTx] = useState({
     memberId: 'ramiro',
     concept: '',
@@ -157,16 +282,16 @@ export default function CommunityMatrix() {
     category: 'Despensa & Alimentos'
   });
 
-  // Formulario de nueva inversión futura
+  // Formulario manual de meta
   const [formGoal, setFormGoal] = useState({
     title: '',
-    category: 'Despensa',
+    category: 'Alimentos',
     currency: 'ARS',
     targetAmount: '',
     targetDate: ''
   });
 
-  // Persistencia
+  // Persistencia en LocalStorage
   useEffect(() => {
     localStorage.setItem('matrix_nodes', JSON.stringify(nodes));
   }, [nodes]);
@@ -206,10 +331,9 @@ export default function CommunityMatrix() {
     const paidComunitario = userTxs.filter(t => t.scope === 'comunitario').reduce((acc, t) => acc + t.amount, 0);
     const paidIndividual = userTxs.filter(t => t.scope === 'individual').reduce((acc, t) => acc + t.amount, 0);
     
-    // Lo que le corresponde aportar del total comunitario (división simple o por unidades)
     const totalComunitarioCurr = totalsByCurrency[selectedCurrency]?.totalComunitario || 0;
     const fairShare = members.length > 0 ? totalComunitarioCurr / members.length : 0;
-    const netBalance = paidComunitario - fairShare; // Positivo = adelantó plata, Negativo = debe aportar
+    const netBalance = paidComunitario - fairShare;
 
     return {
       ...m,
@@ -220,56 +344,35 @@ export default function CommunityMatrix() {
     };
   });
 
-  // Manejador del Simulador de WhatsApp
+  // ==========================================
+  // MANEJADOR DE MENSAJE DE WHATSAPP
+  // ==========================================
   const handleSimulateWhatsApp = (e) => {
     e.preventDefault();
     if (!whatsappInput.trim()) return;
 
-    const text = whatsappInput.toLowerCase();
-    let detectedCurrency = 'ARS';
-    if (text.includes('usd') || text.includes('dolar') || text.includes('dólar') || text.includes('u$s')) {
-      detectedCurrency = 'USD';
-    } else if (text.includes('abeja') || text.includes('hora') || text.includes('semilla')) {
-      detectedCurrency = 'ABEJA';
-    }
+    const parsedItems = parseWhatsAppExpenses(whatsappInput, whatsappSender);
 
-    // Extraer número
-    const matchNumber = text.match(/\d+([.,]\d+)?/);
-    const detectedAmount = matchNumber ? parseFloat(matchNumber[0].replace(',', '.')) : 0;
-
-    if (!detectedAmount) {
-      alert("Por favor incluye un importe numérico en el mensaje (ej: 'Gasté 15000 en verdura')");
+    if (parsedItems.length === 0) {
+      alert("No se pudo detectar ningún importe en el mensaje. Escribe por ejemplo: 'Gasté 25000 en alimentos' o 'Pagué 15000 de nafta con el clio'");
       return;
     }
 
-    let detectedScope = 'comunitario';
-    if (text.includes('personal') || text.includes('propio') || text.includes('mío') || text.includes('mio')) {
-      detectedScope = 'individual';
-    }
-
-    let detectedCategory = 'Despensa & Compras';
-    if (text.includes('nafta') || text.includes('auto') || text.includes('clio') || text.includes('etios')) {
-      detectedCategory = 'Movilidad';
-    } else if (text.includes('luz') || text.includes('gas') || text.includes('internet') || text.includes('starlink')) {
-      detectedCategory = 'Servicios';
-    } else if (text.includes('huerta') || text.includes('tierra') || text.includes('bomba') || text.includes('planta')) {
-      detectedCategory = 'Hábitat & Tierra';
-    }
-
-    const newTx = {
-      id: `tx-wa-${Date.now()}`,
-      date: new Date().toLocaleDateString('es-AR'),
-      memberId: whatsappSender,
-      concept: whatsappInput.trim(),
-      scope: detectedScope,
-      category: detectedCategory,
-      currency: detectedCurrency,
-      amount: detectedAmount,
-      channel: 'whatsapp'
-    };
-
-    setTransactions([newTx, ...transactions]);
+    // Agregar todos los ítems detectados a la lista de transacciones
+    setTransactions(prev => [...parsedItems, ...prev]);
     setWhatsappInput('');
+
+    // Armar mensaje de confirmación detallado
+    const totalSum = parsedItems.reduce((acc, item) => acc + item.amount, 0);
+    const itemsSummary = parsedItems.map(item => `${item.concept} (${getCurrencySymbol(item.currency)}${item.amount.toLocaleString('es-AR')})`).join(', ');
+
+    setFeedbackBanner({
+      sender: members.find(m => m.id === whatsappSender)?.name || whatsappSender,
+      count: parsedItems.length,
+      total: totalSum,
+      currency: parsedItems[0].currency,
+      detail: itemsSummary
+    });
   };
 
   // Carga manual de gasto
@@ -289,9 +392,16 @@ export default function CommunityMatrix() {
       channel: 'web'
     };
 
-    setTransactions([newTx, ...transactions]);
+    setTransactions(prev => [newTx, ...prev]);
     setShowNewTxModal(false);
     setFormTx({ ...formTx, concept: '', amount: '' });
+  };
+
+  // Eliminar transacción
+  const handleDeleteTx = (id) => {
+    if (window.confirm("¿Seguro que deseas eliminar este movimiento?")) {
+      setTransactions(prev => prev.filter(t => t.id !== id));
+    }
   };
 
   // Carga de inversión futura
@@ -310,16 +420,15 @@ export default function CommunityMatrix() {
       status: 'active'
     };
 
-    setProjects([newGoal, ...projects]);
+    setProjects(prev => [newGoal, ...prev]);
     setShowNewGoalModal(false);
-    setFormGoal({ title: '', category: 'Despensa', currency: 'ARS', targetAmount: '', targetDate: '' });
+    setFormGoal({ title: '', category: 'Alimentos', currency: 'ARS', targetAmount: '', targetDate: '' });
   };
 
   const activeNode = nodes.find(n => n.id === activeNodeId) || nodes[0];
 
   const filteredTransactions = transactions.filter(t => {
     if (filterScope !== 'todos' && t.scope !== filterScope) return false;
-    if (filterMember !== 'todos' && t.memberId !== filterMember) return false;
     return true;
   });
 
@@ -330,7 +439,7 @@ export default function CommunityMatrix() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" style={{ width: '100%' }}>
 
       {/* 1. Header de la Matriz En Conjunto y Selector de Nodos */}
       <div className="card" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%)', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
@@ -373,7 +482,7 @@ export default function CommunityMatrix() {
         </div>
       </div>
 
-      {/* 2. Barra de Multimoneda y Resumen Global */}
+      {/* 2. Barra de Multimoneda y Acciones */}
       <div className="flex justify-between items-center flex-wrap gap-4">
         {/* Selector de Moneda */}
         <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
@@ -421,12 +530,12 @@ export default function CommunityMatrix() {
             <Target size={16} color="var(--warning)" /> + Inversión Prevista
           </button>
           <button className="btn btn-primary" style={{ fontSize: '0.85rem' }} onClick={() => setShowNewTxModal(true)}>
-            <Plus size={16} /> Cargar Gasto
+            <Plus size={16} /> Cargar Gasto Manual
           </button>
         </div>
       </div>
 
-      {/* 3. Simulador & Conexión WhatsApp (Cero Fricción) */}
+      {/* 3. Acceso Rápido WhatsApp & Bot (Procesador Coloquial) */}
       <div className="card" style={{ border: '1px solid rgba(16, 185, 129, 0.3)', backgroundColor: 'rgba(16, 185, 129, 0.04)' }}>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="flex items-center gap-2">
@@ -435,11 +544,11 @@ export default function CommunityMatrix() {
               Acceso Rápido WhatsApp & Bot
             </h3>
             <span style={{ fontSize: '0.75rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', padding: '2px 8px', borderRadius: '8px', color: 'var(--success)' }}>
-              Entrada Inteligente
+              Desglose Múltiple Inteligente
             </span>
           </div>
           <span className="text-secondary" style={{ fontSize: '0.8rem' }}>
-            Escribe como le mandarías un mensaje a la comunidad
+            Puedes cargar varios gastos juntos separados por comas o "y"
           </span>
         </div>
 
@@ -458,182 +567,129 @@ export default function CommunityMatrix() {
           <input 
             type="text" 
             className="input" 
-            style={{ flex: 1, minWidth: '240px', fontSize: '0.85rem' }}
-            placeholder="Ej: 'Gasté 28000 en verdulería para la casa' o 'Pagué 45 USD de internet'"
+            style={{ flex: 1, minWidth: '280px', fontSize: '0.85rem' }}
+            placeholder="Ej: 'gasté en alimentos 30.000 y en nafta 15000 con el clio y 10 mil en etios y puse 20.000 para ferretería'"
             value={whatsappInput}
             onChange={(e) => setWhatsappInput(e.target.value)}
           />
 
-          <button type="submit" className="btn" style={{ backgroundColor: 'var(--success)', color: '#fff', fontSize: '0.85rem' }}>
-            <Send size={15} /> Registrar por WhatsApp
+          <button type="submit" className="btn" style={{ backgroundColor: 'var(--success)', color: '#fff', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+            <Send size={15} /> Procesar Mensaje
           </button>
         </form>
+
+        {/* Banner de confirmación cuando se procesa WhatsApp */}
+        {feedbackBanner && (
+          <div style={{ marginTop: '1rem', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid var(--success)', borderRadius: '10px', padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+            <div>
+              <div style={{ fontWeight: 'bold', color: 'var(--success)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <CheckCircle2 size={16} /> ¡Interpretado con éxito! {feedbackBanner.sender} registró {feedbackBanner.count} gasto{feedbackBanner.count > 1 ? 's' : ''} por un total de {getCurrencySymbol(feedbackBanner.currency)}{feedbackBanner.total.toLocaleString('es-AR')}:
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                {feedbackBanner.detail}
+              </div>
+            </div>
+            <button 
+              onClick={() => setFeedbackBanner(null)} 
+              style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem' }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 4. Columnas Principales: Billeteras Individuales y Visión Abierta */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+      {/* 4. Grid Superior: Billeteras Individuales a la Izquierda e Inversiones a la Derecha */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem', width: '100%' }}>
         
-        {/* Columna Izquierda: Billeteras Individuales y Transparencia */}
-        <div className="flex flex-col gap-6">
-          
-          {/* Card: Billeteras de Cada Miembro (Sin perder lo individual) */}
-          <div className="card">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <Wallet color="var(--accent-color)" size={22} />
-                Billeteras de la Comunidad ({selectedCurrency})
-              </h3>
-              <span className="text-secondary" style={{ fontSize: '0.8rem' }}>
-                Transparencia Abierta
+        {/* Columna 1: Billeteras de la Comunidad */}
+        <div className="card" style={{ height: 'fit-content' }}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <Wallet color="var(--accent-color)" size={22} />
+              Billeteras de la Comunidad ({selectedCurrency})
+            </h3>
+            <span className="text-secondary" style={{ fontSize: '0.8rem' }}>
+              Transparencia Abierta
+            </span>
+          </div>
+          <p className="text-secondary mb-4" style={{ fontSize: '0.85rem' }}>
+            Cada miembro mantiene el registro de sus gastos individuales y sus aportes al fondo colectivo.
+          </p>
+
+          <div className="flex flex-col gap-3">
+            {memberBalances.map(m => (
+              <div 
+                key={m.id} 
+                style={{ 
+                  backgroundColor: 'rgba(255,255,255,0.03)', 
+                  border: '1px solid var(--border-color)', 
+                  borderRadius: '12px', 
+                  padding: '1rem' 
+                }}
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <div>
+                    <span className="font-bold text-base">{m.name}</span>
+                    <span className="text-secondary" style={{ fontSize: '0.75rem', display: 'block' }}>
+                      Familia: {m.familyUnits.adults} Adulto{m.familyUnits.adults > 1 ? 's' : ''}, {m.familyUnits.kids} Niño{m.familyUnits.kids !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    <span className="text-secondary" style={{ fontSize: '0.7rem', textTransform: 'uppercase' }}>Balance Colectivo</span>
+                    <div className="font-bold" style={{ 
+                      fontSize: '1.05rem', 
+                      color: m.netBalance >= 0 ? 'var(--success)' : 'var(--danger)' 
+                    }}>
+                      {m.netBalance >= 0 ? `+${getCurrencySymbol(selectedCurrency)}${m.netBalance.toLocaleString('es-AR')}` : `-${getCurrencySymbol(selectedCurrency)}${Math.abs(m.netBalance).toLocaleString('es-AR')}`}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detalle Individual vs Aporte Comunitario */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.8rem' }}>
+                  <div style={{ backgroundColor: 'rgba(99, 102, 241, 0.08)', padding: '0.4rem 0.6rem', borderRadius: '8px' }}>
+                    <span className="text-secondary" style={{ display: 'block', fontSize: '0.7rem' }}>Aportado a la Casa</span>
+                    <strong style={{ color: 'var(--accent-color)' }}>
+                      {getCurrencySymbol(selectedCurrency)}{m.paidComunitario.toLocaleString('es-AR')}
+                    </strong>
+                  </div>
+
+                  <div style={{ backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.4rem 0.6rem', borderRadius: '8px' }}>
+                    <span className="text-secondary" style={{ display: 'block', fontSize: '0.7rem' }}>Gastos Propios</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>
+                      {getCurrencySymbol(selectedCurrency)}{m.paidIndividual.toLocaleString('es-AR')}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Total General de la Comunidad */}
+          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span className="text-secondary font-semibold" style={{ fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                Gasto Comunitario ({selectedCurrency})
               </span>
-            </div>
-            <p className="text-secondary mb-4" style={{ fontSize: '0.85rem' }}>
-              Cada miembro mantiene el registro de sus gastos individuales y sus aportes al fondo colectivo.
-            </p>
-
-            <div className="flex flex-col gap-3">
-              {memberBalances.map(m => (
-                <div 
-                  key={m.id} 
-                  style={{ 
-                    backgroundColor: 'rgba(255,255,255,0.03)', 
-                    border: '1px solid var(--border-color)', 
-                    borderRadius: '12px', 
-                    padding: '1rem' 
-                  }}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <div>
-                      <span className="font-bold text-base">{m.name}</span>
-                      <span className="text-secondary" style={{ fontSize: '0.75rem', display: 'block' }}>
-                        Familia: {m.familyUnits.adults} Adulto{m.familyUnits.adults > 1 ? 's' : ''}, {m.familyUnits.kids} Niño{m.familyUnits.kids !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-
-                    <div style={{ textAlign: 'right' }}>
-                      <span className="text-secondary" style={{ fontSize: '0.7rem', textTransform: 'uppercase' }}>Balance Colectivo</span>
-                      <div className="font-bold" style={{ 
-                        fontSize: '1rem', 
-                        color: m.netBalance >= 0 ? 'var(--success)' : 'var(--danger)' 
-                      }}>
-                        {m.netBalance >= 0 ? `+${getCurrencySymbol(selectedCurrency)}${m.netBalance.toLocaleString('es-AR')}` : `-${getCurrencySymbol(selectedCurrency)}${Math.abs(m.netBalance).toLocaleString('es-AR')}`}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Detalle Individual vs Aporte Comunitario */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.8rem' }}>
-                    <div style={{ backgroundColor: 'rgba(99, 102, 241, 0.08)', padding: '0.4rem 0.6rem', borderRadius: '8px' }}>
-                      <span className="text-secondary" style={{ display: 'block', fontSize: '0.7rem' }}>Aportado a la Casa</span>
-                      <strong style={{ color: 'var(--accent-color)' }}>
-                        {getCurrencySymbol(selectedCurrency)}{m.paidComunitario.toLocaleString('es-AR')}
-                      </strong>
-                    </div>
-
-                    <div style={{ backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.4rem 0.6rem', borderRadius: '8px' }}>
-                      <span className="text-secondary" style={{ display: 'block', fontSize: '0.7rem' }}>Gastos Propios</span>
-                      <strong style={{ color: 'var(--text-primary)' }}>
-                        {getCurrencySymbol(selectedCurrency)}{m.paidIndividual.toLocaleString('es-AR')}
-                      </strong>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Total General de la Comunidad */}
-            <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <span className="text-secondary font-semibold" style={{ fontSize: '0.8rem', textTransform: 'uppercase' }}>
-                  Gasto Total Comunitario ({selectedCurrency})
-                </span>
-                <div className="font-bold text-2xl" style={{ color: 'var(--accent-color)' }}>
-                  {getCurrencySymbol(selectedCurrency)}{(totalsByCurrency[selectedCurrency]?.totalComunitario || 0).toLocaleString('es-AR')}
-                </div>
+              <div className="font-bold text-2xl" style={{ color: 'var(--accent-color)' }}>
+                {getCurrencySymbol(selectedCurrency)}{(totalsByCurrency[selectedCurrency]?.totalComunitario || 0).toLocaleString('es-AR')}
               </div>
+            </div>
 
-              <div style={{ textAlign: 'right' }}>
-                <span className="text-secondary font-semibold" style={{ fontSize: '0.8rem', textTransform: 'uppercase' }}>
-                  Gastos Individuales Sumados
-                </span>
-                <div className="font-bold text-lg" style={{ color: 'var(--text-secondary)' }}>
-                  {getCurrencySymbol(selectedCurrency)}{(totalsByCurrency[selectedCurrency]?.totalIndividual || 0).toLocaleString('es-AR')}
-                </div>
+            <div style={{ textAlign: 'right' }}>
+              <span className="text-secondary font-semibold" style={{ fontSize: '0.75rem', textTransform: 'uppercase' }}>
+                Gastos Individuales
+              </span>
+              <div className="font-bold text-lg" style={{ color: 'var(--text-secondary)' }}>
+                {getCurrencySymbol(selectedCurrency)}{(totalsByCurrency[selectedCurrency]?.totalIndividual || 0).toLocaleString('es-AR')}
               </div>
             </div>
           </div>
-
-          {/* Card: Historial de Movimientos */}
-          <div className="card">
-            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <HeartHandshake className="text-secondary" size={22} />
-                Flujo de Recursos
-              </h3>
-
-              {/* Filtros */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilterScope(filterScope === 'todos' ? 'comunitario' : filterScope === 'comunitario' ? 'individual' : 'todos')}
-                  className="btn btn-outline"
-                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                >
-                  Filtro: {filterScope === 'todos' ? 'Todos' : filterScope === 'comunitario' ? 'Solo Comunitarios' : 'Solo Individuales'}
-                </button>
-              </div>
-            </div>
-
-            <div className="table-container">
-              {filteredTransactions.length === 0 ? (
-                <div className="text-center py-8 text-secondary">No hay movimientos registrados con los filtros actuales.</div>
-              ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Fecha</th>
-                      <th>Miembro</th>
-                      <th>Concepto / Rubro</th>
-                      <th>Ámbito</th>
-                      <th style={{ textAlign: 'right' }}>Importe</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTransactions.map(t => {
-                      const member = members.find(m => m.id === t.memberId);
-                      return (
-                        <tr key={t.id}>
-                          <td className="text-secondary" style={{ fontSize: '0.8rem' }}>{t.date}</td>
-                          <td className="font-semibold">{member ? member.name : t.memberId}</td>
-                          <td>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontSize: '0.88rem' }}>{t.concept}</span>
-                              <span className="text-secondary" style={{ fontSize: '0.72rem' }}>{t.category}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <span style={{
-                              padding: '2px 8px', borderRadius: '8px', fontSize: '0.72rem', fontWeight: 600,
-                              backgroundColor: t.scope === 'comunitario' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.08)',
-                              color: t.scope === 'comunitario' ? 'var(--accent-color)' : 'var(--text-secondary)'
-                            }}>
-                              {t.scope === 'comunitario' ? 'Comunitario' : 'Individual'}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                            {getCurrencySymbol(t.currency)}{t.amount.toLocaleString('es-AR')}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-
         </div>
 
-        {/* Columna Derecha: Inversiones Previstas, Gastos Futuros & Proyectos de la Red */}
+        {/* Columna 2: Inversiones Previstas & Red En Conjunto */}
         <div className="flex flex-col gap-6">
 
           {/* Card: Gastos Futuros e Inversiones Previstas */}
@@ -652,7 +708,7 @@ export default function CommunityMatrix() {
               </button>
             </div>
             <p className="text-secondary mb-4" style={{ fontSize: '0.85rem' }}>
-              Metas de ahorro colectivo y compras planificadas de la colmena antes de realizarlas.
+              Metas de ahorro colectivo y compras planificadas de la colmena.
             </p>
 
             <div className="flex flex-col gap-4">
@@ -691,34 +747,34 @@ export default function CommunityMatrix() {
             </div>
           </div>
 
-          {/* Card: Integración de la Red En Conjunto (VRDE & Elementales) */}
+          {/* Card: Intercambio con la Red En Conjunto */}
           <div className="card" style={{ borderTop: '4px solid var(--accent-color)' }}>
             <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
               <Globe color="var(--accent-color)" size={22} />
               Intercambio en la Red
             </h3>
-            <p className="text-secondary mb-4" style={{ fontSize: '0.85rem' }}>
-              Este nodo de convivencia interactúa de forma directa con los nodos de la matriz En Conjunto.
+            <p className="text-secondary mb-3" style={{ fontSize: '0.85rem' }}>
+              Este nodo interactúa de forma directa con los demás nodos de la matriz.
             </p>
 
             <div className="flex flex-col gap-3">
-              <div style={{ border: '1px solid rgba(16, 185, 129, 0.25)', backgroundColor: 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', padding: '12px' }}>
+              <div style={{ border: '1px solid rgba(16, 185, 129, 0.25)', backgroundColor: 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', padding: '10px 14px' }}>
                 <div className="flex justify-between items-center mb-1">
-                  <span className="font-semibold text-success" style={{ fontSize: '0.9rem' }}>Canal VRDE Alimentos</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Nodo Activo</span>
+                  <span className="font-semibold" style={{ color: 'var(--success)', fontSize: '0.88rem' }}>Canal VRDE Alimentos</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--success)' }}>✓ Nodo Activo</span>
                 </div>
-                <p className="text-secondary" style={{ fontSize: '0.8rem', margin: 0 }}>
-                  Las compras de alimentos agroecológicos se debitan del fondo comunitario de despensa sin intermediarios bancarios.
+                <p className="text-secondary" style={{ fontSize: '0.78rem', margin: 0 }}>
+                  Alimentos agroecológicos debitados del pozo de despensa sin bancos tradicionales.
                 </p>
               </div>
 
-              <div style={{ border: '1px solid rgba(99, 102, 241, 0.25)', backgroundColor: 'rgba(99, 102, 241, 0.05)', borderRadius: '12px', padding: '12px' }}>
+              <div style={{ border: '1px solid rgba(99, 102, 241, 0.25)', backgroundColor: 'rgba(99, 102, 241, 0.05)', borderRadius: '12px', padding: '10px 14px' }}>
                 <div className="flex justify-between items-center mb-1">
-                  <span className="font-semibold" style={{ color: 'var(--accent-color)', fontSize: '0.9rem' }}>Canal Elementales Tierra</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--accent-color)' }}>Nodo Activo</span>
+                  <span className="font-semibold" style={{ color: 'var(--accent-color)', fontSize: '0.88rem' }}>Canal Elementales Hábitat</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--accent-color)' }}>✓ Nodo Activo</span>
                 </div>
-                <p className="text-secondary" style={{ fontSize: '0.8rem', margin: 0 }}>
-                  Las horas de labor dedicadas a biopiscinas, huerta o infraestructura se computan como créditos de labor (🐝 Abejas).
+                <p className="text-secondary" style={{ fontSize: '0.78rem', margin: 0 }}>
+                  Labor dedicada a la tierra o huerta computada como créditos comunitarios (🐝 Abejas).
                 </p>
               </div>
             </div>
@@ -728,12 +784,152 @@ export default function CommunityMatrix() {
 
       </div>
 
-      {/* Modal: Nuevo Gasto Manual */}
+      {/* 5. SECCIÓN HISTORIAL Y FLUJO DE RECURSOS - ANCHO COMPLETO (100%) */}
+      <div className="card" style={{ width: '100%', overflow: 'hidden' }}>
+        <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+          <div>
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <HeartHandshake className="text-accent" color="var(--accent-color)" size={22} />
+              Flujo de Recursos & Historial
+            </h3>
+            <p className="text-secondary mt-1" style={{ fontSize: '0.85rem' }}>
+              Registro abierto de gastos comunitarios e individuales de toda la colmena
+            </p>
+          </div>
+
+          {/* Filtros */}
+          <div style={{ display: 'flex', gap: '4px', backgroundColor: 'rgba(0,0,0,0.25)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+            <button
+              onClick={() => setFilterScope('todos')}
+              className="btn"
+              style={{
+                padding: '4px 12px', fontSize: '0.75rem', borderRadius: '6px',
+                backgroundColor: filterScope === 'todos' ? 'var(--accent-color)' : 'transparent',
+                color: filterScope === 'todos' ? '#fff' : 'var(--text-secondary)'
+              }}
+            >
+              Todos ({transactions.length})
+            </button>
+            <button
+              onClick={() => setFilterScope('comunitario')}
+              className="btn"
+              style={{
+                padding: '4px 12px', fontSize: '0.75rem', borderRadius: '6px',
+                backgroundColor: filterScope === 'comunitario' ? 'var(--accent-color)' : 'transparent',
+                color: filterScope === 'comunitario' ? '#fff' : 'var(--text-secondary)'
+              }}
+            >
+              Comunitarios
+            </button>
+            <button
+              onClick={() => setFilterScope('individual')}
+              className="btn"
+              style={{
+                padding: '4px 12px', fontSize: '0.75rem', borderRadius: '6px',
+                backgroundColor: filterScope === 'individual' ? 'var(--accent-color)' : 'transparent',
+                color: filterScope === 'individual' ? '#fff' : 'var(--text-secondary)'
+              }}
+            >
+              Individuales
+            </button>
+          </div>
+        </div>
+
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          <table style={{ width: '100%', minWidth: '720px', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.78rem', textTransform: 'uppercase' }}>
+                <th style={{ padding: '12px 14px', width: '110px', textAlign: 'left' }}>Fecha</th>
+                <th style={{ padding: '12px 14px', width: '130px', textAlign: 'left' }}>Miembro</th>
+                <th style={{ padding: '12px 14px', textAlign: 'left', minWidth: '280px' }}>Concepto & Rubro</th>
+                <th style={{ padding: '12px 14px', width: '120px', textAlign: 'center' }}>Ámbito</th>
+                <th style={{ padding: '12px 14px', width: '100px', textAlign: 'center' }}>Origen</th>
+                <th style={{ padding: '12px 14px', width: '140px', textAlign: 'right' }}>Importe</th>
+                <th style={{ padding: '12px 14px', width: '50px', textAlign: 'center' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTransactions.length === 0 ? (
+                <tr>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                    No hay movimientos registrados con los filtros seleccionados.
+                  </td>
+                </tr>
+              ) : (
+                filteredTransactions.map(t => {
+                  const member = members.find(m => m.id === t.memberId);
+                  return (
+                    <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                      <td style={{ padding: '12px 14px', color: 'var(--text-secondary)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                        {t.date}
+                      </td>
+                      <td style={{ padding: '12px 14px', fontWeight: 'bold', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+                        {member ? member.name : t.memberId}
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <div>
+                          <span style={{ fontSize: '0.92rem', fontWeight: '500', color: 'var(--text-primary)', display: 'block' }}>
+                            {t.concept}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            {t.category}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                        <span style={{
+                          padding: '3px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 600,
+                          backgroundColor: t.scope === 'comunitario' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255,255,255,0.08)',
+                          color: t.scope === 'comunitario' ? 'var(--accent-color)' : 'var(--text-secondary)'
+                        }}>
+                          {t.scope === 'comunitario' ? 'Comunitario' : 'Individual'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                        {t.channel === 'whatsapp' ? (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--success)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <MessageSquare size={13} /> WhatsApp
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Web</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 'bold', fontSize: '1rem', whiteSpace: 'nowrap' }}>
+                        {getCurrencySymbol(t.currency)}{t.amount.toLocaleString('es-AR')}
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                        <button
+                          onClick={() => handleDeleteTx(t.id)}
+                          className="btn"
+                          title="Eliminar este movimiento"
+                          style={{
+                            padding: '4px',
+                            background: 'none',
+                            border: 'none',
+                            color: 'rgba(239, 68, 68, 0.6)',
+                            cursor: 'pointer'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                          onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(239, 68, 68, 0.6)'}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Modal: Carga Manual */}
       {showNewTxModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
           <div className="card" style={{ maxWidth: '450px', width: '100%', position: 'relative' }}>
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <Plus color="var(--accent-color)" size={20} /> Registrar Nuevo Movimiento
+              <Plus color="var(--accent-color)" size={20} /> Registrar Movimiento Manual
             </h3>
 
             <form onSubmit={handleCreateTx} className="flex flex-col gap-4">
@@ -812,7 +1008,7 @@ export default function CommunityMatrix() {
                   >
                     <option value="Despensa & Alimentos">Despensa & Alimentos</option>
                     <option value="Servicios">Servicios (Luz, Gas, Red)</option>
-                    <option value="Hábitat & Tierra">Hábitat & Tierra</option>
+                    <option value="Hábitat & Mantenimiento">Hábitat & Mantenimiento</option>
                     <option value="Movilidad">Movilidad</option>
                     <option value="Personal / Familia">Personal / Familia</option>
                   </select>
