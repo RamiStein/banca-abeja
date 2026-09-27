@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
-import { UploadCloud, Wallet, TrendingUp, TrendingDown, LayoutDashboard, History, Trash2, Plus, X, Tag, User, Car } from 'lucide-react';
+import { UploadCloud, Wallet, TrendingUp, TrendingDown, LayoutDashboard, History, Trash2, Plus, X, Tag, User, Car, Layers } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { parseCSV } from './utils/parser';
 import VehicleManager from './VehicleManager';
+import CommunityMatrix from './CommunityMatrix';
 import './index.css';
 
 // Función segura para formatear moneda sin errores de "-0"
@@ -16,7 +17,7 @@ const formatCurrency = (val, isExpense = false) => {
 function App() {
   const [transactions, setTransactions] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('community');
   
   // Filtros del historial
   const [filterProject, setFilterProject] = useState('');
@@ -195,28 +196,26 @@ function App() {
 
   return (
     <div className="container relative">
-      <header className="flex justify-between items-center mb-6">
+      <header className="flex justify-between items-center mb-6 flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Wallet className="text-accent" color="#6366f1" size={32} />
-            Billeteras Virtuales
+            <span style={{ fontSize: '1.8rem' }}>🐝</span>
+            Banca Abeja
           </h1>
-          <p className="text-secondary mt-2">Analiza tus movimientos financieros</p>
+          <p className="text-secondary mt-1">Matriz En Conjunto • Billeteras Comunitarias & Gestión de Recursos</p>
         </div>
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-3">
           <button 
-            className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setActiveTab('dashboard')}
+            className={`btn ${activeTab === 'community' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveTab('community')}
+            style={{ 
+               backgroundColor: activeTab === 'community' ? 'var(--accent-color)' : 'transparent',
+               borderColor: activeTab === 'community' ? 'var(--accent-color)' : 'var(--border-color)',
+               color: activeTab === 'community' ? '#fff' : 'inherit'
+            }}
           >
-            <LayoutDashboard size={18} />
-            Dashboard
-          </button>
-          <button 
-            className={`btn ${activeTab === 'history' ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setActiveTab('history')}
-          >
-            <History size={18} />
-            Historial y Cuentas
+            <Layers size={18} />
+            Colmena & Red
           </button>
           <button 
             className={`btn ${activeTab === 'vehicle' ? 'btn-primary' : 'btn-outline'}`}
@@ -229,6 +228,20 @@ function App() {
           >
             <Car size={18} />
             Vehículos
+          </button>
+          <button 
+            className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            <LayoutDashboard size={18} />
+            Dashboard
+          </button>
+          <button 
+            className={`btn ${activeTab === 'history' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveTab('history')}
+          >
+            <History size={18} />
+            Historial
           </button>
           {transactions.length > 0 && (
              <button className="btn btn-outline" style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }} onClick={clearData} title="Borrar Todos los Datos">
@@ -676,6 +689,11 @@ function App() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Módulo de la Matriz Comunitaria y Colmena */}
+        {activeTab === 'community' && (
+          <CommunityMatrix />
         )}
 
         {/* Módulo de Gestión Vehicular */}
