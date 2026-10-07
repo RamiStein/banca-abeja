@@ -460,7 +460,7 @@ export default function CommunityMatrix() {
           </div>
 
           {/* Selector de Nodos */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="matrix-nodes-bar">
             {nodes.map(n => (
               <button
                 key={n.id}
@@ -483,14 +483,14 @@ export default function CommunityMatrix() {
       </div>
 
       {/* 2. Barra de Multimoneda y Acciones */}
-      <div className="flex justify-between items-center flex-wrap gap-4">
+      <div className="currency-bar-responsive">
         {/* Selector de Moneda */}
-        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+        <div className="currency-pills">
           <button
             onClick={() => setSelectedCurrency('ARS')}
             className="btn"
             style={{
-              padding: '6px 14px', fontSize: '0.85rem', borderRadius: '8px',
+              borderRadius: '8px',
               backgroundColor: selectedCurrency === 'ARS' ? 'rgba(99, 102, 241, 0.25)' : 'transparent',
               color: selectedCurrency === 'ARS' ? '#fff' : 'var(--text-secondary)',
               border: selectedCurrency === 'ARS' ? '1px solid var(--accent-color)' : 'none'
@@ -502,7 +502,7 @@ export default function CommunityMatrix() {
             onClick={() => setSelectedCurrency('USD')}
             className="btn"
             style={{
-              padding: '6px 14px', fontSize: '0.85rem', borderRadius: '8px',
+              borderRadius: '8px',
               backgroundColor: selectedCurrency === 'USD' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
               color: selectedCurrency === 'USD' ? 'var(--success)' : 'var(--text-secondary)',
               border: selectedCurrency === 'USD' ? '1px solid var(--success)' : 'none'
@@ -514,23 +514,23 @@ export default function CommunityMatrix() {
             onClick={() => setSelectedCurrency('ABEJA')}
             className="btn"
             style={{
-              padding: '6px 14px', fontSize: '0.85rem', borderRadius: '8px',
+              borderRadius: '8px',
               backgroundColor: selectedCurrency === 'ABEJA' ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
               color: selectedCurrency === 'ABEJA' ? 'var(--warning)' : 'var(--text-secondary)',
               border: selectedCurrency === 'ABEJA' ? '1px solid var(--warning)' : 'none'
             }}
           >
-            🐝 Moneda Abeja (Labor)
+            🐝 Abejas (Labor)
           </button>
         </div>
 
         {/* Acciones Rápidas */}
-        <div className="flex gap-2">
-          <button className="btn btn-outline" style={{ fontSize: '0.85rem' }} onClick={() => setShowNewGoalModal(true)}>
-            <Target size={16} color="var(--warning)" /> + Inversión Prevista
+        <div className="currency-actions">
+          <button className="btn btn-outline" onClick={() => setShowNewGoalModal(true)}>
+            <Target size={16} color="var(--warning)" /> + Inversión
           </button>
-          <button className="btn btn-primary" style={{ fontSize: '0.85rem' }} onClick={() => setShowNewTxModal(true)}>
-            <Plus size={16} /> Cargar Gasto Manual
+          <button className="btn btn-primary" onClick={() => setShowNewTxModal(true)}>
+            <Plus size={16} /> + Gasto Manual
           </button>
         </div>
       </div>
@@ -540,22 +540,22 @@ export default function CommunityMatrix() {
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <MessageSquare color="var(--success)" size={20} />
-            <h3 className="font-bold text-base" style={{ color: 'var(--success)' }}>
+            <h3 className="font-bold text-base" style={{ color: 'var(--success)', margin: 0 }}>
               Acceso Rápido WhatsApp & Bot
             </h3>
             <span style={{ fontSize: '0.75rem', backgroundColor: 'rgba(16, 185, 129, 0.2)', padding: '2px 8px', borderRadius: '8px', color: 'var(--success)' }}>
-              Desglose Múltiple Inteligente
+              Desglose Múltiple
             </span>
           </div>
-          <span className="text-secondary" style={{ fontSize: '0.8rem' }}>
-            Puedes cargar varios gastos juntos separados por comas o "y"
+          <span className="text-secondary" style={{ fontSize: '0.78rem' }}>
+            Carga varios gastos separados por "y" o comas
           </span>
         </div>
 
-        <form onSubmit={handleSimulateWhatsApp} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <form onSubmit={handleSimulateWhatsApp} className="whatsapp-input-group">
           <select 
             className="input" 
-            style={{ width: 'auto', minWidth: '130px', fontSize: '0.85rem' }}
+            style={{ fontSize: '0.85rem' }}
             value={whatsappSender}
             onChange={(e) => setWhatsappSender(e.target.value)}
           >
@@ -567,8 +567,8 @@ export default function CommunityMatrix() {
           <input 
             type="text" 
             className="input" 
-            style={{ flex: 1, minWidth: '280px', fontSize: '0.85rem' }}
-            placeholder="Ej: 'gasté en alimentos 30.000 y en nafta 15000 con el clio y 10 mil en etios y puse 20.000 para ferretería'"
+            style={{ fontSize: '0.85rem' }}
+            placeholder="Ej: 'gasté en alimentos 30.000 y en nafta 15000 con el clio y 10 mil en etios'"
             value={whatsappInput}
             onChange={(e) => setWhatsappInput(e.target.value)}
           />
@@ -600,7 +600,7 @@ export default function CommunityMatrix() {
       </div>
 
       {/* 4. Grid Superior: Billeteras Individuales a la Izquierda e Inversiones a la Derecha */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem', width: '100%' }}>
+      <div className="responsive-two-col-grid">
         
         {/* Columna 1: Billeteras de la Comunidad */}
         <div className="card" style={{ height: 'fit-content' }}>

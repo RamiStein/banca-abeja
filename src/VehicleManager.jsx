@@ -236,17 +236,17 @@ export default function VehicleManager() {
     <div className="flex flex-col gap-6">
       
       {/* Header integrado */}
-      <div className="flex justify-between items-center mb-2 flex-wrap gap-4">
+      <div className="flex justify-between items-center mb-2 flex-wrap gap-4 vehicle-header-responsive">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Car color="var(--accent-color)" size={28} />
             Auto Compartido <span style={{fontSize: '0.8rem', padding: '2px 8px', backgroundColor: 'rgba(245, 158, 11, 0.2)', color: 'var(--warning)', borderRadius: '12px', marginLeft: '8px'}}>Control & Mantenimiento</span>
           </h2>
-          <p className="text-secondary mt-2">Gestión de kilómetros, nafta, seguro y pozo de amortización entre amigos.</p>
+          <p className="text-secondary mt-1">Gestión de kilómetros, nafta, seguro y pozo de amortización entre amigos.</p>
         </div>
         
         {/* Car Selector */}
-        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+        <div className="vehicle-selector-bar">
           <button 
             className="btn"
             style={{ 
@@ -272,10 +272,10 @@ export default function VehicleManager() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', width: '100%' }}>
         
         {/* Columna Izquierda */}
-        <div className="flex flex-col gap-6" style={{ flex: '1 1 55%', minWidth: '300px' }}>
+        <div className="flex flex-col gap-6" style={{ flex: '1 1 55%', minWidth: 'min(100%, 300px)', width: '100%' }}>
           
           {/* Card: Calculadora y Registro */}
           <div className="card">
@@ -318,7 +318,7 @@ export default function VehicleManager() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', backgroundColor: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '1rem', backgroundColor: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                 <div>
                   <label className="font-semibold" style={{ fontSize: '0.9rem', display: 'block', marginBottom: '8px' }}>¿Pagó la Nafta?</label>
                   <div className="flex gap-2">
@@ -451,7 +451,7 @@ export default function VehicleManager() {
         </div>
 
         {/* Columna Derecha */}
-        <div className="flex flex-col gap-6" style={{ flex: '1 1 40%', minWidth: '280px' }}>
+        <div className="flex flex-col gap-6" style={{ flex: '1 1 40%', minWidth: 'min(100%, 280px)', width: '100%' }}>
           
           {/* Card: Resumen por Usuario */}
           <div className="card" style={{ borderTop: '4px solid #8b5cf6' }}>

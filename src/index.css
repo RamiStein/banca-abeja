@@ -212,13 +212,247 @@ tbody tr:hover {
   background: rgba(99, 102, 241, 0.05);
 }
 
-/* Responsive */
+/* ========================================================
+   RESPONSIVE DESIGN SYSTEM (MOBILE-FIRST ADAPTATIONS)
+   ======================================================== */
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
+/* Contenedor principal de pestañas superiores */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.nav-tabs-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Selector de Nodos */
+.matrix-nodes-bar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Barra de Monedas y Acciones Rápidas */
+.currency-bar-responsive {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.currency-pills {
+  display: flex;
+  gap: 0.35rem;
+  background-color: rgba(0,0,0,0.3);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.currency-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Formulario WhatsApp */
+.whatsapp-input-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Grid de 2 columnas flexible */
+.responsive-two-col-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Selector de Vehículos */
+.vehicle-selector-bar {
+  display: flex;
+  gap: 0.5rem;
+  background-color: rgba(255,255,255,0.05);
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+/* Adaptación para pantallas de Celulares y Tablets pequeñas */
 @media (max-width: 768px) {
   .grid-cols-3 {
     grid-template-columns: 1fr;
   }
+  
   .container {
-    padding: 1rem;
+    padding: 0.75rem 0.5rem;
+    max-width: 100%;
+  }
+
+  .card {
+    padding: 1rem 0.85rem;
+    border-radius: 14px;
+  }
+
+  /* Header y Título en Celulares */
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .app-header p {
+    font-size: 0.8rem !important;
+  }
+
+  /* Pestañas de Navegación Móvil (Scroll Horizontal Suave) */
+  .nav-tabs-container {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  .nav-tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-tabs-container .btn {
+    flex: 0 0 auto;
+    padding: 0.5rem 0.85rem !important;
+    font-size: 0.82rem !important;
+    border-radius: 10px;
+  }
+
+  /* Selector de Nodos en Móvil */
+  .matrix-nodes-bar {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .matrix-nodes-bar button {
+    flex: 0 0 auto;
+    font-size: 0.78rem !important;
+    padding: 0.45rem 0.75rem !important;
+  }
+
+  /* Monedas y Acciones en Móvil */
+  .currency-bar-responsive {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .currency-pills {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  .currency-pills button {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    padding: 6px 2px !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap;
+  }
+
+  .currency-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .currency-actions .btn {
+    width: 100%;
+    padding: 0.6rem 0.4rem !important;
+    font-size: 0.78rem !important;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Formulario de WhatsApp en Celular (Pasa a columna limpia) */
+  .whatsapp-input-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .whatsapp-input-group select,
+  .whatsapp-input-group input,
+  .whatsapp-input-group button {
+    width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .whatsapp-input-group button {
+    padding: 0.75rem !important;
+    justify-content: center;
+    font-size: 0.9rem !important;
+  }
+
+  /* Grid en Celular */
+  .responsive-two-col-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Vehículos en Móvil */
+  .vehicle-header-responsive {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.85rem !important;
+  }
+
+  .vehicle-selector-bar {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+
+  .vehicle-selector-bar button {
+    width: 100%;
+    justify-content: center;
+    padding: 0.55rem 0.5rem !important;
+    font-size: 0.85rem !important;
   }
 }
 
@@ -259,3 +493,80 @@ select.input option {
   justify-content: center;
   z-index: 50;
 }
+
+/* Badges de Estado y Comprobantes */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid transparent;
+}
+
+.status-pill:hover {
+  transform: scale(1.03);
+}
+
+.status-pendiente {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.status-aprobado {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.status-rendido {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.status-observado {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.receipt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  background: rgba(99, 102, 241, 0.12);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.receipt-chip:hover {
+  background: rgba(99, 102, 241, 0.25);
+  color: #ffffff;
+}
+
+.file-upload-box {
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.file-upload-box:hover {
+  border-color: var(--accent-color);
+  background: rgba(99, 102, 241, 0.05);
+}
+
