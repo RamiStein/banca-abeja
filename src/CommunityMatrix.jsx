@@ -79,24 +79,25 @@ function parseWhatsAppExpenses(rawText, defaultSenderId) {
         }
 
         // 3. Detectar categoría específica
-        let category = 'Despensa & Alimentos';
-        if (lowerClause.includes('clio')) {
+        let category = 'Gastos Generales';
+        if (/\bclio\b/i.test(lowerClause)) {
           category = 'Movilidad (Clio)';
-        } else if (lowerClause.includes('etios')) {
+        } else if (/\betios\b/i.test(lowerClause)) {
           category = 'Movilidad (Etios)';
-        } else if (lowerClause.includes('nafta') || lowerClause.includes('nafte') || lowerClause.includes('combustible') || lowerClause.includes('auto') || lowerClause.includes('gasoil')) {
+        } else if (/nafta|combustible|\bauto\b|gasoil/i.test(lowerClause)) {
           category = 'Movilidad';
-        } else if (lowerClause.includes('ferreteria') || lowerClause.includes('ferretería') || lowerClause.includes('bomba') || lowerClause.includes('herramienta') || lowerClause.includes('huerta') || lowerClause.includes('tierra') || lowerClause.includes('obra')) {
+        } else if (/ferreter[ií]a|bomba|herramienta|huerta|tierra|obra/i.test(lowerClause)) {
           category = 'Hábitat & Mantenimiento';
-        } else if (lowerClause.includes('luz') || lowerClause.includes('gas') || lowerClause.includes('internet') || lowerClause.includes('starlink') || lowerClause.includes('agua') || lowerClause.includes('seguro')) {
+        } else if (/\bluz\b|\bgas\b|\binternet\b|\bstarlink\b|\bagua\b|\bseguro\b/i.test(lowerClause)) {
           category = 'Servicios';
-        } else if (lowerClause.includes('alimento') || lowerClause.includes('verdura') || lowerClause.includes('comida') || lowerClause.includes('arepa') || lowerClause.includes('super') || lowerClause.includes('pan')) {
+        } else if (/alimento|verdur|comida|arepa|s[uú]per|\bpan\b/i.test(lowerClause)) {
           category = 'Despensa & Alimentos';
         }
 
         // 4. Limpiar concepto descriptivo legible
         let concept = clause
           .replace(rawNumStr, '')
+          .replace(/^(#abeja|banca abeja|abeja|\/gasto)\s+/i, '')
           .replace(/^(gast[eé]\s+en|gast[eé]|puse\s+para|puse|compr[eé]\s+en|compr[eé]|para|en|de)\s+/i, '')
           .replace(/\s+(con|para|en)$/i, '')
           .replace(/\s*(usd|dolares|dólares|u\$s|pesos|abejas|horas)\s*/gi, '')
@@ -104,7 +105,7 @@ function parseWhatsAppExpenses(rawText, defaultSenderId) {
 
         if (lowerClause.includes('clio') && (!concept || concept.length < 3)) concept = 'Nafta con el Clio';
         if (lowerClause.includes('etios') && (!concept || concept.length < 3)) concept = 'Nafta con el Etios';
-        if (!concept || concept.length < 3) concept = category;
+        if (!concept || concept.length < 2) concept = category;
 
         // Capitalizar primer letra
         concept = concept.charAt(0).toUpperCase() + concept.slice(1);
