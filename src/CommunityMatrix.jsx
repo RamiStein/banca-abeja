@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, Wallet, Globe, ArrowUpRight, ArrowDownLeft, Plus, 
   Sparkles, MessageSquare, Send, CheckCircle2, TrendingUp, 
   DollarSign, Coins, Target, Calendar, ChevronRight, Filter, 
-  ShieldCheck, Share2, Layers, HeartHandshake, Trash2, AlertCircle
+  ShieldCheck, Share2, Layers, HeartHandshake, Trash2, AlertCircle,
+  Wifi, RefreshCw
 } from 'lucide-react';
+import { db } from './firebase';
+import { collection, onSnapshot, addDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 
 // ==========================================
 // PARSER INTELIGENTE DE LENGUAJE COLOQUIAL (WHATSAPP)
@@ -271,6 +274,8 @@ export default function CommunityMatrix() {
   const [showNewGoalModal, setShowNewGoalModal] = useState(false);
   const [filterScope, setFilterScope] = useState('todos'); // 'todos' | 'comunitario' | 'individual'
   const [feedbackBanner, setFeedbackBanner] = useState(null);
+  const [isLiveSynced, setIsLiveSynced] = useState(false);
+  const [syncStatusText, setSyncStatusText] = useState('Conectando con WhatsApp...');
 
   // Formulario manual de movimiento
   const [formTx, setFormTx] = useState({
@@ -308,6 +313,43 @@ export default function CommunityMatrix() {
     localStorage.setItem('matrix_future_projects', JSON.stringify(projects));
   }, [projects]);
 
+  // Sincronización en Tiempo Real con Firebase Firestore (Banca Abeja & WhatsApp Bot)
+  useEffect(() => {
+    if (!db) {
+      setSyncStatusText('Modo Local');
+      return;
+    }
+
+    try {
+      const q = query(collection(db, 'banca_abeja_transactions'), orderBy('timestamp', 'desc'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+          const liveTxs = snapshot.docs.map(docSnap => ({
+            id: docSnap.id,
+            ...docSnap.data()
+          }));
+          setTransactions(liveTxs);
+          localStorage.setItem('matrix_transactions', JSON.stringify(liveTxs));
+          setIsLiveSynced(true);
+          setSyncStatusText('WhatsApp en Vivo (cobelgrano-36019)');
+        } else {
+          setIsLiveSynced(true);
+          setSyncStatusText('WhatsApp en Vivo (Esperando mensajes)');
+        }
+      }, (err) => {
+        console.warn("Firestore snapshot error, operando en modo local:", err.message);
+        setIsLiveSynced(false);
+        setSyncStatusText('Modo Local');
+      });
+
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn("No se pudo iniciar listener de Firestore:", e.message);
+      setIsLiveSynced(false);
+      setSyncStatusText('Modo Local');
+    }
+  }, []);
+
   // Cálculos de Totales por Moneda
   const totalsByCurrency = {
     ARS: { totalComunitario: 0, totalIndividual: 0 },
@@ -325,14 +367,32 @@ export default function CommunityMatrix() {
     }
   });
 
+  // Lista dinámica de miembros (incluye a miembros que envíen gastos por WhatsApp)
+  const activeMembersList = useMemo(() => {
+    const knownMap = new Map();
+    members.forEach(m => knownMap.set(m.id, { ...m }));
+    transactions.forEach(t => {
+      if (t.memberId && !knownMap.has(t.memberId)) {
+        const displayName = t.memberName || (t.memberId.charAt(0).toUpperCase() + t.memberId.slice(1));
+        knownMap.set(t.memberId, {
+          id: t.memberId,
+          name: displayName,
+          familyUnits: { adults: 1, kids: 0 },
+          phone: ''
+        });
+      }
+    });
+    return Array.from(knownMap.values());
+  }, [members, transactions]);
+
   // Balance por Miembro en la moneda seleccionada
-  const memberBalances = members.map(m => {
+  const memberBalances = activeMembersList.map(m => {
     const userTxs = transactions.filter(t => t.memberId === m.id && t.currency === selectedCurrency);
     const paidComunitario = userTxs.filter(t => t.scope === 'comunitario').reduce((acc, t) => acc + t.amount, 0);
     const paidIndividual = userTxs.filter(t => t.scope === 'individual').reduce((acc, t) => acc + t.amount, 0);
     
     const totalComunitarioCurr = totalsByCurrency[selectedCurrency]?.totalComunitario || 0;
-    const fairShare = members.length > 0 ? totalComunitarioCurr / members.length : 0;
+    const fairShare = activeMembersList.length > 0 ? totalComunitarioCurr / activeMembersList.length : 0;
     const netBalance = paidComunitario - fairShare;
 
     return {
@@ -347,7 +407,7 @@ export default function CommunityMatrix() {
   // ==========================================
   // MANEJADOR DE MENSAJE DE WHATSAPP
   // ==========================================
-  const handleSimulateWhatsApp = (e) => {
+  const handleSimulateWhatsApp = async (e) => {
     e.preventDefault();
     if (!whatsappInput.trim()) return;
 
@@ -358,8 +418,33 @@ export default function CommunityMatrix() {
       return;
     }
 
-    // Agregar todos los ítems detectados a la lista de transacciones
-    setTransactions(prev => [...parsedItems, ...prev]);
+    const senderObj = activeMembersList.find(m => m.id === whatsappSender);
+    const senderName = senderObj?.name || (whatsappSender.charAt(0).toUpperCase() + whatsappSender.slice(1));
+
+    // Guardar en Firestore si está conectado
+    if (db) {
+      for (const item of parsedItems) {
+        try {
+          await addDoc(collection(db, 'banca_abeja_transactions'), {
+            date: new Date().toLocaleDateString('es-AR'),
+            memberId: whatsappSender,
+            memberName: senderName,
+            concept: item.concept,
+            category: item.category,
+            currency: item.currency,
+            amount: item.amount,
+            scope: item.scope,
+            channel: 'whatsapp_web',
+            timestamp: Date.now()
+          });
+        } catch (err) {
+          console.warn("Error guardando en Firestore:", err);
+        }
+      }
+    } else {
+      setTransactions(prev => [...parsedItems, ...prev]);
+    }
+
     setWhatsappInput('');
 
     // Armar mensaje de confirmación detallado
@@ -367,7 +452,7 @@ export default function CommunityMatrix() {
     const itemsSummary = parsedItems.map(item => `${item.concept} (${getCurrencySymbol(item.currency)}${item.amount.toLocaleString('es-AR')})`).join(', ');
 
     setFeedbackBanner({
-      sender: members.find(m => m.id === whatsappSender)?.name || whatsappSender,
+      sender: senderName,
       count: parsedItems.length,
       total: totalSum,
       currency: parsedItems[0].currency,
@@ -376,31 +461,52 @@ export default function CommunityMatrix() {
   };
 
   // Carga manual de gasto
-  const handleCreateTx = (e) => {
+  const handleCreateTx = async (e) => {
     e.preventDefault();
     if (!formTx.concept || !formTx.amount) return;
 
+    const senderObj = activeMembersList.find(m => m.id === formTx.memberId);
+    const senderName = senderObj?.name || (formTx.memberId.charAt(0).toUpperCase() + formTx.memberId.slice(1));
+
     const newTx = {
-      id: `tx-man-${Date.now()}`,
       date: new Date().toLocaleDateString('es-AR'),
       memberId: formTx.memberId,
+      memberName: senderName,
       concept: formTx.concept.trim(),
       scope: formTx.scope,
       category: formTx.category,
       currency: formTx.currency,
       amount: parseFloat(formTx.amount) || 0,
-      channel: 'web'
+      channel: 'web',
+      timestamp: Date.now()
     };
 
-    setTransactions(prev => [newTx, ...prev]);
+    if (db) {
+      try {
+        await addDoc(collection(db, 'banca_abeja_transactions'), newTx);
+      } catch (err) {
+        console.warn("Error guardando en Firestore:", err);
+        setTransactions(prev => [{ ...newTx, id: `tx-man-${Date.now()}` }, ...prev]);
+      }
+    } else {
+      setTransactions(prev => [{ ...newTx, id: `tx-man-${Date.now()}` }, ...prev]);
+    }
+
     setShowNewTxModal(false);
     setFormTx({ ...formTx, concept: '', amount: '' });
   };
 
   // Eliminar transacción
-  const handleDeleteTx = (id) => {
+  const handleDeleteTx = async (id) => {
     if (window.confirm("¿Seguro que deseas eliminar este movimiento?")) {
       setTransactions(prev => prev.filter(t => t.id !== id));
+      if (db && !id.startsWith('tx-')) {
+        try {
+          await deleteDoc(doc(db, 'banca_abeja_transactions', id));
+        } catch (err) {
+          console.warn("Error eliminando documento de Firestore:", err);
+        }
+      }
     }
   };
 
@@ -451,8 +557,22 @@ export default function CommunityMatrix() {
                 Matriz En Conjunto • Red Comunitaria
               </span>
             </div>
-            <h2 className="text-2xl font-bold flex items-center gap-2">
+            <h2 className="text-2xl font-bold flex items-center gap-2 flex-wrap">
               Banca Abeja <span style={{ fontSize: '0.85rem', padding: '2px 10px', backgroundColor: 'rgba(245, 158, 11, 0.2)', color: 'var(--warning)', borderRadius: '12px' }}>Economía de la Colmena</span>
+              <span style={{ 
+                fontSize: '0.75rem', 
+                padding: '3px 10px', 
+                backgroundColor: isLiveSynced ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)', 
+                color: isLiveSynced ? '#10b981' : '#f59e0b', 
+                border: isLiveSynced ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
+                borderRadius: '12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isLiveSynced ? '#10b981' : '#f59e0b', display: 'inline-block' }}></span>
+                {syncStatusText}
+              </span>
             </h2>
             <p className="text-secondary mt-1" style={{ fontSize: '0.9rem' }}>
               Nodo Activo: <strong style={{ color: 'var(--text-primary)' }}>{activeNode.name}</strong> — {activeNode.desc}
@@ -559,7 +679,7 @@ export default function CommunityMatrix() {
             value={whatsappSender}
             onChange={(e) => setWhatsappSender(e.target.value)}
           >
-            {members.map(m => (
+            {activeMembersList.map(m => (
               <option key={m.id} value={m.id}>{m.name}</option>
             ))}
           </select>
