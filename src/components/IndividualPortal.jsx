@@ -2,15 +2,19 @@ import React, { useState, useMemo } from 'react';
 import { 
   User, Plus, Phone, MessageSquare, CheckCircle2, AlertCircle, 
   ArrowUpRight, ArrowDownLeft, ShieldCheck, ExternalLink, Edit3, 
-  Trash2, Send, Sparkles, Layers, Users, Wallet, ChevronRight, HelpCircle
+  Trash2, Send, Sparkles, Layers, Users, Wallet, ChevronRight, HelpCircle,
+  LogOut
 } from 'lucide-react';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+
 
 export default function IndividualPortal({
   members = [],
   currentMemberId = 'ramiro',
   onSelectMember,
+  currentUser = null,
+  onLogout = null,
   transactions = [],
   onDeleteTx,
   onAddTx,
@@ -39,8 +43,12 @@ export default function IndividualPortal({
   const [quickScope, setQuickScope] = useState('comunitario'); // 'comunitario' | 'individual'
   const [quickFeedback, setQuickFeedback] = useState(null);
 
-  // Miembro activo actual
+  // Miembro activo actual (prioriza el usuario autenticado para asegurar identidad única)
   const currentMember = useMemo(() => {
+    if (currentUser) {
+      const match = members.find(m => m.id === currentUser.id || m.email === currentUser.email);
+      return match || currentUser;
+    }
     return members.find(m => m.id === currentMemberId) || members[0] || {
       id: 'ramiro',
       name: 'Ramiro',
@@ -48,7 +56,8 @@ export default function IndividualPortal({
       cleanPhone: '5491127452476',
       role: 'Fundador'
     };
-  }, [members, currentMemberId]);
+  }, [members, currentMemberId, currentUser]);
+
 
   // Transacciones exclusivas del miembro activo
   const memberTransactions = useMemo(() => {
@@ -245,32 +254,40 @@ export default function IndividualPortal({
             </p>
           </div>
 
-          {/* Switcher de Miembros y Botón de Alta */}
+          {/* Perfil de Usuario Autenticado (Identidad Exclusiva y Fija) */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-secondary text-xs mr-1 hidden sm:inline">Operando como:</span>
-            <div className="flex items-center gap-1.5 p-1 rounded-xl" style={{ backgroundColor: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              {members.map(m => {
-                const isSelected = m.id === currentMember.id;
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => onSelectMember && onSelectMember(m.id)}
-                    className="btn"
-                    style={{
-                      fontSize: '0.82rem',
-                      padding: '5px 12px',
-                      borderRadius: '8px',
-                      backgroundColor: isSelected ? 'var(--accent-color)' : 'transparent',
-                      color: isSelected ? '#fff' : 'var(--text-secondary)',
-                      fontWeight: isSelected ? 600 : 400,
-                      border: 'none',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    👤 {m.name}
-                  </button>
-                );
-              })}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '6px 14px',
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              border: '1px solid var(--border-color)',
+              boxShadow: 'var(--shadow-sm)'
+            }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(99, 102, 241, 0.12)',
+                color: '#4f46e5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '0.88rem'
+              }}>
+                {currentMember.name ? currentMember.name.charAt(0).toUpperCase() : '👤'}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                  {currentMember.name}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <ShieldCheck size={12} /> Sesión activa • {currentMember.role || 'Miembro'}
+                </span>
+              </div>
             </div>
 
             <button
@@ -291,7 +308,30 @@ export default function IndividualPortal({
               <Plus size={15} />
               Darse de Alta
             </button>
+
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="btn btn-outline"
+                style={{
+                  fontSize: '0.82rem',
+                  padding: '6px 12px',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: '#dc2626',
+                  borderColor: '#fecaca',
+                  backgroundColor: '#fef2f2'
+                }}
+                title="Cerrar sesión en esta cuenta"
+              >
+                <LogOut size={14} />
+                Cerrar Sesión
+              </button>
+            )}
           </div>
+
 
         </div>
       </div>

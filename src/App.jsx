@@ -4,7 +4,7 @@ import {
   History, Trash2, Plus, X, Tag, User, Car, Layers, FileText, 
   CheckCircle2, Clock, AlertTriangle, ShieldCheck, Eye, Paperclip, 
   ArrowDownRight, Sparkles, Upload, FileCheck, Coins, Image as ImageIcon,
-  Truck, Lock, Unlock, KeyRound
+  Truck, Lock, Unlock, KeyRound, LogOut
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { parseCSV } from './utils/parser';
@@ -13,6 +13,8 @@ import ReceiptViewerModal from './components/ReceiptViewerModal';
 import VehicleManager from './VehicleManager';
 import CommunityMatrix from './CommunityMatrix';
 import TruckManager from './TruckManager';
+import { authService } from './services/authService';
+import AuthScreen from './components/AuthScreen';
 import './index.css';
 
 // Función segura para formatear moneda sin errores de "-0"
@@ -97,6 +99,21 @@ const SEED_TRANSACTIONS = [
 ];
 
 function App() {
+  // Autenticación de Usuario (Identidad Exclusiva y Sesión Segura)
+  const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser());
+
+  useEffect(() => {
+    const unsub = authService.initAuthListener((user) => {
+      if (user) setCurrentUser(user);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleLogout = () => {
+    authService.logout();
+    setCurrentUser(null);
+  };
+
   // Persistencia de transacciones con LocalStorage
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('banca_abeja_transactions');
@@ -112,6 +129,7 @@ function App() {
   useEffect(() => {
     localStorage.setItem('banca_abeja_transactions', JSON.stringify(transactions));
   }, [transactions]);
+
 
   const [isDragging, setIsDragging] = useState(false);
   const [activeTab, setActiveTab] = useState('community');
@@ -507,6 +525,11 @@ function App() {
     );
   };
 
+  // Si no hay sesión iniciada, mostrar la pantalla de autenticación con Email y Contraseña
+  if (!currentUser) {
+    return <AuthScreen onLogin={(user) => setCurrentUser(user)} />;
+  }
+
   return (
     <div className="container relative">
       <header className="flex justify-between items-center mb-6 flex-wrap gap-4">
@@ -606,6 +629,57 @@ function App() {
               <Lock size={14} />
               Admin
             </button>
+          )}
+
+          {/* Badge de Usuario Logueado & Cerrar Sesión */}
+          {currentUser && (
+            <div className="flex items-center gap-2 pl-2" style={{ borderLeft: '1px solid var(--border-color)' }}>
+              <div 
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  padding: '5px 12px', 
+                  backgroundColor: '#f8fafc', 
+                  border: '1px solid #e2e8f0', 
+                  borderRadius: '10px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  color: '#1e293b'
+                }}
+                title={`Sesión activa: ${currentUser.email || currentUser.id}`}
+              >
+                <span style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  backgroundColor: '#4f46e5',
+                  color: '#ffffff',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.72rem',
+                  fontWeight: 700
+                }}>
+                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                </span>
+                <span>{currentUser.name}</span>
+              </div>
+
+              <button 
+                className="btn btn-outline" 
+                style={{ borderColor: '#fecaca', color: '#dc2626', background: '#fef2f2', padding: '6px 10px', fontSize: '0.8rem' }}
+                onClick={() => {
+                  if (window.confirm(`¿Deseas cerrar la sesión de ${currentUser.name}?`)) {
+                    handleLogout();
+                  }
+                }}
+                title="Cerrar Sesión de Banca Abeja"
+              >
+                <LogOut size={14} />
+                <span className="hidden sm:inline">Salir</span>
+              </button>
+            </div>
           )}
         </div>
       </header>
@@ -1337,7 +1411,7 @@ function App() {
 
         {/* Módulo de la Matriz Comunitaria y Colmena */}
         {activeTab === 'community' && (
-          <CommunityMatrix />
+          <CommunityMatrix currentUser={currentUser} onLogout={handleLogout} />
         )}
 
         {/* Módulo de Gestión Vehicular */}

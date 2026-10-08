@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAZtufy7-MAc6_97Yy7Ilj1TRUtgzFWtjY",
@@ -20,11 +21,13 @@ export const isFirebaseConfigured = () => {
 
 let app = null;
 let db = null;
+let auth = null;
 
 if (isFirebaseConfigured()) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     db = getFirestore(app);
+    auth = getAuth(app);
     console.log("🐝 Firebase conectado con éxito para Banca Abeja en el proyecto:", firebaseConfig.projectId);
   } catch (error) {
     console.warn("Error al inicializar Firebase en Banca Abeja:", error);
@@ -33,4 +36,5 @@ if (isFirebaseConfigured()) {
   console.info("Firebase no configurado aún o en modo local. Usando LocalStorage.");
 }
 
-export { app, db };
+export { app, db, auth };
+

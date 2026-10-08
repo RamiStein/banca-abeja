@@ -130,7 +130,7 @@ function parseWhatsAppExpenses(rawText, defaultSenderId) {
   return parsedItems;
 }
 
-export default function CommunityMatrix() {
+export default function CommunityMatrix({ currentUser = null, onLogout = null }) {
   // 1. Matriz de Nodos en la Red "En Conjunto"
   const defaultNodes = [
     { id: 'hogar', name: 'Comunidad Hogar', type: 'Convivencia & Familia', desc: 'Espacio de vida compartida, despensa y movilidad' },
@@ -160,12 +160,22 @@ export default function CommunityMatrix() {
   // Modo de Vista: 'individual' (Mi Espacio) vs 'community' (La Colmena)
   const [viewMode, setViewMode] = useState('individual');
   const [currentMemberId, setCurrentMemberId] = useState(() => {
-    return localStorage.getItem('banca_abeja_active_member') || 'ramiro';
+    return currentUser?.id || localStorage.getItem('banca_abeja_active_member') || 'ramiro';
   });
+
+  // Mantener la identidad sincronizada con el usuario autenticado
+  useEffect(() => {
+    if (currentUser?.id) {
+      setCurrentMemberId(currentUser.id);
+      setWhatsappSender(currentUser.id);
+      setFormTx(prev => ({ ...prev, memberId: currentUser.id }));
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     localStorage.setItem('banca_abeja_active_member', currentMemberId);
   }, [currentMemberId]);
+
 
   // 3. Moneda Activa para Visualización (ARS, USD, ABEJA)
   const [selectedCurrency, setSelectedCurrency] = useState('ARS'); // 'ARS' | 'USD' | 'ABEJA'
@@ -678,6 +688,8 @@ export default function CommunityMatrix() {
         <IndividualPortal
           members={members}
           currentMemberId={currentMemberId}
+          currentUser={currentUser}
+          onLogout={onLogout}
           onSelectMember={setCurrentMemberId}
           transactions={transactions}
           onDeleteTx={handleDeleteTx}
@@ -814,16 +826,35 @@ export default function CommunityMatrix() {
         </div>
 
         <form onSubmit={handleSimulateWhatsApp} className="whatsapp-input-group">
-          <select 
-            className="input" 
-            style={{ fontSize: '0.85rem' }}
-            value={whatsappSender}
-            onChange={(e) => setWhatsappSender(e.target.value)}
-          >
-            {activeMembersList.map(m => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
+          {currentUser ? (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              backgroundColor: '#ffffff',
+              border: '1px solid #cbd5e1',
+              borderRadius: '10px',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              color: '#0f172a',
+              whiteSpace: 'nowrap'
+            }}>
+              <User size={15} color="#4f46e5" />
+              <span>{currentUser.name}</span>
+            </div>
+          ) : (
+            <select 
+              className="input" 
+              style={{ fontSize: '0.85rem' }}
+              value={whatsappSender}
+              onChange={(e) => setWhatsappSender(e.target.value)}
+            >
+              {activeMembersList.map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+          )}
 
           <input 
             type="text" 
@@ -1198,15 +1229,34 @@ export default function CommunityMatrix() {
             <form onSubmit={handleCreateTx} className="flex flex-col gap-4">
               <div>
                 <label className="text-secondary" style={{ fontSize: '0.85rem', display: 'block', marginBottom: '4px' }}>¿Quién pagó?</label>
-                <select 
-                  className="input" 
-                  value={formTx.memberId} 
-                  onChange={e => setFormTx({...formTx, memberId: e.target.value})}
-                >
-                  {members.map(m => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
+                {currentUser ? (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '9px 12px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '10px',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    color: '#0f172a'
+                  }}>
+                    <ShieldCheck size={16} color="#16a34a" />
+                    <span>{currentUser.name}</span>
+                    <span style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: 'auto' }}>Identidad verificada</span>
+                  </div>
+                ) : (
+                  <select 
+                    className="input" 
+                    value={formTx.memberId} 
+                    onChange={e => setFormTx({...formTx, memberId: e.target.value})}
+                  >
+                    {members.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
