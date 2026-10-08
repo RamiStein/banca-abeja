@@ -363,18 +363,18 @@ export default function VehicleManager() {
                 Historial de Viajes ({activeCar})
               </h3>
               
-              <div className="flex gap-2" style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '8px' }}>
+              <div className="flex gap-2" style={{ backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', padding: '3px', borderRadius: '8px' }}>
                 <button 
                   onClick={() => setFilter('Todos')}
-                  style={{ padding: '4px 12px', fontSize: '0.8rem', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: filter === 'Todos' ? 'rgba(255,255,255,0.1)' : 'transparent', color: filter === 'Todos' ? '#fff' : 'var(--text-secondary)' }}
+                  style={{ padding: '4px 12px', fontSize: '0.8rem', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: filter === 'Todos' ? '#ffffff' : 'transparent', color: filter === 'Todos' ? '#0f172a' : 'var(--text-secondary)', fontWeight: filter === 'Todos' ? 600 : 'normal', boxShadow: filter === 'Todos' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}
                 >Todos</button>
                 <button 
                   onClick={() => setFilter('Deuda Nafta')}
-                  style={{ padding: '4px 12px', fontSize: '0.8rem', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: filter === 'Deuda Nafta' ? 'rgba(239, 68, 68, 0.2)' : 'transparent', color: filter === 'Deuda Nafta' ? 'var(--danger)' : 'var(--text-secondary)' }}
+                  style={{ padding: '4px 12px', fontSize: '0.8rem', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: filter === 'Deuda Nafta' ? '#fee2e2' : 'transparent', color: filter === 'Deuda Nafta' ? '#b91c1c' : 'var(--text-secondary)', fontWeight: filter === 'Deuda Nafta' ? 600 : 'normal' }}
                 >Deuda Nafta</button>
                 <button 
                   onClick={() => setFilter('Deuda Amort')}
-                  style={{ padding: '4px 12px', fontSize: '0.8rem', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: filter === 'Deuda Amort' ? 'rgba(245, 158, 11, 0.2)' : 'transparent', color: filter === 'Deuda Amort' ? 'var(--warning)' : 'var(--text-secondary)' }}
+                  style={{ padding: '4px 12px', fontSize: '0.8rem', borderRadius: '6px', border: 'none', cursor: 'pointer', backgroundColor: filter === 'Deuda Amort' ? '#fef3c7' : 'transparent', color: filter === 'Deuda Amort' ? '#b45309' : 'var(--text-secondary)', fontWeight: filter === 'Deuda Amort' ? 600 : 'normal' }}
                 >Deuda Amort.</button>
               </div>
             </div>

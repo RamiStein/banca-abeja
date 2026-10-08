@@ -8,30 +8,30 @@ import {
 const STATUS_CONFIG = {
   pendiente: {
     label: 'Pendiente de Revisión',
-    bg: 'rgba(245, 158, 11, 0.15)',
-    color: '#f59e0b',
-    border: 'rgba(245, 158, 11, 0.4)',
+    bg: '#fffbeb',
+    color: '#b45309',
+    border: '#fde68a',
     icon: Clock
   },
   aprobado: {
     label: 'Aprobado / Validado',
-    bg: 'rgba(16, 185, 129, 0.15)',
-    color: '#10b981',
-    border: 'rgba(16, 185, 129, 0.4)',
+    bg: '#f0fdf4',
+    color: '#15803d',
+    border: '#bbf7d0',
     icon: CheckCircle2
   },
   rendido: {
     label: 'Rendido con Factura',
-    bg: 'rgba(56, 189, 248, 0.15)',
-    color: '#38bdf8',
-    border: 'rgba(56, 189, 248, 0.4)',
+    bg: '#f0f9ff',
+    color: '#0284c7',
+    border: '#bae6fd',
     icon: ShieldCheck
   },
   observado: {
     label: 'Observado / Rechazado',
-    bg: 'rgba(239, 68, 68, 0.15)',
-    color: '#ef4444',
-    border: 'rgba(239, 68, 68, 0.4)',
+    bg: '#fef2f2',
+    color: '#b91c1c',
+    border: '#fecaca',
     icon: AlertTriangle
   }
 };
@@ -70,9 +70,9 @@ export default function ReceiptViewerModal({ transaction, onClose, onUpdateStatu
           display: 'flex', 
           flexDirection: 'column',
           padding: '1.75rem',
-          backgroundColor: '#161926',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)'
+          backgroundColor: '#ffffff',
+          border: '1px solid #e2e8f0',
+          boxShadow: 'var(--shadow-lg)'
         }}
       >
         {/* Header */}
@@ -100,16 +100,17 @@ export default function ReceiptViewerModal({ transaction, onClose, onUpdateStatu
                   padding: '4px 8px',
                   borderRadius: '6px',
                   fontSize: '0.75rem',
-                  backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                  color: '#818cf8',
-                  fontWeight: 600
+                  backgroundColor: '#eef2ff',
+                  color: '#4338ca',
+                  fontWeight: 600,
+                  border: '1px solid #c7d2fe'
                 }}>
                   {transaction.receiptType}
                 </span>
               )}
             </div>
 
-            <h3 className="text-2xl font-bold mt-1 text-white flex items-center gap-2">
+            <h3 className="text-2xl font-bold mt-1 flex items-center gap-2" style={{ color: '#0f172a' }}>
               <FileText size={22} className="text-accent" />
               {transaction.concept}
             </h3>
@@ -167,9 +168,9 @@ export default function ReceiptViewerModal({ transaction, onClose, onUpdateStatu
             <div 
               style={{ 
                 minHeight: '280px', 
-                backgroundColor: 'rgba(0,0,0,0.3)', 
+                backgroundColor: '#f8fafc', 
                 borderRadius: '12px',
-                border: '1px dashed var(--border-color)',
+                border: '1px dashed #cbd5e1',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -180,9 +181,9 @@ export default function ReceiptViewerModal({ transaction, onClose, onUpdateStatu
               {transaction.receiptUrl ? (
                 isPdf ? (
                   <div className="flex flex-col items-center gap-3 p-6 text-center">
-                    <FileSpreadsheet size={48} color="#38bdf8" />
+                    <FileSpreadsheet size={48} color="#0284c7" />
                     <div>
-                      <p className="font-semibold text-white">{transaction.receiptFileName || 'Documento PDF'}</p>
+                      <p className="font-semibold" style={{ color: '#0f172a' }}>{transaction.receiptFileName || 'Documento PDF'}</p>
                       <p className="text-secondary text-xs mt-1">Comprobante en formato digital PDF</p>
                     </div>
                     <a 
@@ -232,8 +233,8 @@ export default function ReceiptViewerModal({ transaction, onClose, onUpdateStatu
             <div style={{ 
               padding: '1.2rem', 
               borderRadius: '12px', 
-              backgroundColor: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)'
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0'
             }}>
               <span className="text-xs text-secondary uppercase tracking-wider block mb-1">Monto de la Operación</span>
               <div className="text-3xl font-bold flex items-baseline gap-2">
@@ -248,43 +249,43 @@ export default function ReceiptViewerModal({ transaction, onClose, onUpdateStatu
 
             {/* Metadatos en Ficha */}
             <div className="flex flex-col gap-2.5 text-sm">
-              <div className="flex justify-between items-center py-2 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+              <div className="flex justify-between items-center py-2 border-b" style={{ borderColor: '#e2e8f0' }}>
                 <span className="text-secondary flex items-center gap-2"><Calendar size={15} /> Fecha del Movimiento</span>
-                <span className="font-semibold text-white">{transaction.date}</span>
+                <span className="font-semibold" style={{ color: '#0f172a' }}>{transaction.date}</span>
               </div>
 
-              <div className="flex justify-between items-center py-2 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+              <div className="flex justify-between items-center py-2 border-b" style={{ borderColor: '#e2e8f0' }}>
                 <span className="text-secondary flex items-center gap-2"><Wallet size={15} /> Billetera / Cuenta</span>
-                <span className="font-medium text-white">{transaction.wallet}</span>
+                <span className="font-medium" style={{ color: '#0f172a' }}>{transaction.wallet}</span>
               </div>
 
-              <div className="flex justify-between items-center py-2 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+              <div className="flex justify-between items-center py-2 border-b" style={{ borderColor: '#e2e8f0' }}>
                 <span className="text-secondary flex items-center gap-2"><Tag size={15} /> Proyecto / Imputación</span>
                 <span className="font-semibold" style={{ color: 'var(--accent-color)' }}>
                   {transaction.project || 'Sin Proyecto Asignado'}
                 </span>
               </div>
 
-              <div className="flex justify-between items-center py-2 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+              <div className="flex justify-between items-center py-2 border-b" style={{ borderColor: '#e2e8f0' }}>
                 <span className="text-secondary flex items-center gap-2">
                   <User size={15} /> 
                   {transaction.type === 'income' ? 'Emisor / Cliente' : (transaction.type === 'advance' ? 'Responsable Anticipo' : 'Proveedor / Destinatario')}
                 </span>
-                <span className="font-medium text-white">
+                <span className="font-medium" style={{ color: '#0f172a' }}>
                   {transaction.recipient || transaction.advanceHolder || 'No especificado'}
                 </span>
               </div>
 
               {transaction.category && (
-                <div className="flex justify-between items-center py-2 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                <div className="flex justify-between items-center py-2 border-b" style={{ borderColor: '#e2e8f0' }}>
                   <span className="text-secondary flex items-center gap-2"><Building2 size={15} /> Categoría</span>
-                  <span className="font-medium text-white">{transaction.category}</span>
+                  <span className="font-medium" style={{ color: '#0f172a' }}>{transaction.category}</span>
                 </div>
               )}
             </div>
 
             {/* Selector de Acción de Auditoría (Cambio Rápido de Estado) */}
-            <div className="mt-2 p-3.5 rounded-lg" style={{ backgroundColor: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+            <div className="mt-2 p-3.5 rounded-lg" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
               <label className="text-xs font-semibold text-secondary uppercase tracking-wider block mb-2">
                 Dictamen de Auditoría / Estado:
               </label>
@@ -296,9 +297,10 @@ export default function ReceiptViewerModal({ transaction, onClose, onUpdateStatu
                   style={{
                     fontSize: '0.8rem',
                     padding: '8px 10px',
-                    borderColor: currentStatus === 'aprobado' ? '#10b981' : 'rgba(255,255,255,0.1)',
-                    backgroundColor: currentStatus === 'aprobado' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
-                    color: currentStatus === 'aprobado' ? '#10b981' : 'var(--text-secondary)'
+                    borderColor: currentStatus === 'aprobado' ? '#16a34a' : '#cbd5e1',
+                    backgroundColor: currentStatus === 'aprobado' ? '#dcfce7' : '#ffffff',
+                    color: currentStatus === 'aprobado' ? '#15803d' : '#64748b',
+                    fontWeight: currentStatus === 'aprobado' ? 700 : 500
                   }}
                 >
                   <CheckCircle2 size={14} /> Aprobar
@@ -311,9 +313,10 @@ export default function ReceiptViewerModal({ transaction, onClose, onUpdateStatu
                   style={{
                     fontSize: '0.8rem',
                     padding: '8px 10px',
-                    borderColor: currentStatus === 'rendido' ? '#38bdf8' : 'rgba(255,255,255,0.1)',
-                    backgroundColor: currentStatus === 'rendido' ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
-                    color: currentStatus === 'rendido' ? '#38bdf8' : 'var(--text-secondary)'
+                    borderColor: currentStatus === 'rendido' ? '#0284c7' : '#cbd5e1',
+                    backgroundColor: currentStatus === 'rendido' ? '#e0f2fe' : '#ffffff',
+                    color: currentStatus === 'rendido' ? '#0369a1' : '#64748b',
+                    fontWeight: currentStatus === 'rendido' ? 700 : 500
                   }}
                 >
                   <ShieldCheck size={14} /> Rendido (Factura OK)
@@ -326,9 +329,10 @@ export default function ReceiptViewerModal({ transaction, onClose, onUpdateStatu
                   style={{
                     fontSize: '0.8rem',
                     padding: '8px 10px',
-                    borderColor: currentStatus === 'pendiente' ? '#f59e0b' : 'rgba(255,255,255,0.1)',
-                    backgroundColor: currentStatus === 'pendiente' ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
-                    color: currentStatus === 'pendiente' ? '#f59e0b' : 'var(--text-secondary)'
+                    borderColor: currentStatus === 'pendiente' ? '#d97706' : '#cbd5e1',
+                    backgroundColor: currentStatus === 'pendiente' ? '#fef3c7' : '#ffffff',
+                    color: currentStatus === 'pendiente' ? '#b45309' : '#64748b',
+                    fontWeight: currentStatus === 'pendiente' ? 700 : 500
                   }}
                 >
                   <Clock size={14} /> Poner en Revisión
@@ -341,9 +345,10 @@ export default function ReceiptViewerModal({ transaction, onClose, onUpdateStatu
                   style={{
                     fontSize: '0.8rem',
                     padding: '8px 10px',
-                    borderColor: currentStatus === 'observado' ? '#ef4444' : 'rgba(255,255,255,0.1)',
-                    backgroundColor: currentStatus === 'observado' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
-                    color: currentStatus === 'observado' ? '#ef4444' : 'var(--text-secondary)'
+                    borderColor: currentStatus === 'observado' ? '#dc2626' : '#cbd5e1',
+                    backgroundColor: currentStatus === 'observado' ? '#fee2e2' : '#ffffff',
+                    color: currentStatus === 'observado' ? '#b91c1c' : '#64748b',
+                    fontWeight: currentStatus === 'observado' ? 700 : 500
                   }}
                 >
                   <AlertTriangle size={14} /> Observar / Rechazar

@@ -981,11 +981,14 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
       {/* ========================================================================= */}
       {/* 6. VISTA B: LISTADO DE INVOICES & FACTURAS DE ALQUILER                     */}
       {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* 6. VISTA B: LISTADO DE INVOICES & FACTURAS DE ALQUILER                     */}
+      {/* ========================================================================= */}
       {activeSubTab === 'invoices' && (
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 border-b border-white/10 flex items-center justify-between flex-wrap gap-3">
+        <div className="card p-0 overflow-hidden" style={{ background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: 'var(--shadow-sm)' }}>
+          <div className="p-4 flex items-center justify-between flex-wrap gap-3" style={{ borderBottom: '1px solid #e2e8f0' }}>
             <div>
-              <h3 className="font-bold flex items-center gap-2 text-base text-white">
+              <h3 className="font-bold flex items-center gap-2 text-base" style={{ color: '#0f172a' }}>
                 <FileText size={18} className="text-accent" />
                 Liquidaciones & Invoices Generados
               </h3>
@@ -996,7 +999,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
             <button 
               type="button"
               className="btn btn-primary text-xs" 
-              style={{ backgroundColor: '#6366f1', color: '#fff', fontWeight: 600 }}
+              style={{ backgroundColor: '#4f46e5', color: '#fff', fontWeight: 600 }}
               onClick={() => handleStartBooking(new Date().toISOString().split('T')[0])}
             >
               <Plus size={15} /> + Nuevo Invoice
@@ -1012,7 +1015,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs" style={{ borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr className="border-b border-white/10 text-secondary bg-white/[0.02]">
+                  <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc', color: '#475569' }}>
                     <th className="p-3">N° FACTURA</th>
                     <th className="p-3">INQUILINO</th>
                     <th className="p-3">PERÍODO / DÍAS</th>
@@ -1026,36 +1029,36 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
                 </thead>
                 <tbody>
                   {filteredRentals.map(rental => (
-                    <tr key={rental.id} className="border-b border-white/5 hover:bg-white/5 transition-all">
-                      <td className="p-3 font-mono font-bold text-white whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">
+                    <tr key={rental.id} style={{ borderBottom: '1px solid #f1f5f9' }} className="hover:bg-slate-50 transition-all">
+                      <td className="p-3 font-mono font-bold whitespace-nowrap" style={{ color: '#0f172a' }}>
+                        <span className="px-2 py-0.5 rounded font-mono font-semibold" style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#0f172a' }}>
                           {rental.invoiceNumber}
                         </span>
                       </td>
                       <td className="p-3 whitespace-nowrap">
-                        <div className="font-semibold text-white">{rental.tenantName}</div>
+                        <div className="font-semibold" style={{ color: '#0f172a' }}>{rental.tenantName}</div>
                         {rental.tenantPhone && <div className="text-[11px] text-secondary">{rental.tenantPhone}</div>}
                       </td>
                       <td className="p-3 whitespace-nowrap">
-                        <div className="text-white font-medium">{rental.startDate} al {rental.endDate}</div>
+                        <div className="font-medium" style={{ color: '#0f172a' }}>{rental.startDate} al {rental.endDate}</div>
                         <div className="text-[11px] text-secondary">{rental.daysCount} días contratados</div>
                       </td>
-                      <td className="p-3 font-medium text-white whitespace-nowrap">
+                      <td className="p-3 font-medium whitespace-nowrap" style={{ color: '#0f172a' }}>
                         {formatMoney(rental.dailyRate)} / día
                       </td>
-                      <td className="p-3 font-bold text-white whitespace-nowrap font-mono">
+                      <td className="p-3 font-bold whitespace-nowrap font-mono" style={{ color: '#0f172a' }}>
                         {formatMoney(rental.totalAmount)}
                       </td>
-                      <td className="p-3 text-success font-semibold whitespace-nowrap font-mono">
+                      <td className="p-3 font-semibold whitespace-nowrap font-mono" style={{ color: '#16a34a' }}>
                         {formatMoney(rental.paidAmount || 0)}
                       </td>
                       <td className="p-3 font-bold whitespace-nowrap font-mono">
-                        <span className={rental.balanceDue > 0 ? "text-warning" : "text-success"}>
+                        <span style={{ color: rental.balanceDue > 0 ? '#b45309' : '#16a34a' }}>
                           {formatMoney(rental.balanceDue)}
                         </span>
                       </td>
                       <td className="p-3 whitespace-nowrap">
-                        <span className={`px-2.5 py-0.5 rounded text-[11px] font-bold ${rental.balanceDue <= 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'}`}>
+                        <span className="px-2.5 py-0.5 rounded text-[11px] font-bold" style={{ background: rental.balanceDue <= 0 ? '#dcfce7' : '#fef3c7', color: rental.balanceDue <= 0 ? '#15803d' : '#b45309', border: rental.balanceDue <= 0 ? '1px solid #bbf7d0' : '1px solid #fde68a' }}>
                           {rental.balanceDue <= 0 ? 'Pagado' : 'Pendiente'}
                         </span>
                       </td>
@@ -1064,7 +1067,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
                           <button 
                             type="button"
                             className="btn btn-primary text-xs py-1.5 px-3 rounded-lg"
-                            style={{ backgroundColor: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', borderColor: 'rgba(99, 102, 241, 0.5)', border: '1px solid' }}
+                            style={{ backgroundColor: '#eef2ff', color: '#4338ca', borderColor: '#c7d2fe', border: '1px solid' }}
                             onClick={() => handleOpenRentalInvoice(rental)}
                             title="Ver documento completo para imprimir o enviar"
                           >
@@ -1072,7 +1075,8 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
                           </button>
                           <button 
                             type="button"
-                            className="btn btn-outline p-1.5 text-danger border-transparent hover:bg-danger/20 rounded-lg"
+                            className="btn btn-outline p-1.5 rounded-lg"
+                            style={{ color: '#dc2626', borderColor: 'transparent', background: '#fef2f2' }}
                             onClick={() => {
                               if (window.confirm(`¿Eliminar la factura ${rental.invoiceNumber}?`)) {
                                 setRentals(rentals.filter(r => r.id !== rental.id));
@@ -1097,16 +1101,16 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
       {/* 7. VISTA C: PLANILLA ESTILO UBER (VIAJES Y FLETES)                        */}
       {/* ========================================================================= */}
       {activeSubTab === 'trips' && (
-        <div className="card p-0 overflow-hidden">
-          <div className="p-4 border-b border-white/10 flex items-center justify-between">
-            <h3 className="font-bold flex items-center gap-2 text-base text-white">
+        <div className="card p-0 overflow-hidden" style={{ background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: 'var(--shadow-sm)' }}>
+          <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #e2e8f0' }}>
+            <h3 className="font-bold flex items-center gap-2 text-base" style={{ color: '#0f172a' }}>
               <Truck size={18} className="text-warning" />
               Fletes y Viajes Realizados (Estilo Uber)
             </h3>
             <button 
               type="button"
               className="btn btn-primary text-xs" 
-              style={{ backgroundColor: '#f59e0b', color: '#000', fontWeight: 700 }}
+              style={{ backgroundColor: '#f59e0b', color: '#ffffff', fontWeight: 700 }}
               onClick={() => setShowTripModal(true)}
             >
               <Plus size={15} /> + Cargar Flete
@@ -1116,7 +1120,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs" style={{ borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b border-white/10 text-secondary bg-white/[0.02]">
+                <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc', color: '#475569' }}>
                   <th className="p-3">FECHA</th>
                   <th className="p-3">CLIENTE / RUTA</th>
                   <th className="p-3">KM</th>
@@ -1129,26 +1133,27 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               </thead>
               <tbody>
                 {trips.map(trip => (
-                  <tr key={trip.id} className="border-b border-white/5 hover:bg-white/5 transition-all">
-                    <td className="p-3 text-white whitespace-nowrap">{trip.date}</td>
+                  <tr key={trip.id} style={{ borderBottom: '1px solid #f1f5f9' }} className="hover:bg-slate-50 transition-all">
+                    <td className="p-3 whitespace-nowrap" style={{ color: '#0f172a' }}>{trip.date}</td>
                     <td className="p-3">
-                      <div className="font-semibold text-white">{trip.client}</div>
+                      <div className="font-semibold" style={{ color: '#0f172a' }}>{trip.client}</div>
                       <div className="text-[11px] text-secondary flex items-center gap-1 mt-0.5">
                         <MapPin size={11} className="text-accent" />
                         <span>{trip.origin}</span> → <span>{trip.destination}</span>
                       </div>
                     </td>
-                    <td className="p-3 text-white whitespace-nowrap">{trip.km} km</td>
-                    <td className="p-3 font-bold text-white whitespace-nowrap font-mono">{formatMoney(trip.grossAmount)}</td>
+                    <td className="p-3 whitespace-nowrap" style={{ color: '#0f172a' }}>{trip.km} km</td>
+                    <td className="p-3 font-bold whitespace-nowrap font-mono" style={{ color: '#0f172a' }}>{formatMoney(trip.grossAmount)}</td>
                     <td className="p-3 text-secondary whitespace-nowrap">
                       <div>Gasoil: {formatMoney(trip.fuelCost)}</div>
                     </td>
-                    <td className="p-3 font-semibold text-warning whitespace-nowrap font-mono">{formatMoney(trip.ownerEarnings)}</td>
-                    <td className="p-3 font-semibold text-success whitespace-nowrap font-mono">{formatMoney(trip.driverEarnings)}</td>
+                    <td className="p-3 font-semibold whitespace-nowrap font-mono" style={{ color: '#b45309' }}>{formatMoney(trip.ownerEarnings)}</td>
+                    <td className="p-3 font-semibold whitespace-nowrap font-mono" style={{ color: '#16a34a' }}>{formatMoney(trip.driverEarnings)}</td>
                     <td className="p-3 text-right whitespace-nowrap">
                       <button 
                         type="button"
-                        className="btn btn-outline p-1.5 text-danger border-transparent hover:bg-danger/20 rounded-lg"
+                        className="btn btn-outline p-1.5 rounded-lg"
+                        style={{ color: '#dc2626', borderColor: 'transparent', background: '#fef2f2' }}
                         onClick={() => {
                           if (window.confirm('¿Borrar viaje?')) {
                             setTrips(trips.filter(t => t.id !== trip.id));
@@ -1176,7 +1181,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               <X size={20} />
             </button>
 
-            <h3 className="text-xl font-bold mb-1 flex items-center gap-2 text-white">
+            <h3 className="text-xl font-bold mb-1 flex items-center gap-2" style={{ color: '#0f172a' }}>
               <CalendarDays size={22} className="text-warning" /> Asignar Días de Alquiler en Calendario
             </h3>
             <p className="text-xs text-secondary mb-4">
@@ -1208,20 +1213,20 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               </div>
 
               {/* Tarifa definida por el dueño */}
-              <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+              <div className="p-3.5 rounded-lg" style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-warning block uppercase tracking-wider">
+                  <label className="text-xs font-bold block uppercase tracking-wider" style={{ color: '#b45309' }}>
                     Tarifa de Alquiler por Día (Fijada por Dueño) *
                   </label>
                   <span className="text-[11px] text-secondary">
-                    Total: <strong className="text-white">{computedRentalDays} días</strong>
+                    Total: <strong style={{ color: '#0f172a' }}>{computedRentalDays} días</strong>
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-white font-bold text-lg">$</span>
+                  <span className="font-bold text-lg" style={{ color: '#0f172a' }}>$</span>
                   <input 
                     type="number" 
-                    className="input flex-1 font-bold text-white text-lg font-mono" 
+                    className="input flex-1 font-bold text-lg font-mono" 
                     value={rentalForm.dailyRate} 
                     onChange={e => setRentalForm({ ...rentalForm, dailyRate: parseFloat(e.target.value) || 0 })} 
                     required 
@@ -1229,9 +1234,9 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
                   <span className="text-xs text-secondary">por día</span>
                 </div>
 
-                <div className="flex justify-between items-center text-xs mt-2.5 pt-2 border-t border-amber-500/20">
+                <div className="flex justify-between items-center text-xs mt-2.5 pt-2" style={{ borderTop: '1px solid #fde68a' }}>
                   <span className="text-secondary">Subtotal de Alquiler ({computedRentalDays} días × {formatMoney(rentalForm.dailyRate)}):</span>
-                  <strong className="text-white text-sm font-mono">{formatMoney(computedRentalSubtotal)}</strong>
+                  <strong className="text-sm font-mono" style={{ color: '#0f172a' }}>{formatMoney(computedRentalSubtotal)}</strong>
                 </div>
               </div>
 
@@ -1291,12 +1296,12 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
                 />
               </div>
 
-              <div className="p-3 rounded-lg bg-black/40 border border-white/10 flex justify-between items-center text-sm">
+              <div className="p-3 rounded-lg flex justify-between items-center text-sm" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#0f172a' }}>
                 <span>TOTAL DEL INVOICE A EMITIR:</span>
-                <strong className="text-warning text-lg font-bold font-mono">{formatMoney(computedRentalTotal)}</strong>
+                <strong className="text-lg font-bold font-mono" style={{ color: '#b45309' }}>{formatMoney(computedRentalTotal)}</strong>
               </div>
 
-              <button type="submit" className="btn btn-primary mt-1" style={{ backgroundColor: '#f59e0b', color: '#000', fontWeight: 700, padding: '10px' }}>
+              <button type="submit" className="btn btn-primary mt-1" style={{ backgroundColor: '#f59e0b', color: '#ffffff', fontWeight: 700, padding: '10px' }}>
                 Confirmar Alquiler & Emitir Invoice
               </button>
             </form>
@@ -1314,7 +1319,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               <X size={20} />
             </button>
 
-            <h3 className="text-xl font-bold mb-3 flex items-center gap-2 text-white">
+            <h3 className="text-xl font-bold mb-3 flex items-center gap-2" style={{ color: '#0f172a' }}>
               <Truck size={22} className="text-warning" /> Registrar Flete Realizado
             </h3>
 
@@ -1390,7 +1395,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
                 </div>
               </div>
 
-              <button type="submit" className="btn btn-primary mt-1" style={{ backgroundColor: '#f59e0b', color: '#000', fontWeight: 700 }}>
+              <button type="submit" className="btn btn-primary mt-1" style={{ backgroundColor: '#f59e0b', color: '#ffffff', fontWeight: 700 }}>
                 Guardar Flete
               </button>
             </form>
@@ -1408,7 +1413,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               <X size={20} />
             </button>
 
-            <h3 className="text-xl font-bold mb-3 flex items-center gap-2 text-white">
+            <h3 className="text-xl font-bold mb-3 flex items-center gap-2" style={{ color: '#0f172a' }}>
               <ArrowDownLeft size={22} className="text-success" /> Registrar Cobro de Alquiler
             </h3>
 
@@ -1476,7 +1481,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
                 />
               </div>
 
-              <button type="submit" className="btn btn-primary mt-1" style={{ backgroundColor: '#10b981', fontWeight: 600 }}>
+              <button type="submit" className="btn btn-primary mt-1" style={{ backgroundColor: '#10b981', color: '#ffffff', fontWeight: 600 }}>
                 Asentar Cobro en Cuenta
               </button>
             </form>
@@ -1494,14 +1499,14 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               <X size={20} />
             </button>
 
-            <h3 className="text-xl font-bold mb-3 flex items-center gap-2 text-white">
+            <h3 className="text-xl font-bold mb-3 flex items-center gap-2" style={{ color: '#0f172a' }}>
               <Settings size={22} className="text-warning" /> Tarifas del Dueño & Configuración
             </h3>
 
             <div className="flex flex-col gap-4">
               {/* Tarifas de Alquiler Definidas por Ramiro */}
-              <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                <label className="text-xs font-bold text-warning mb-2 block uppercase tracking-wider">
+              <div className="p-3.5 rounded-lg" style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a' }}>
+                <label className="text-xs font-bold mb-2 block uppercase tracking-wider" style={{ color: '#b45309' }}>
                   Valores del Alquiler Fijados por el Dueño
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -1509,7 +1514,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
                     <label className="text-xs text-secondary mb-1 block">Tarifa por Día ($)</label>
                     <input 
                       type="number" 
-                      className="input w-full font-bold text-white font-mono" 
+                      className="input w-full font-bold font-mono" 
                       value={settings.dailyRentalRate} 
                       onChange={e => setSettings({ ...settings, dailyRentalRate: parseFloat(e.target.value) || 0 })} 
                     />
@@ -1518,7 +1523,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
                     <label className="text-xs text-secondary mb-1 block">Tarifa por Semana ($)</label>
                     <input 
                       type="number" 
-                      className="input w-full font-bold text-white font-mono" 
+                      className="input w-full font-bold font-mono" 
                       value={settings.weeklyRentalRate} 
                       onChange={e => setSettings({ ...settings, weeklyRentalRate: parseFloat(e.target.value) || 0 })} 
                     />
@@ -1527,8 +1532,8 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               </div>
 
               {/* Datos Bancarios del Dueño (para que salgan en los Invoices) */}
-              <div className="p-3.5 rounded-lg bg-white/5 border border-white/10">
-                <label className="text-xs font-bold text-white mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+              <div className="p-3.5 rounded-lg" style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <label className="text-xs font-bold mb-2 flex items-center gap-1.5 uppercase tracking-wider" style={{ color: '#0f172a' }}>
                   <CreditCard size={14} className="text-accent" /> Datos de Pago del Dueño (Para Facturas)
                 </label>
                 <div className="grid grid-cols-2 gap-3 mb-2">
@@ -1545,7 +1550,8 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
                     <label className="text-xs text-secondary mb-1 block">Alias Bancario / MP</label>
                     <input 
                       type="text" 
-                      className="input w-full font-mono text-warning" 
+                      className="input w-full font-mono font-semibold" 
+                      style={{ color: '#b45309' }}
                       value={settings.ownerAlias} 
                       onChange={e => setSettings({ ...settings, ownerAlias: e.target.value })} 
                     />
@@ -1606,8 +1612,8 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               </div>
 
               {/* PIN de Seguridad Admin */}
-              <div className="pt-2 border-t border-white/10">
-                <label className="text-xs font-semibold text-warning mb-1.5 flex items-center gap-1.5">
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
+                <label className="text-xs font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: '#b45309' }}>
                   <Shield size={14} /> PIN de Acceso Administrador
                 </label>
                 <div className="flex items-center gap-2">
@@ -1649,11 +1655,11 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               <X size={20} />
             </button>
 
-            <h3 className="text-xl font-bold mb-3 flex items-center gap-2 text-white">
+            <h3 className="text-xl font-bold mb-3 flex items-center gap-2" style={{ color: '#0f172a' }}>
               <Share2 size={22} className="text-success" /> Resumen de Alquiler para WhatsApp
             </h3>
 
-            <div className="p-3.5 rounded-lg bg-black/60 border border-white/10 font-mono text-xs text-secondary whitespace-pre-wrap leading-relaxed select-all">
+            <div className="p-3.5 rounded-lg font-mono text-xs whitespace-pre-wrap leading-relaxed select-all" style={{ backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', color: '#1e293b' }}>
               {generateWhatsAppSummary()}
             </div>
 
@@ -1674,7 +1680,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
                   target="_blank" 
                   rel="noreferrer" 
                   className="btn btn-outline" 
-                  style={{ borderColor: '#22c55e', color: '#22c55e' }}
+                  style={{ borderColor: '#22c55e', color: '#15803d', background: '#f0fdf4' }}
                 >
                   <Send size={16} /> Abrir WhatsApp
                 </a>

@@ -547,9 +547,9 @@ function App() {
               className={`btn ${activeTab === 'truck' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setActiveTab('truck')}
               style={{ 
-                 backgroundColor: activeTab === 'truck' ? '#f59e0b' : 'transparent',
-                 borderColor: activeTab === 'truck' ? '#f59e0b' : 'rgba(245, 158, 11, 0.5)',
-                 color: activeTab === 'truck' ? '#000' : '#f59e0b',
+                 backgroundColor: activeTab === 'truck' ? '#f59e0b' : '#ffffff',
+                 borderColor: activeTab === 'truck' ? '#d97706' : 'var(--border-color)',
+                 color: activeTab === 'truck' ? '#ffffff' : '#b45309',
                  fontWeight: 600
               }}
             >
@@ -572,7 +572,7 @@ function App() {
             Historial ({transactions.length})
           </button>
           {transactions.length > 0 && (
-             <button className="btn btn-outline" style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }} onClick={clearData} title="Restablecer Datos Semilla">
+             <button className="btn btn-outline" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', background: '#ffffff' }} onClick={clearData} title="Restablecer Datos Semilla">
                <Trash2 size={18} />
              </button>
           )}
@@ -581,7 +581,7 @@ function App() {
           {isAdmin ? (
             <button 
               className="btn btn-outline" 
-              style={{ borderColor: 'rgba(245, 158, 11, 0.4)', color: '#f59e0b', padding: '6px 10px', fontSize: '0.8rem' }}
+              style={{ borderColor: '#fcd34d', color: '#b45309', background: '#fffbeb', padding: '6px 10px', fontSize: '0.8rem' }}
               onClick={() => {
                 if (window.confirm('¿Cerrar sesión de Administrador?')) {
                   handleLockAdmin();
@@ -595,7 +595,7 @@ function App() {
           ) : (
             <button 
               className="btn btn-outline" 
-              style={{ borderColor: 'rgba(255, 255, 255, 0.15)', color: 'var(--text-secondary)', padding: '6px 10px', fontSize: '0.8rem' }}
+              style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)', background: '#ffffff', padding: '6px 10px', fontSize: '0.8rem' }}
               onClick={() => {
                 setAdminPinInput('');
                 setAdminPinError('');
@@ -1401,7 +1401,7 @@ function App() {
                 )}
               </div>
 
-              <button type="submit" className="btn btn-primary mt-1" style={{ backgroundColor: '#f59e0b', color: '#000', fontWeight: 600 }}>
+              <button type="submit" className="btn btn-primary mt-1" style={{ backgroundColor: '#f59e0b', color: '#ffffff', fontWeight: 600 }}>
                 Desbloquear Modo Admin
               </button>
             </form>
