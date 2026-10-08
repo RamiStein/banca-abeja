@@ -3,7 +3,8 @@ import {
   UploadCloud, Wallet, TrendingUp, TrendingDown, LayoutDashboard, 
   History, Trash2, Plus, X, Tag, User, Car, Layers, FileText, 
   CheckCircle2, Clock, AlertTriangle, ShieldCheck, Eye, Paperclip, 
-  ArrowDownRight, Sparkles, Upload, FileCheck, Coins, Image as ImageIcon
+  ArrowDownRight, Sparkles, Upload, FileCheck, Coins, Image as ImageIcon,
+  Truck, Lock, Unlock, KeyRound
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { parseCSV } from './utils/parser';
@@ -11,6 +12,7 @@ import { compressReceiptImage } from './utils/imageCompressor';
 import ReceiptViewerModal from './components/ReceiptViewerModal';
 import VehicleManager from './VehicleManager';
 import CommunityMatrix from './CommunityMatrix';
+import TruckManager from './TruckManager';
 import './index.css';
 
 // Función segura para formatear moneda sin errores de "-0"
@@ -113,6 +115,37 @@ function App() {
 
   const [isDragging, setIsDragging] = useState(false);
   const [activeTab, setActiveTab] = useState('community');
+
+  // Modo Administrador (para módulos exclusivos como Gestión de Camión y alquiler)
+  const [isAdmin, setIsAdmin] = useState(() => {
+    return localStorage.getItem('banca_abeja_is_admin') === 'true';
+  });
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminPinInput, setAdminPinInput] = useState('');
+  const [adminPinError, setAdminPinError] = useState('');
+
+  const handleUnlockAdmin = (e) => {
+    e.preventDefault();
+    const validPin = localStorage.getItem('banca_abeja_admin_pin') || '1234';
+    if (adminPinInput.trim() === validPin || adminPinInput.trim().toLowerCase() === 'ramiro') {
+      localStorage.setItem('banca_abeja_is_admin', 'true');
+      setIsAdmin(true);
+      setShowAdminModal(false);
+      setAdminPinInput('');
+      setAdminPinError('');
+      setActiveTab('truck');
+    } else {
+      setAdminPinError('PIN incorrecto. Intentá de nuevo (por defecto: 1234).');
+    }
+  };
+
+  const handleLockAdmin = () => {
+    localStorage.setItem('banca_abeja_is_admin', 'false');
+    setIsAdmin(false);
+    if (activeTab === 'truck') {
+      setActiveTab('community');
+    }
+  };
   
   // Modal de Visor de Comprobantes
   const [selectedReceiptTx, setSelectedReceiptTx] = useState(null);
@@ -509,6 +542,21 @@ function App() {
             <Car size={18} />
             Vehículos
           </button>
+          {isAdmin && (
+            <button 
+              className={`btn ${activeTab === 'truck' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setActiveTab('truck')}
+              style={{ 
+                 backgroundColor: activeTab === 'truck' ? '#f59e0b' : 'transparent',
+                 borderColor: activeTab === 'truck' ? '#f59e0b' : 'rgba(245, 158, 11, 0.5)',
+                 color: activeTab === 'truck' ? '#000' : '#f59e0b',
+                 fontWeight: 600
+              }}
+            >
+              <Truck size={18} />
+              Camión
+            </button>
+          )}
           <button 
             className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-outline'}`}
             onClick={() => setActiveTab('dashboard')}
@@ -527,6 +575,37 @@ function App() {
              <button className="btn btn-outline" style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }} onClick={clearData} title="Restablecer Datos Semilla">
                <Trash2 size={18} />
              </button>
+          )}
+
+          {/* Botón de Modo Administrador */}
+          {isAdmin ? (
+            <button 
+              className="btn btn-outline" 
+              style={{ borderColor: 'rgba(245, 158, 11, 0.4)', color: '#f59e0b', padding: '6px 10px', fontSize: '0.8rem' }}
+              onClick={() => {
+                if (window.confirm('¿Cerrar sesión de Administrador?')) {
+                  handleLockAdmin();
+                }
+              }}
+              title="Modo Administrador Activo. Clic para bloquear."
+            >
+              <Unlock size={14} />
+              Admin
+            </button>
+          ) : (
+            <button 
+              className="btn btn-outline" 
+              style={{ borderColor: 'rgba(255, 255, 255, 0.15)', color: 'var(--text-secondary)', padding: '6px 10px', fontSize: '0.8rem' }}
+              onClick={() => {
+                setAdminPinInput('');
+                setAdminPinError('');
+                setShowAdminModal(true);
+              }}
+              title="Acceso exclusivo Administrador"
+            >
+              <Lock size={14} />
+              Admin
+            </button>
           )}
         </div>
       </header>
@@ -1266,6 +1345,11 @@ function App() {
           <VehicleManager />
         )}
 
+        {/* Módulo de Gestión de Camión & Fletes (Exclusivo Administrador) */}
+        {activeTab === 'truck' && isAdmin && (
+          <TruckManager onLockAdmin={handleLockAdmin} />
+        )}
+
       </main>
 
       {/* Visor Modal de Comprobante / Expediente Digital */}
@@ -1275,6 +1359,54 @@ function App() {
           onClose={() => setSelectedReceiptTx(null)}
           onUpdateStatus={handleUpdateStatus}
         />
+      )}
+
+      {/* Modal de Acceso Administrador */}
+      {showAdminModal && (
+        <div className="modal-overlay" onClick={() => setShowAdminModal(false)}>
+          <div className="card w-full max-w-sm relative" onClick={e => e.stopPropagation()} style={{ width: '380px' }}>
+            <button className="btn btn-outline absolute top-4 right-4 p-1 border-none" onClick={() => setShowAdminModal(false)}>
+              <X size={20} />
+            </button>
+
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center mb-2" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
+                <KeyRound size={24} />
+              </div>
+              <h3 className="text-lg font-bold">Acceso de Administrador</h3>
+              <p className="text-xs text-secondary mt-1">
+                Ingresá tu PIN para desbloquear la gestión del camión y control de alquiler.
+              </p>
+            </div>
+
+            <form onSubmit={handleUnlockAdmin} className="flex flex-col gap-3">
+              <div>
+                <label className="text-xs text-secondary mb-1 block">PIN de Seguridad (Por defecto: 1234)</label>
+                <input 
+                  type="password" 
+                  className="input w-full text-center text-xl tracking-widest font-mono" 
+                  placeholder="••••" 
+                  maxLength={10} 
+                  autoFocus 
+                  value={adminPinInput} 
+                  onChange={e => {
+                    setAdminPinInput(e.target.value);
+                    if (adminPinError) setAdminPinError('');
+                  }} 
+                />
+                {adminPinError && (
+                  <div className="text-xs text-danger mt-1.5 text-center font-medium">
+                    {adminPinError}
+                  </div>
+                )}
+              </div>
+
+              <button type="submit" className="btn btn-primary mt-1" style={{ backgroundColor: '#f59e0b', color: '#000', fontWeight: 600 }}>
+                Desbloquear Modo Admin
+              </button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
