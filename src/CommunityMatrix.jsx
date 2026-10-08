@@ -16,6 +16,8 @@ import IndividualPortal from './components/IndividualPortal';
 function parseWhatsAppExpenses(rawText, defaultSenderId) {
   if (!rawText || !rawText.trim()) return [];
   const text = rawText.trim();
+  if (text.length > 250) return [];
+  if (text.startsWith('/j/') || text.startsWith('/9j/') || text.startsWith('data:') || /^[\w+/=]{50,}$/.test(text.replace(/\s+/g, ''))) return [];
 
   // Helper para convertir cualquier número en formato argentino/latinoamericano
   // Soporta: "30.000" -> 30000, "15000" -> 15000, "10 mil" -> 10000, "10k" -> 10000, "45 usd" -> 45
@@ -244,8 +246,8 @@ export default function CommunityMatrix({ currentUser = null, onLogout = null })
     if (!saved) return defaultTransactions;
     try {
       const parsed = JSON.parse(saved);
-      // Limpiar automáticamente el registro erróneo previo con 30 pesos si existe
-      return parsed.filter(t => !(t.amount === 30 && t.concept && t.concept.includes('gaste en alimentos')));
+      // Limpiar automáticamente registros erróneos
+      return parsed.filter(t => !(t.amount === 30 && t.concept && t.concept.includes('gaste en alimentos')) && !(t.concept && t.concept.includes('/j/4AAQ')));
     } catch (e) {
       return defaultTransactions;
     }
