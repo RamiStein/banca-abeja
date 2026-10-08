@@ -99,8 +99,9 @@ function parseWhatsAppExpenses(rawText, defaultSenderId) {
         let concept = clause
           .replace(rawNumStr, '')
           .replace(/^(#abeja|banca abeja|abeja|\/gasto)\s+/i, '')
-          .replace(/^(gast[eé]\s+en|gast[eé]|puse\s+para|puse|compr[eé]\s+en|compr[eé]|para|en|de)\s+/i, '')
-          .replace(/\s+(con|para|en)$/i, '')
+          .replace(/\b(gast[eéóo]|gasto|puse|pongo|compr[eéóo]|compro|pagu[eé]|pag[oó])\b\s*(?:en|para|de)?\s*/gi, '')
+          .replace(/^(para|en|de|con)\s+/i, '')
+          .replace(/\s+(con|para|en|de)$/i, '')
           .replace(/\s*(usd|dolares|dólares|u\$s|pesos|abejas|horas)\s*/gi, '')
           .trim();
 
