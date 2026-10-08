@@ -84,13 +84,13 @@ function parseWhatsAppExpenses(rawText, defaultSenderId) {
           category = 'Movilidad (Clio)';
         } else if (/\betios\b/i.test(lowerClause)) {
           category = 'Movilidad (Etios)';
-        } else if (/nafta|combustible|\bauto\b|gasoil/i.test(lowerClause)) {
+        } else if (/nafta|combustible|\bauto\b|gasoil|peaje|estacionamiento|remis|uber|cabify|taxi|colectivo|sube|gnc|taller|mec[aá]nic/i.test(lowerClause)) {
           category = 'Movilidad';
-        } else if (/ferreter[ií]a|bomba|herramienta|huerta|tierra|obra/i.test(lowerClause)) {
+        } else if (/ferreter[ií]a|bomba|herramienta|huerta|tierra|obra|plomer|electric|pintur|limpieza|lavandina|jab[oó]n|gasista|mantenimiento/i.test(lowerClause)) {
           category = 'Hábitat & Mantenimiento';
-        } else if (/\bluz\b|\bgas\b|\binternet\b|\bstarlink\b|\bagua\b|\bseguro\b/i.test(lowerClause)) {
+        } else if (/\bluz\b|\bgas\b|\binternet\b|\bstarlink\b|\bagua\b|\bseguro\b|edenor|metrogas|aysa|fibertel|personal|claro|movistar|abl|arba|expensas/i.test(lowerClause)) {
           category = 'Servicios';
-        } else if (/alimento|verdur|comida|arepa|s[uú]per|\bpan\b/i.test(lowerClause)) {
+        } else if (/alimento|verdu|frut|comida|arepa|s[uú]per|carn|pollo|panader|diet[eé]tica|\bpan\b|\bleche\b|\bhuevo|almac[eé]n|mercado|queso/i.test(lowerClause)) {
           category = 'Despensa & Alimentos';
         }
 
