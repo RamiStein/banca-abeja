@@ -538,21 +538,21 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
       {/* ========================================================================= */}
       {/* 1. ENCABEZADO SUPERIOR: CAMIÓN, TARIFA DEL DUEÑO Y ACCIONES             */}
       {/* ========================================================================= */}
-      <div className="card p-5 flex flex-wrap items-center justify-between gap-4" style={{ borderLeft: '4px solid #f59e0b', background: 'linear-gradient(180deg, rgba(30, 34, 48, 0.8) 0%, rgba(20, 23, 33, 0.9) 100%)' }}>
+      <div className="card p-5 flex flex-wrap items-center justify-between gap-4" style={{ borderLeft: '4px solid #f59e0b', background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: 'var(--shadow-sm)' }}>
         <div className="flex items-center gap-3.5">
-          <div className="p-3 rounded-xl shadow-md" style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
+          <div className="p-3 rounded-xl shadow-sm" style={{ backgroundColor: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>
             <Truck size={30} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-white tracking-wide">{settings.truckName}</h2>
-              <span className="badge font-mono" style={{ backgroundColor: 'rgba(245, 158, 11, 0.25)', color: '#fbbf24', fontSize: '0.8rem', padding: '3px 9px', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
+              <h2 className="text-xl font-bold tracking-wide" style={{ color: '#0f172a' }}>{settings.truckName}</h2>
+              <span className="badge font-mono" style={{ backgroundColor: '#fffbeb', color: '#b45309', fontSize: '0.8rem', padding: '3px 9px', borderRadius: '6px', border: '1px solid #fde68a' }}>
                 {settings.plate}
               </span>
             </div>
             <p className="text-secondary text-xs flex items-center gap-2 mt-1">
-              <User size={13} className="text-accent" /> Chofer predeterminado: <strong className="text-white">{settings.driverName}</strong>
-              <span className="text-xs px-2.5 py-0.5 rounded font-bold text-warning bg-amber-500/15 border border-amber-500/30">
+              <User size={13} className="text-accent" /> Chofer predeterminado: <strong style={{ color: '#0f172a' }}>{settings.driverName}</strong>
+              <span className="text-xs px-2.5 py-0.5 rounded font-bold" style={{ backgroundColor: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
                 Tarifa Dueño: {formatMoney(settings.dailyRentalRate)} / día
               </span>
             </p>
@@ -563,7 +563,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
           {onLockAdmin && (
             <button 
               className="btn btn-outline text-xs" 
-              style={{ borderColor: 'rgba(239, 68, 68, 0.4)', color: 'var(--danger)', padding: '6px 11px', background: 'rgba(239, 68, 68, 0.05)' }}
+              style={{ borderColor: '#fca5a5', color: '#dc2626', padding: '6px 11px', background: '#fef2f2' }}
               onClick={onLockAdmin}
               title="Cerrar y bloquear sesión de Administrador"
             >
@@ -573,7 +573,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
           )}
           <button 
             className="btn btn-outline text-xs" 
-            style={{ borderColor: 'rgba(255, 255, 255, 0.2)', padding: '6px 12px', background: 'rgba(255, 255, 255, 0.05)' }}
+            style={{ borderColor: '#cbd5e1', padding: '6px 12px', background: '#ffffff', color: '#0f172a' }}
             onClick={() => setShowSettingsModal(true)}
             title="Configurar valores del camión, tarifas del dueño y datos bancarios"
           >
@@ -582,7 +582,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
           </button>
           <button 
             className="btn btn-outline text-xs" 
-            style={{ borderColor: '#22c55e', color: '#22c55e', padding: '6px 12px', background: 'rgba(34, 197, 94, 0.08)' }}
+            style={{ borderColor: '#86efac', color: '#15803d', padding: '6px 12px', background: '#f0fdf4' }}
             onClick={() => setShowShareModal(true)}
             title="Generar resumen para enviar al inquilino por WhatsApp"
           >
@@ -591,7 +591,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
           </button>
           <button 
             className="btn btn-primary text-xs" 
-            style={{ backgroundColor: '#10b981', color: '#fff', padding: '6px 13px', fontWeight: 600, boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)' }}
+            style={{ backgroundColor: '#10b981', color: '#fff', padding: '6px 13px', fontWeight: 600, boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)' }}
             onClick={() => setShowPaymentModal(true)}
             title="Registrar dinero recibido por transferencia o efectivo"
           >
@@ -600,7 +600,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
           </button>
           <button 
             className="btn btn-primary text-xs" 
-            style={{ backgroundColor: '#f59e0b', color: '#000', fontWeight: 700, padding: '7px 15px', boxShadow: '0 2px 10px rgba(245, 158, 11, 0.35)' }}
+            style={{ backgroundColor: '#f59e0b', color: '#ffffff', fontWeight: 700, padding: '7px 15px', boxShadow: '0 2px 10px rgba(245, 158, 11, 0.3)' }}
             onClick={() => handleStartBooking(new Date().toISOString().split('T')[0])}
           >
             <CalendarDays size={16} />
@@ -612,7 +612,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
       {/* ========================================================================= */}
       {/* 2. BARRA DE FILTROS VINCULADA AL CHOFER Y A ESTADOS                      */}
       {/* ========================================================================= */}
-      <div className="card p-3 flex flex-wrap items-center justify-between gap-3" style={{ background: 'rgba(255, 255, 255, 0.03)', borderColor: hasActiveFilters ? '#f59e0b' : 'var(--border-color)' }}>
+      <div className="card p-3 flex flex-wrap items-center justify-between gap-3" style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderColor: hasActiveFilters ? '#f59e0b' : '#e2e8f0', boxShadow: 'var(--shadow-sm)' }}>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-secondary">
             <Filter size={15} className={hasActiveFilters ? "text-warning" : "text-secondary"} />
@@ -626,7 +626,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
             </label>
             <select 
               className="input text-xs py-1 px-2.5 rounded-lg"
-              style={{ minWidth: '160px', borderColor: filterDriver !== 'all' ? '#f59e0b' : 'rgba(255,255,255,0.15)' }}
+              style={{ minWidth: '160px', borderColor: filterDriver !== 'all' ? '#f59e0b' : '#cbd5e1', background: '#ffffff', color: '#0f172a' }}
               value={filterDriver} 
               onChange={e => setFilterDriver(e.target.value)}
             >
@@ -640,24 +640,37 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
           {/* Filtro de Estado de Pago */}
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-secondary">Estado:</span>
-            <div className="inline-flex rounded-lg p-0.5 bg-black/40 border border-white/10 text-xs">
+            <div className="inline-flex rounded-lg p-0.5 text-xs" style={{ background: '#f1f5f9', border: '1px solid #e2e8f0' }}>
               <button
                 type="button"
-                className={`px-2.5 py-1 rounded transition-all ${filterPaymentStatus === 'all' ? 'bg-white/20 text-white font-bold' : 'text-secondary hover:text-white'}`}
+                className={`px-2.5 py-1 rounded transition-all ${filterPaymentStatus === 'all' ? 'bg-white font-bold shadow-sm' : 'hover:text-slate-900'}`}
+                style={{ color: filterPaymentStatus === 'all' ? '#0f172a' : '#64748b', background: filterPaymentStatus === 'all' ? '#ffffff' : 'transparent' }}
                 onClick={() => setFilterPaymentStatus('all')}
               >
                 Todos
               </button>
               <button
                 type="button"
-                className={`px-2.5 py-1 rounded transition-all flex items-center gap-1 ${filterPaymentStatus === 'pending' ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-secondary hover:text-white'}`}
+                className="px-2.5 py-1 rounded transition-all flex items-center gap-1"
+                style={{ 
+                  background: filterPaymentStatus === 'pending' ? '#fef3c7' : 'transparent', 
+                  color: filterPaymentStatus === 'pending' ? '#b45309' : '#64748b', 
+                  fontWeight: filterPaymentStatus === 'pending' ? 700 : 500,
+                  border: filterPaymentStatus === 'pending' ? '1px solid #fde68a' : '1px solid transparent' 
+                }}
                 onClick={() => setFilterPaymentStatus('pending')}
               >
                 <AlertCircle size={11} /> Con Deuda
               </button>
               <button
                 type="button"
-                className={`px-2.5 py-1 rounded transition-all ${filterPaymentStatus === 'paid' ? 'bg-emerald-500/30 text-emerald-300 font-bold' : 'text-secondary hover:text-white'}`}
+                className="px-2.5 py-1 rounded transition-all"
+                style={{ 
+                  background: filterPaymentStatus === 'paid' ? '#dcfce7' : 'transparent', 
+                  color: filterPaymentStatus === 'paid' ? '#15803d' : '#64748b', 
+                  fontWeight: filterPaymentStatus === 'paid' ? 700 : 500,
+                  border: filterPaymentStatus === 'paid' ? '1px solid #bbf7d0' : '1px solid transparent' 
+                }}
                 onClick={() => setFilterPaymentStatus('paid')}
               >
                 Al Día
@@ -668,8 +681,8 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
           {/* Botón Reset de Filtros */}
           {hasActiveFilters && (
             <button 
-              className="btn btn-outline text-xs py-1 px-2 text-secondary hover:text-white"
-              style={{ borderColor: 'transparent' }}
+              className="btn btn-outline text-xs py-1 px-2 text-secondary hover:text-slate-900"
+              style={{ borderColor: 'transparent', background: '#f8fafc' }}
               onClick={() => {
                 setFilterDriver('all');
                 setFilterPaymentStatus('all');
@@ -684,8 +697,8 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
         {/* Resumen dinámico del filtro activo */}
         <div className="text-xs text-secondary flex items-center gap-2">
           {filterDriver !== 'all' ? (
-            <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 font-medium">
-              Viendo exclusivamente a: <strong>{filterDriver}</strong>
+            <span className="px-2 py-0.5 rounded font-medium" style={{ background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' }}>
+              Viendo exclusivamente a: <strong style={{ color: '#92400e' }}>{filterDriver}</strong>
             </span>
           ) : (
             <span>Mostrando todos los registros del camión</span>
@@ -698,9 +711,9 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
       {/* ========================================================================= */}
       <div className="grid grid-cols-4 gap-4">
         {/* KPI 1: Saldo Pendiente del Inquilino */}
-        <div className="card p-4 relative overflow-hidden" style={{ borderColor: financialSummary.totalRentalsDebt > 0 ? '#f59e0b' : '#10b981', background: financialSummary.totalRentalsDebt > 0 ? 'linear-gradient(145deg, rgba(245, 158, 11, 0.08) 0%, rgba(20, 23, 33, 0.8) 100%)' : 'rgba(26, 29, 41, 0.7)' }}>
+        <div className="card p-4 relative overflow-hidden" style={{ borderColor: financialSummary.totalRentalsDebt > 0 ? '#fcd34d' : '#86efac', background: financialSummary.totalRentalsDebt > 0 ? '#fffbeb' : '#f0fdf4', border: '1px solid' }}>
           <div className="flex items-center justify-between text-secondary text-xs mb-1">
-            <span>SALDO PENDIENTE A LIQUIDAR</span>
+            <span className="font-semibold" style={{ color: financialSummary.totalRentalsDebt > 0 ? '#b45309' : '#15803d' }}>SALDO PENDIENTE A LIQUIDAR</span>
             <Wallet size={16} className={financialSummary.totalRentalsDebt > 0 ? "text-warning" : "text-success"} />
           </div>
           <div className={`text-2xl font-bold font-mono ${financialSummary.totalRentalsDebt > 0 ? "text-warning" : "text-success"}`}>
@@ -708,27 +721,27 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
           </div>
           <div className="text-xs text-secondary mt-1 flex items-center justify-between">
             <span>{financialSummary.totalRentalsDebt > 0 ? 'Falta transferir' : 'Cuentas al día'}</span>
-            <span className="text-white font-medium">Cobrado: {formatMoney(financialSummary.totalPaymentsReceived)}</span>
+            <span className="font-semibold" style={{ color: '#0f172a' }}>Cobrado: {formatMoney(financialSummary.totalPaymentsReceived)}</span>
           </div>
         </div>
 
         {/* KPI 2: Días de Alquiler en Calendario */}
-        <div className="card p-4">
+        <div className="card p-4" style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}>
           <div className="flex items-center justify-between text-secondary text-xs mb-1">
             <span>DÍAS ALQUILADOS</span>
             <CalendarDays size={16} className="text-accent" />
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold" style={{ color: '#0f172a' }}>
             {financialSummary.totalDaysRented} <span className="text-xs font-normal text-secondary">días contratados</span>
           </div>
           <div className="text-xs text-secondary mt-1 flex items-center justify-between">
             <span>{financialSummary.rentalsCount} períodos</span>
-            <span className="text-warning font-semibold">{formatMoney(settings.dailyRentalRate)} / día</span>
+            <span className="font-semibold" style={{ color: '#b45309' }}>{formatMoney(settings.dailyRentalRate)} / día</span>
           </div>
         </div>
 
         {/* KPI 3: Facturación Total de Alquileres */}
-        <div className="card p-4">
+        <div className="card p-4" style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}>
           <div className="flex items-center justify-between text-secondary text-xs mb-1">
             <span>TOTAL FACTURADO</span>
             <DollarSign size={16} className="text-success" />
@@ -742,16 +755,16 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
         </div>
 
         {/* KPI 4: Odómetro & Mantenimiento */}
-        <div className="card p-4">
+        <div className="card p-4" style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}>
           <div className="flex items-center justify-between text-secondary text-xs mb-1">
             <span>ODÓMETRO & SERVICE</span>
             <Wrench size={16} className="text-secondary" />
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-2xl font-bold" style={{ color: '#0f172a' }}>
             {(settings.currentOdometer || 0).toLocaleString('es-AR')} <span className="text-xs font-normal text-secondary">km</span>
           </div>
           <div className="text-xs text-secondary mt-1">
-            Próximo aceite en: <strong>{((settings.lastOilKm || 0) + (settings.oilInterval || 15000) - (settings.currentOdometer || 0)).toLocaleString('es-AR')} km</strong>
+            Próximo aceite en: <strong style={{ color: '#0f172a' }}>{((settings.lastOilKm || 0) + (settings.oilInterval || 15000) - (settings.currentOdometer || 0)).toLocaleString('es-AR')} km</strong>
           </div>
         </div>
       </div>
@@ -759,17 +772,17 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
       {/* ========================================================================= */}
       {/* 4. BARRA DE NAVEGACIÓN DE SUB-PESTAÑAS CON IDENTIDAD CLARA                */}
       {/* ========================================================================= */}
-      <div className="flex items-center justify-between flex-wrap gap-3 border-b border-white/10 pb-2">
+      <div className="flex items-center justify-between flex-wrap gap-3 pb-2" style={{ borderBottom: '1px solid #e2e8f0' }}>
         <div className="flex items-center gap-2">
           <button
             type="button"
             className={`btn text-xs py-2 px-4 rounded-lg transition-all ${activeSubTab === 'calendar' ? 'btn-primary' : 'btn-outline'}`}
             style={{ 
-              backgroundColor: activeSubTab === 'calendar' ? '#f59e0b' : 'rgba(255, 255, 255, 0.04)', 
-              color: activeSubTab === 'calendar' ? '#000' : '#ffffff',
-              borderColor: activeSubTab === 'calendar' ? '#f59e0b' : 'rgba(255, 255, 255, 0.15)',
+              backgroundColor: activeSubTab === 'calendar' ? '#f59e0b' : '#ffffff', 
+              color: activeSubTab === 'calendar' ? '#ffffff' : '#475569',
+              borderColor: activeSubTab === 'calendar' ? '#d97706' : '#cbd5e1',
               fontWeight: 700,
-              boxShadow: activeSubTab === 'calendar' ? '0 2px 10px rgba(245, 158, 11, 0.4)' : 'none'
+              boxShadow: activeSubTab === 'calendar' ? '0 2px 8px rgba(245, 158, 11, 0.35)' : 'none'
             }}
             onClick={() => setActiveSubTab('calendar')}
           >
@@ -780,11 +793,11 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
             type="button"
             className={`btn text-xs py-2 px-4 rounded-lg transition-all ${activeSubTab === 'invoices' ? 'btn-primary' : 'btn-outline'}`}
             style={{ 
-              backgroundColor: activeSubTab === 'invoices' ? '#6366f1' : 'rgba(255, 255, 255, 0.04)', 
-              color: activeSubTab === 'invoices' ? '#fff' : '#ffffff',
-              borderColor: activeSubTab === 'invoices' ? '#6366f1' : 'rgba(255, 255, 255, 0.15)',
+              backgroundColor: activeSubTab === 'invoices' ? '#4f46e5' : '#ffffff', 
+              color: activeSubTab === 'invoices' ? '#ffffff' : '#475569',
+              borderColor: activeSubTab === 'invoices' ? '#4338ca' : '#cbd5e1',
               fontWeight: 700,
-              boxShadow: activeSubTab === 'invoices' ? '0 2px 10px rgba(99, 102, 241, 0.4)' : 'none'
+              boxShadow: activeSubTab === 'invoices' ? '0 2px 8px rgba(79, 70, 229, 0.35)' : 'none'
             }}
             onClick={() => setActiveSubTab('invoices')}
           >
@@ -795,11 +808,11 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
             type="button"
             className={`btn text-xs py-2 px-4 rounded-lg transition-all ${activeSubTab === 'trips' ? 'btn-primary' : 'btn-outline'}`}
             style={{ 
-              backgroundColor: activeSubTab === 'trips' ? '#10b981' : 'rgba(255, 255, 255, 0.04)', 
-              color: activeSubTab === 'trips' ? '#fff' : '#ffffff',
-              borderColor: activeSubTab === 'trips' ? '#10b981' : 'rgba(255, 255, 255, 0.15)',
+              backgroundColor: activeSubTab === 'trips' ? '#10b981' : '#ffffff', 
+              color: activeSubTab === 'trips' ? '#ffffff' : '#475569',
+              borderColor: activeSubTab === 'trips' ? '#059669' : '#cbd5e1',
               fontWeight: 700,
-              boxShadow: activeSubTab === 'trips' ? '0 2px 10px rgba(16, 185, 129, 0.4)' : 'none'
+              boxShadow: activeSubTab === 'trips' ? '0 2px 8px rgba(16, 185, 129, 0.35)' : 'none'
             }}
             onClick={() => setActiveSubTab('trips')}
           >
@@ -809,7 +822,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
         </div>
 
         <div className="text-xs text-secondary">
-          Tarifa fija del camión: <strong className="text-warning font-bold">{formatMoney(settings.dailyRentalRate)} / día</strong>
+          Tarifa fija del camión: <strong className="font-bold" style={{ color: '#b45309' }}>{formatMoney(settings.dailyRentalRate)} / día</strong>
         </div>
       </div>
 
@@ -819,16 +832,16 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
       {activeSubTab === 'calendar' && (
         <div className="truck-calendar-container">
           {/* Navegación del Mes con Botones Claros y de Alto Contraste */}
-          <div className="flex items-center justify-between pb-3 border-b border-white/10">
+          <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid #e2e8f0' }}>
             <div className="flex items-center gap-3">
-              <h3 className="text-lg font-bold text-white capitalize flex items-center gap-2">
+              <h3 className="text-lg font-bold capitalize flex items-center gap-2" style={{ color: '#0f172a' }}>
                 <CalendarDays size={22} className="text-warning" />
                 {monthNames[currentCalendarDate.getMonth()]} {currentCalendarDate.getFullYear()}
               </h3>
               <button 
                 type="button"
                 className="btn btn-outline text-xs py-1 px-3 rounded-lg"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.25)', background: 'rgba(255, 255, 255, 0.06)' }}
+                style={{ borderColor: '#cbd5e1', background: '#ffffff', color: '#0f172a' }}
                 onClick={() => setCurrentCalendarDate(new Date())}
               >
                 Hoy
@@ -839,7 +852,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               <button 
                 type="button"
                 className="btn btn-outline p-2 rounded-lg"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.25)', background: 'rgba(255, 255, 255, 0.06)' }}
+                style={{ borderColor: '#cbd5e1', background: '#ffffff', color: '#0f172a' }}
                 onClick={() => {
                   const prev = new Date(currentCalendarDate);
                   prev.setMonth(prev.getMonth() - 1);
@@ -852,7 +865,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               <button 
                 type="button"
                 className="btn btn-outline p-2 rounded-lg"
-                style={{ borderColor: 'rgba(255, 255, 255, 0.25)', background: 'rgba(255, 255, 255, 0.06)' }}
+                style={{ borderColor: '#cbd5e1', background: '#ffffff', color: '#0f172a' }}
                 onClick={() => {
                   const next = new Date(currentCalendarDate);
                   next.setMonth(next.getMonth() + 1);
@@ -949,17 +962,17 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
           </div>
 
           {/* Leyenda y Explicación al pie del calendario */}
-          <div className="flex items-center justify-between text-xs text-secondary pt-3 border-t border-white/10 flex-wrap gap-2">
+          <div className="flex items-center justify-between text-xs text-secondary pt-3 flex-wrap gap-2" style={{ borderTop: '1px solid #e2e8f0' }}>
             <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1.5 font-medium text-white">
-                <span className="w-3 h-3 rounded bg-amber-500 inline-block border border-amber-300" /> Días Alquilados (tocá "Ver Factura" para abrir el comprobante)
+              <span className="flex items-center gap-1.5 font-medium" style={{ color: '#0f172a' }}>
+                <span className="w-3 h-3 rounded inline-block" style={{ backgroundColor: '#f59e0b', border: '1px solid #d97706' }} /> Días Alquilados (tocá "Ver Factura" para abrir el comprobante)
               </span>
               <span className="flex items-center gap-1.5 font-medium text-secondary">
-                <span className="w-3 h-3 rounded bg-white/20 inline-block border border-white/30" /> Días Libres (tocá "+ Alquilar" para agendar)
+                <span className="w-3 h-3 rounded inline-block" style={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1' }} /> Días Libres (tocá "+ Alquilar" para agendar)
               </span>
             </div>
             <span>
-              Tarifa estándar pactada: <strong className="text-warning">{formatMoney(settings.dailyRentalRate)} / día</strong>
+              Tarifa estándar pactada: <strong style={{ color: '#b45309' }}>{formatMoney(settings.dailyRentalRate)} / día</strong>
             </span>
           </div>
         </div>

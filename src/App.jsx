@@ -527,8 +527,8 @@ function App() {
                color: activeTab === 'community' ? '#fff' : 'inherit'
             }}
           >
-            <Layers size={18} />
-            Colmena & Red
+            <User size={18} />
+            Mi Espacio & Colmena
           </button>
           <button 
             className={`btn ${activeTab === 'vehicle' ? 'btn-primary' : 'btn-outline'}`}

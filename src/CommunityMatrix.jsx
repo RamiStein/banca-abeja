@@ -4,10 +4,11 @@ import {
   Sparkles, MessageSquare, Send, CheckCircle2, TrendingUp, 
   DollarSign, Coins, Target, Calendar, ChevronRight, Filter, 
   ShieldCheck, Share2, Layers, HeartHandshake, Trash2, AlertCircle,
-  Wifi, RefreshCw
+  Wifi, RefreshCw, User
 } from 'lucide-react';
 import { db } from './firebase';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
+import IndividualPortal from './components/IndividualPortal';
 
 // ==========================================
 // PARSER INTELIGENTE DE LENGUAJE COLOQUIAL (WHATSAPP)
@@ -145,15 +146,25 @@ export default function CommunityMatrix() {
 
   // 2. Miembros / Familias de la Colmena
   const defaultMembers = [
-    { id: 'ramiro', name: 'Ramiro', familyUnits: { adults: 1, kids: 1 }, phone: '+54911...' },
-    { id: 'cristian', name: 'Cristian', familyUnits: { adults: 1, kids: 1 }, phone: '+54911...' },
-    { id: 'agustina', name: 'Agustina', familyUnits: { adults: 1, kids: 0 }, phone: '+54911...' }
+    { id: 'ramiro', name: 'Ramiro', familyUnits: { adults: 1, kids: 1 }, phone: '+54 9 11 2745-2476', cleanPhone: '5491127452476', role: 'Fundador' },
+    { id: 'agustina', name: 'Agustina', familyUnits: { adults: 1, kids: 0 }, phone: '+54 9 11 2649-5598', cleanPhone: '5491126495598', role: 'Miembro' },
+    { id: 'cristian', name: 'Cristian', familyUnits: { adults: 1, kids: 1 }, phone: '+54 9 11 4974-8673', cleanPhone: '5491149748673', role: 'Miembro' }
   ];
 
   const [members, setMembers] = useState(() => {
     const saved = localStorage.getItem('matrix_members');
     return saved ? JSON.parse(saved) : defaultMembers;
   });
+
+  // Modo de Vista: 'individual' (Mi Espacio) vs 'community' (La Colmena)
+  const [viewMode, setViewMode] = useState('individual');
+  const [currentMemberId, setCurrentMemberId] = useState(() => {
+    return localStorage.getItem('banca_abeja_active_member') || 'ramiro';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('banca_abeja_active_member', currentMemberId);
+  }, [currentMemberId]);
 
   // 3. Moneda Activa para Visualización (ARS, USD, ABEJA)
   const [selectedCurrency, setSelectedCurrency] = useState('ARS'); // 'ARS' | 'USD' | 'ABEJA'
@@ -350,6 +361,69 @@ export default function CommunityMatrix() {
       setSyncStatusText('Modo Local');
     }
   }, []);
+
+  // Sincronización en tiempo real de Miembros con Firestore
+  useEffect(() => {
+    if (!db) return;
+    try {
+      const unsubMembers = onSnapshot(collection(db, 'banca_abeja_members'), (snapshot) => {
+        if (!snapshot.empty) {
+          const liveMembers = snapshot.docs.map(docSnap => ({
+            id: docSnap.id,
+            ...docSnap.data()
+          }));
+          setMembers(liveMembers);
+          localStorage.setItem('matrix_members', JSON.stringify(liveMembers));
+        }
+      }, (err) => {
+        console.warn("Error leyendo miembros de Firestore:", err.message);
+      });
+      return () => unsubMembers();
+    } catch(err) {
+      console.warn("No se pudo iniciar listener de miembros:", err.message);
+    }
+  }, []);
+
+  // Función para carga rápida de gastos desde el Portal Individual
+  const handleQuickAddTx = async (rawText, memberId, forcedScope = 'comunitario') => {
+    const parsedItems = parseWhatsAppExpenses(rawText, memberId);
+    if (parsedItems.length === 0) return { count: 0, total: 0 };
+
+    const senderObj = members.find(m => m.id === memberId);
+    const senderName = senderObj?.name || (memberId.charAt(0).toUpperCase() + memberId.slice(1));
+    let totalSum = 0;
+
+    for (const item of parsedItems) {
+      if (forcedScope) {
+        item.scope = forcedScope;
+      }
+      totalSum += item.amount;
+      const txPayload = {
+        date: new Date().toLocaleDateString('es-AR'),
+        memberId,
+        memberName: senderName,
+        concept: item.concept,
+        category: item.category,
+        currency: item.currency,
+        amount: item.amount,
+        scope: item.scope,
+        channel: 'web_portal',
+        timestamp: Date.now()
+      };
+
+      if (db) {
+        try {
+          await addDoc(collection(db, 'banca_abeja_transactions'), txPayload);
+        } catch (err) {
+          console.warn("Error guardando gasto en Firestore:", err);
+        }
+      } else {
+        setTransactions(prev => [{ id: `tx-${Date.now()}-${Math.random()}`, ...txPayload }, ...prev]);
+      }
+    }
+
+    return { count: parsedItems.length, total: totalSum };
+  };
 
   // Cálculos de Totales por Moneda
   const totalsByCurrency = {
@@ -548,8 +622,73 @@ export default function CommunityMatrix() {
   return (
     <div className="flex flex-col gap-6" style={{ width: '100%' }}>
 
-      {/* 1. Header de la Matriz En Conjunto y Selector de Nodos */}
-      <div className="card" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%)', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
+      {/* Selector de Modo: Mi Espacio Individual vs La Colmena Colectiva */}
+      <div className="flex items-center justify-between flex-wrap gap-3 p-1.5 rounded-2xl" style={{ backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setViewMode('individual')}
+            className="btn"
+            style={{
+              fontSize: '0.88rem',
+              padding: '8px 18px',
+              borderRadius: '12px',
+              backgroundColor: viewMode === 'individual' ? 'var(--accent-color)' : 'transparent',
+              color: viewMode === 'individual' ? '#fff' : 'var(--text-secondary)',
+              fontWeight: viewMode === 'individual' ? 700 : 500,
+              border: viewMode === 'individual' ? '1px solid rgba(99, 102, 241, 0.4)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <User size={17} />
+            Mi Espacio (Individual)
+          </button>
+
+          <button
+            onClick={() => setViewMode('community')}
+            className="btn"
+            style={{
+              fontSize: '0.88rem',
+              padding: '8px 18px',
+              borderRadius: '12px',
+              backgroundColor: viewMode === 'community' ? 'var(--warning)' : 'transparent',
+              color: viewMode === 'community' ? '#000' : 'var(--text-secondary)',
+              fontWeight: viewMode === 'community' ? 700 : 500,
+              border: viewMode === 'community' ? '1px solid rgba(245, 158, 11, 0.4)' : 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Layers size={17} />
+            La Colmena (Colectivo)
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 pr-2 text-xs text-secondary">
+          <span>{viewMode === 'individual' ? 'Gestión personal de flujos y WhatsApp Bot' : 'Balances cruzados, fondo común e inversiones de la red'}</span>
+        </div>
+      </div>
+
+      {viewMode === 'individual' ? (
+        <IndividualPortal
+          members={members}
+          currentMemberId={currentMemberId}
+          onSelectMember={setCurrentMemberId}
+          transactions={transactions}
+          onDeleteTx={handleDeleteTx}
+          onAddTx={handleQuickAddTx}
+          onNavigateToCommunity={() => setViewMode('community')}
+          selectedCurrency={selectedCurrency}
+          setSelectedCurrency={setSelectedCurrency}
+        />
+      ) : (
+        <>
+          {/* 1. Header de la Matriz En Conjunto y Selector de Nodos */}
+          <div className="card" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%)', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -1044,6 +1183,8 @@ export default function CommunityMatrix() {
           </table>
         </div>
       </div>
+      </>
+      )}
 
       {/* Modal: Carga Manual */}
       {showNewTxModal && (
