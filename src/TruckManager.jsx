@@ -1070,9 +1070,6 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
       {/* ========================================================================= */}
       {/* 6. VISTA B: LISTADO DE INVOICES & FACTURAS DE ALQUILER                     */}
       {/* ========================================================================= */}
-      {/* ========================================================================= */}
-      {/* 6. VISTA B: LISTADO DE INVOICES & FACTURAS DE ALQUILER                     */}
-      {/* ========================================================================= */}
       {activeSubTab === 'invoices' && (
         <div className="card p-0 overflow-hidden" style={{ background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: 'var(--shadow-sm)' }}>
           <div className="p-4 flex items-center justify-between flex-wrap gap-3" style={{ borderBottom: '1px solid #e2e8f0' }}>
