@@ -570,3 +570,62 @@ select.input option {
   background: rgba(99, 102, 241, 0.05);
 }
 
+/* ========================================================== */
+/* ESTILOS DE IMPRESIÓN LIMPIA PARA INVOICES Y REPORTES        */
+/* ========================================================== */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  header, .print\:hidden, nav, .btn {
+    display: none !important;
+  }
+
+  .modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .text-white {
+    color: #111827 !important;
+  }
+
+  .text-secondary {
+    color: #4b5563 !important;
+  }
+
+  .text-warning {
+    color: #b45309 !important;
+  }
+
+  .text-success {
+    color: #047857 !important;
+  }
+
+  .bg-white\/5, .bg-amber-500\/10 {
+    background-color: #f3f4f6 !important;
+    border-color: #e5e7eb !important;
+  }
+
+  table {
+    border: 1px solid #e5e7eb !important;
+  }
+
+  th, td {
+    border-bottom: 1px solid #e5e7eb !important;
+    color: #111827 !important;
+  }
+}
+
