@@ -22,11 +22,27 @@ const AVAILABLE_ICONS = [
   { icon: '📚', label: 'Educación & Cursos', category: 'Educación' }
 ];
 
+const safeFormatCurrency = (val, decimals = 0) => {
+  const num = Number(val);
+  if (isNaN(num)) return '$0';
+  return `$${num.toLocaleString('es-AR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  })}`;
+};
+
 export default function ElementsManager({ currentUser = null, onSelectElement = null }) {
-  const [elements, setElements] = useState(() => elementsService.elements || DEFAULT_ELEMENTS);
-  const [transactions, setTransactions] = useState(() => elementsService.transactions || []);
+  const [elements, setElements] = useState(() => {
+    const list = elementsService.elements;
+    return Array.isArray(list) && list.length > 0 ? list : DEFAULT_ELEMENTS;
+  });
+  const [transactions, setTransactions] = useState(() => {
+    const list = elementsService.transactions;
+    return Array.isArray(list) ? list : [];
+  });
   const [mainBalance, setMainBalance] = useState(() => {
-    return elementsService.getMainBalance(currentUser?.id || 'ramiro');
+    const bal = elementsService.getMainBalance(currentUser?.id || 'ramiro');
+    return typeof bal === 'number' && !isNaN(bal) ? bal : 450000;
   });
 
   const [showBalance, setShowBalance] = useState(true);
@@ -276,7 +292,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
               Saldo Total Disponible
             </div>
             <div className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight flex items-baseline gap-2">
-              <span>{showBalance ? `$${mainBalance.toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : '••••••••'}</span>
+              <span>{showBalance ? safeFormatCurrency(mainBalance, 2) : '••••••••'}</span>
               <span className="text-base sm:text-lg font-medium text-indigo-300">ARS</span>
             </div>
             <p className="text-xs text-indigo-200/80 mt-1">
@@ -305,11 +321,11 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
             <div className="hidden sm:flex items-center gap-4 ml-auto text-xs text-indigo-200">
               <div className="flex items-center gap-1.5">
                 <Users size={14} className="text-amber-400" />
-                <span>En Compartidos: <strong>${metrics.sharedFundsTotal.toLocaleString('es-AR')}</strong></span>
+                <span>En Compartidos: <strong>{safeFormatCurrency(metrics.sharedFundsTotal)}</strong></span>
               </div>
               <div className="flex items-center gap-1.5">
                 <User size={14} className="text-emerald-400" />
-                <span>En Individuales: <strong>${metrics.individualFundsTotal.toLocaleString('es-AR')}</strong></span>
+                <span>En Individuales: <strong>{safeFormatCurrency(metrics.individualFundsTotal)}</strong></span>
               </div>
             </div>
           </div>
@@ -426,7 +442,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                       Fondo Disponible
                     </span>
                     <span className={`text-xl font-extrabold ${stats.currentBalance >= 0 ? 'text-slate-900' : 'text-rose-600'}`}>
-                      ${stats.currentBalance.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                      {safeFormatCurrency(stats.currentBalance, 2)}
                     </span>
                   </div>
 
@@ -435,12 +451,12 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                     <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
                       <TrendingUp size={14} className="text-emerald-500" />
                       <span>Ingresos/Depósitos:</span>
-                      <strong className="ml-auto">${(stats.totalIncome + stats.totalDeposits).toLocaleString('es-AR')}</strong>
+                      <strong className="ml-auto">{safeFormatCurrency((stats.totalIncome || 0) + (stats.totalDeposits || 0))}</strong>
                     </div>
                     <div className="flex items-center gap-1.5 text-rose-700 font-medium">
                       <TrendingDown size={14} className="text-rose-500" />
                       <span>Gastos/Egresos:</span>
-                      <strong className="ml-auto">${stats.totalExpense.toLocaleString('es-AR')}</strong>
+                      <strong className="ml-auto">{safeFormatCurrency(stats.totalExpense)}</strong>
                     </div>
                   </div>
                 </div>
@@ -457,9 +473,9 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                           <span 
                             key={mId}
                             className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium text-[11px] border border-slate-200"
-                            title={`Aportó: $${contributed.toLocaleString('es-AR')}`}
+                            title={`Aportó: ${safeFormatCurrency(contributed)}`}
                           >
-                            {mObj.name} {contributed > 0 && `($${Math.round(contributed / 1000)}k)`}
+                            {mObj.name} {contributed > 0 && `(${safeFormatCurrency(Math.round(contributed / 1000))}k)`}
                           </span>
                         );
                       })}
@@ -768,7 +784,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                     />
                   </div>
                   <span className="text-[11px] text-slate-500 mt-0.5 block">
-                    Saldo disponible en tu cuenta: ${mainBalance.toLocaleString('es-AR')}
+                    Saldo disponible en tu cuenta: {safeFormatCurrency(mainBalance)}
                   </span>
                 </div>
 
@@ -948,19 +964,19 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                       Saldo Total Acumulado en {selectedElement.name}
                     </span>
                     <div className="text-3xl font-extrabold text-slate-900 mt-1">
-                      ${stats.currentBalance.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                      {safeFormatCurrency(stats.currentBalance, 2)}
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200 text-xs">
                       <div>
                         <span className="text-slate-500 block">Total Ingresos / Depósitos:</span>
                         <strong className="text-emerald-700 text-sm">
-                          +${(stats.totalIncome + stats.totalDeposits).toLocaleString('es-AR')}
+                          +{safeFormatCurrency((stats.totalIncome || 0) + (stats.totalDeposits || 0))}
                         </strong>
                       </div>
                       <div>
                         <span className="text-slate-500 block">Total Egresos / Gastos:</span>
                         <strong className="text-rose-700 text-sm">
-                          -${stats.totalExpense.toLocaleString('es-AR')}
+                          -{safeFormatCurrency(stats.totalExpense)}
                         </strong>
                       </div>
                     </div>
@@ -1020,7 +1036,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                             <div key={mId} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs">
                               <span className="font-semibold text-slate-800">{mObj.name}</span>
                               <span className="font-bold text-indigo-700">
-                                ${contributed.toLocaleString('es-AR')}
+                                {safeFormatCurrency(contributed)}
                               </span>
                             </div>
                           );
@@ -1045,7 +1061,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                               </span>
                             </div>
                             <span className={`font-bold ${tx.type === 'expense' ? 'text-rose-600' : 'text-emerald-600'}`}>
-                              {tx.type === 'expense' ? '-' : '+'}${tx.amount.toLocaleString('es-AR')}
+                              {tx.type === 'expense' ? '-' : '+'}{safeFormatCurrency(tx.amount)}
                             </span>
                           </div>
                         ))}

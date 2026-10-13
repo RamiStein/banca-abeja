@@ -143,11 +143,14 @@ class ElementsService {
     this.accounts = this.loadStoredAccounts();
   }
 
-  // --- PERSISTENCIA LOCAL ---
+  // --- PERSISTENCIA LOCAL ULTRA RESILIENTE ---
   loadStoredElements() {
     try {
       const saved = localStorage.getItem(STORAGE_ELEMENTS_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch (e) {
       console.warn("Error leyendo elementos locales:", e);
     }
@@ -155,16 +158,19 @@ class ElementsService {
   }
 
   saveStoredElements(elements) {
-    this.elements = elements;
+    this.elements = Array.isArray(elements) ? elements : DEFAULT_ELEMENTS;
     try {
-      localStorage.setItem(STORAGE_ELEMENTS_KEY, JSON.stringify(elements));
+      localStorage.setItem(STORAGE_ELEMENTS_KEY, JSON.stringify(this.elements));
     } catch (e) {}
   }
 
   loadStoredTransactions() {
     try {
       const saved = localStorage.getItem(STORAGE_ELEMENT_TXS_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch (e) {
       console.warn("Error leyendo transacciones de elementos:", e);
     }
@@ -172,36 +178,44 @@ class ElementsService {
   }
 
   saveStoredTransactions(txs) {
-    this.transactions = txs;
+    this.transactions = Array.isArray(txs) ? txs : DEFAULT_ELEMENT_TXS;
     try {
-      localStorage.setItem(STORAGE_ELEMENT_TXS_KEY, JSON.stringify(txs));
+      localStorage.setItem(STORAGE_ELEMENT_TXS_KEY, JSON.stringify(this.transactions));
     } catch (e) {}
   }
 
   loadStoredAccounts() {
-    try {
-      const saved = localStorage.getItem(STORAGE_ACCOUNT_KEY);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return {
+    const defaults = {
       ramiro: { balance: 450000, updatedAt: Date.now() },
       agustina: { balance: 280000, updatedAt: Date.now() },
       cristian: { balance: 220000, updatedAt: Date.now() }
     };
+    try {
+      const saved = localStorage.getItem(STORAGE_ACCOUNT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') return { ...defaults, ...parsed };
+      }
+    } catch (e) {}
+    return defaults;
   }
 
   saveStoredAccounts(accounts) {
-    this.accounts = accounts;
+    this.accounts = (accounts && typeof accounts === 'object') ? accounts : this.loadStoredAccounts();
     try {
-      localStorage.setItem(STORAGE_ACCOUNT_KEY, JSON.stringify(accounts));
+      localStorage.setItem(STORAGE_ACCOUNT_KEY, JSON.stringify(this.accounts));
     } catch (e) {}
   }
 
   // --- CUENTA PRINCIPAL DEL USUARIO ---
   getMainBalance(userId = 'ramiro') {
-    const acc = this.accounts[userId];
-    if (acc && typeof acc.balance === 'number') return acc.balance;
-    return 350000;
+    if (!this.accounts || typeof this.accounts !== 'object') {
+      this.accounts = this.loadStoredAccounts();
+    }
+    const cleanId = String(userId || 'ramiro').toLowerCase();
+    const acc = this.accounts[cleanId];
+    if (acc && typeof acc.balance === 'number' && !isNaN(acc.balance)) return acc.balance;
+    return 450000;
   }
 
   async updateMainBalance(userId, amountToAdd) {
@@ -454,7 +468,10 @@ class ElementsService {
 
   // --- CÁLCULO DE BALANCE DE UN ELEMENTO ---
   getElementStats(elementId) {
-    const elemTxs = this.transactions.filter(t => t.elementId === elementId);
+    if (!this.transactions || !Array.isArray(this.transactions)) {
+      this.transactions = this.loadStoredTransactions();
+    }
+    const elemTxs = (this.transactions || []).filter(t => t && t.elementId === elementId);
 
     let totalIncome = 0;
     let totalExpense = 0;
@@ -463,7 +480,7 @@ class ElementsService {
     const memberContributions = {}; // memberId -> total deposited
 
     elemTxs.forEach(t => {
-      const amt = Number(t.amount) || 0;
+      const amt = Number(t?.amount) || 0;
       if (t.type === 'income') {
         totalIncome += amt;
       } else if (t.type === 'expense') {
@@ -480,11 +497,11 @@ class ElementsService {
     const currentBalance = (totalIncome + totalDeposits) - (totalExpense + totalWithdrawals);
 
     return {
-      currentBalance,
-      totalIncome,
-      totalExpense,
-      totalDeposits,
-      totalWithdrawals,
+      currentBalance: isNaN(currentBalance) ? 0 : currentBalance,
+      totalIncome: isNaN(totalIncome) ? 0 : totalIncome,
+      totalExpense: isNaN(totalExpense) ? 0 : totalExpense,
+      totalDeposits: isNaN(totalDeposits) ? 0 : totalDeposits,
+      totalWithdrawals: isNaN(totalWithdrawals) ? 0 : totalWithdrawals,
       memberContributions,
       txCount: elemTxs.length,
       recentTxs: elemTxs.slice(0, 10)
