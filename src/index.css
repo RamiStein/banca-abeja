@@ -65,22 +65,116 @@ body {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
-  line-height: 1.2;
-  margin-bottom: 0.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 0.35rem;
   color: var(--text-primary);
 }
 
+.text-white { color: #ffffff !important; }
 .text-secondary { color: var(--text-secondary); }
 .text-success { color: var(--success); }
 .text-danger { color: var(--danger); }
 .text-warning { color: var(--warning); }
-.text-white { color: var(--text-primary); } /* Adaptación automática a modo blanco */
-.font-semibold { font-weight: 600; }
-.font-bold { font-weight: 700; }
-.text-xl { font-size: 1.25rem; }
-.text-2xl { font-size: 1.5rem; }
-.text-3xl { font-size: 1.875rem; }
+
+/* Slate Colors */
+.text-slate-400 { color: #94a3b8 !important; }
+.text-slate-500 { color: #64748b !important; }
+.text-slate-600 { color: #475569 !important; }
+.text-slate-700 { color: #334155 !important; }
+.text-slate-800 { color: #1e293b !important; }
+.text-slate-900 { color: #0f172a !important; }
+
+/* Indigo Colors */
+.text-indigo-100 { color: #e0e7ff !important; }
+.text-indigo-200 { color: #c7d2fe !important; }
+.text-indigo-300 { color: #a5b4fc !important; }
+.text-indigo-400 { color: #818cf8 !important; }
+.text-indigo-600 { color: #4f46e5 !important; }
+.text-indigo-700 { color: #4338ca !important; }
+.text-indigo-800 { color: #3730a3 !important; }
+.text-indigo-900 { color: #312e81 !important; }
+
+/* Emerald / Green Colors */
+.text-emerald-300 { color: #6ee7b7 !important; }
+.text-emerald-400 { color: #34d399 !important; }
+.text-emerald-500 { color: #10b981 !important; }
+.text-emerald-600 { color: #059669 !important; }
+.text-emerald-700 { color: #047857 !important; }
+.text-emerald-800 { color: #065f46 !important; }
+
+/* Rose / Red Colors */
+.text-rose-400 { color: #fb7185 !important; }
+.text-rose-500 { color: #f43f5e !important; }
+.text-rose-600 { color: #e11d48 !important; }
+.text-rose-700 { color: #be123c !important; }
+.text-rose-800 { color: #9f1239 !important; }
+
+/* Amber / Yellow Colors */
+.text-amber-400 { color: #fbbf24 !important; }
+.text-amber-500 { color: #f59e0b !important; }
+.text-amber-700 { color: #b45309 !important; }
+.text-amber-800 { color: #92400e !important; }
+
+/* Font Weights & Sizes */
+.font-medium { font-weight: 500 !important; }
+.font-semibold { font-weight: 600 !important; }
+.font-bold { font-weight: 700 !important; }
+.font-extrabold { font-weight: 800 !important; }
+.text-xs { font-size: 0.75rem !important; }
+.text-sm { font-size: 0.875rem !important; }
+.text-base { font-size: 1rem !important; }
+.text-lg { font-size: 1.125rem !important; }
+.text-xl { font-size: 1.25rem !important; }
+.text-2xl { font-size: 1.5rem !important; }
+.text-3xl { font-size: 1.875rem !important; }
+.text-4xl { font-size: 2.25rem !important; }
+
+/* Backgrounds */
+.bg-white { background-color: #ffffff !important; }
+.bg-slate-50 { background-color: #f8fafc !important; }
+.bg-slate-100 { background-color: #f1f5f9 !important; }
+.bg-slate-200 { background-color: #e2e8f0 !important; }
+.bg-indigo-50 { background-color: #eef2ff !important; }
+.bg-indigo-100 { background-color: #e0e7ff !important; }
+.bg-indigo-600 { background-color: #4f46e5 !important; }
+.bg-indigo-700 { background-color: #4338ca !important; }
+.bg-indigo-900 { background-color: #1e1b4b !important; }
+.bg-emerald-50 { background-color: #ecfdf5 !important; }
+.bg-emerald-100 { background-color: #d1fae5 !important; }
+.bg-emerald-600 { background-color: #059669 !important; }
+.bg-rose-50 { background-color: #fff1f2 !important; }
+.bg-rose-100 { background-color: #ffe4e6 !important; }
+.bg-amber-50 { background-color: #fffbeb !important; }
+.bg-amber-100 { background-color: #fef3c7 !important; }
+
+/* Borders & Radius */
+.border { border: 1px solid var(--border-color); }
+.border-slate-100 { border-color: #f1f5f9 !important; }
+.border-slate-200 { border-color: #e2e8f0 !important; }
+.border-slate-300 { border-color: #cbd5e1 !important; }
+.border-indigo-100 { border-color: #e0e7ff !important; }
+.border-indigo-200 { border-color: #c7d2fe !important; }
+.border-indigo-600 { border-color: #4f46e5 !important; }
+.border-emerald-200 { border-color: #a7f3d0 !important; }
+.border-emerald-300 { border-color: #6ee7b7 !important; }
+.border-rose-200 { border-color: #fecdd3 !important; }
+.border-amber-200 { border-color: #fde68a !important; }
+.border-t { border-top-width: 1px; border-top-style: solid; }
+.border-b { border-bottom-width: 1px; border-bottom-style: solid; }
+
+.rounded-lg { border-radius: 10px !important; }
+.rounded-xl { border-radius: 14px !important; }
+.rounded-2xl { border-radius: 20px !important; }
+.rounded-3xl { border-radius: 28px !important; }
+.rounded-full { border-radius: 9999px !important; }
+
+/* Shadows */
+.shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important; }
+.shadow-md { box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.08) !important; }
+.shadow-lg { box-shadow: 0 10px 25px -3px rgba(15, 23, 42, 0.12) !important; }
+.shadow-xl { box-shadow: 0 20px 30px -10px rgba(15, 23, 42, 0.16) !important; }
+.shadow-2xl { box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important; }
 
 /* Buttons - Estilo App Móvil Premium (Pill, Touch-friendly) */
 .btn {
@@ -227,6 +321,42 @@ h1, h2, h3, h4, h5, h6 {
 .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .grid-cols-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
+/* Layout, Position & Sizing */
+.fixed { position: fixed !important; }
+.relative { position: relative !important; }
+.absolute { position: absolute !important; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.z-40 { z-index: 40 !important; }
+.z-50 { z-index: 50 !important; }
+.shrink-0 { flex-shrink: 0 !important; }
+.flex-1 { flex: 1 1 0% !important; }
+.w-full { width: 100% !important; }
+.max-w-sm { max-width: 24rem !important; }
+.max-w-md { max-width: 28rem !important; }
+.max-w-lg { max-width: 32rem !important; }
+.max-w-xl { max-width: 36rem !important; }
+.max-w-5xl { max-width: 64rem !important; }
+.mx-auto { margin-left: auto !important; margin-right: auto !important; }
+.pb-12 { padding-bottom: 3rem !important; }
+.p-2 { padding: 0.5rem !important; }
+.p-3 { padding: 0.75rem !important; }
+.p-4 { padding: 1rem !important; }
+.p-5 { padding: 1.25rem !important; }
+.p-6 { padding: 1.5rem !important; }
+.p-8 { padding: 2rem !important; }
+.px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+.px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+.px-5 { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+.py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+.py-3 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+.overflow-y-auto { overflow-y: auto !important; }
+.overflow-x-auto { overflow-x: auto !important; }
+.overflow-hidden { overflow: hidden !important; }
+
+/* Backdrop & Blur */
+.bg-black\/60 { background-color: rgba(15, 23, 42, 0.65) !important; }
+.backdrop-blur-sm { backdrop-filter: blur(6px) !important; -webkit-backdrop-filter: blur(6px) !important; }
 
 @media (max-width: 900px) {
   .grid-cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -589,13 +719,13 @@ html, body {
   }
   
   .container {
-    padding: 0.75rem 0.5rem;
+    padding: 1rem 1rem 5.5rem 1rem !important;
     max-width: 100%;
   }
 
   .card {
-    padding: 1rem 0.85rem;
-    border-radius: 14px;
+    padding: 1.25rem 1rem;
+    border-radius: 20px;
   }
 
   /* Header y Título en Celulares */
@@ -859,9 +989,118 @@ select.input option {
   transition: var(--transition);
 }
 
-.file-upload-box:hover {
-  border-color: var(--accent-color);
-  background: #f1f5f9;
+/* ========================================================== */
+/* FINTECH DESIGN SYSTEM - MOBILE APP EXPERIENCIA PREMIUM     */
+/* ========================================================== */
+
+/* Hero Card (Cuenta Principal) */
+.fintech-hero {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #4338ca 100%) !important;
+  border-radius: 28px !important;
+  padding: 1.75rem 1.5rem !important;
+  color: #ffffff !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow: 0 16px 36px -8px rgba(49, 46, 129, 0.42), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.fintech-hero-label {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: #c7d2fe !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.fintech-hero-amount {
+  font-size: 2.25rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+  color: #ffffff !important;
+  line-height: 1.15 !important;
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 0.4rem !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+}
+
+.fintech-hero-sub {
+  font-size: 0.8rem !important;
+  color: rgba(224, 231, 255, 0.85) !important;
+  margin-top: 0.35rem !important;
+  line-height: 1.4 !important;
+}
+
+/* Element Card (Tarjeta de Elemento / Bolsillo) */
+.fintech-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 22px !important;
+  padding: 1.25rem !important;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.fintech-card:hover {
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.09) !important;
+  transform: translateY(-2px) !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Segmented Control de Filtros */
+.fintech-filter-bar {
+  display: inline-flex !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 9999px !important;
+  padding: 4px !important;
+  gap: 4px !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.fintech-filter-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 6px 14px !important;
+  border-radius: 9999px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  border: none !important;
+  transition: all 0.16s ease !important;
+  color: #64748b !important;
+  background: transparent !important;
+}
+
+.fintech-filter-btn.active {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07) !important;
+}
+
+.fintech-filter-btn.active-shared {
+  background: #ffffff !important;
+  color: #b45309 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.12) !important;
+}
+
+.fintech-filter-btn.active-indiv {
+  background: #ffffff !important;
+  color: #047857 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(4, 120, 87, 0.12) !important;
 }
 
 /* ========================================================== */

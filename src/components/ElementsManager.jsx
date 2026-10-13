@@ -244,89 +244,162 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto pb-12">
+    <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto pb-12" style={{ padding: '0 2px' }}>
 
       {/* ======================================================== */}
       {/* 1. CUENTA PRINCIPAL DEL USUARIO (HERO CARD ESTILO FINTECH) */}
       {/* ======================================================== */}
       <div 
-        className="rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden"
+        className="fintech-hero"
         style={{
-          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%)',
-          boxShadow: '0 12px 30px -6px rgba(49, 46, 129, 0.35)'
+          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #4338ca 100%)',
+          borderRadius: '26px',
+          padding: '1.6rem 1.4rem',
+          color: '#ffffff',
+          boxShadow: '0 16px 36px -8px rgba(49, 46, 129, 0.42), 0 4px 12px rgba(0, 0, 0, 0.08)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          position: 'relative',
+          overflow: 'hidden'
         }}
       >
         {/* Adorno visual sutil de fondo */}
         <div 
-          className="absolute -right-12 -top-12 w-64 h-64 rounded-full opacity-10 pointer-events-none"
+          className="absolute -right-12 -top-12 w-64 h-64 rounded-full opacity-15 pointer-events-none"
           style={{ background: 'radial-gradient(circle, #818cf8 0%, transparent 70%)' }}
         />
 
-        <div className="relative z-10 flex flex-col gap-5">
+        <div className="relative z-10 flex flex-col gap-4">
           {/* Fila superior: Título de cuenta & Ojo para ocultar saldo */}
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-indigo-500/30 flex items-center justify-center text-sm">
+              <span 
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+                style={{ background: 'rgba(255, 255, 255, 0.18)' }}
+              >
                 🐝
               </span>
-              <span className="text-sm font-medium tracking-wide text-indigo-200">
+              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e0e7ff', letterSpacing: '0.02em' }}>
                 Cuenta Principal • {currentUser?.name || 'Ramiro'}
               </span>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
+              <span 
+                style={{ 
+                  fontSize: '11px', 
+                  padding: '2px 8px', 
+                  borderRadius: '9999px', 
+                  background: 'rgba(16, 185, 129, 0.25)', 
+                  color: '#6ee7b7', 
+                  fontWeight: 700, 
+                  border: '1px solid rgba(16, 185, 129, 0.4)' 
+                }}
+              >
                 Activa
               </span>
             </div>
 
             <button
               onClick={() => setShowBalance(!showBalance)}
-              className="p-1.5 rounded-full hover:bg-white/10 text-indigo-200 hover:text-white transition-colors"
+              className="p-1.5 rounded-full transition-colors"
+              style={{ background: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', border: 'none', cursor: 'pointer' }}
               title={showBalance ? "Ocultar saldo" : "Mostrar saldo"}
             >
-              {showBalance ? <Eye size={18} /> : <EyeOff size={18} />}
+              {showBalance ? <Eye size={17} color="#ffffff" /> : <EyeOff size={17} color="#ffffff" />}
             </button>
           </div>
 
           {/* Saldo Principal Destacado */}
           <div>
-            <div className="text-xs uppercase tracking-wider text-indigo-200 font-semibold mb-1">
+            <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#c7d2fe', fontWeight: 700, marginBottom: '2px' }}>
               Saldo Total Disponible
             </div>
-            <div className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight flex items-baseline gap-2">
-              <span>{showBalance ? safeFormatCurrency(mainBalance, 2) : '••••••••'}</span>
-              <span className="text-base sm:text-lg font-medium text-indigo-300">ARS</span>
+            <div 
+              style={{ 
+                fontSize: '2.25rem', 
+                fontWeight: 800, 
+                letterSpacing: '-0.02em', 
+                color: '#ffffff', 
+                display: 'flex', 
+                alignItems: 'baseline', 
+                gap: '8px', 
+                margin: '2px 0 4px 0',
+                textShadow: '0 2px 8px rgba(0,0,0,0.2)' 
+              }}
+            >
+              <span style={{ color: '#ffffff' }}>{showBalance ? safeFormatCurrency(mainBalance, 2) : '••••••••'}</span>
+              <span style={{ fontSize: '1rem', fontWeight: 700, color: '#c7d2fe' }}>ARS</span>
             </div>
-            <p className="text-xs text-indigo-200/80 mt-1">
+            <p style={{ fontSize: '0.78rem', color: 'rgba(224, 231, 255, 0.85)', margin: 0, lineHeight: 1.35 }}>
               Monto base desde el cual fondeás tus elementos individuales y comunitarios.
             </p>
           </div>
 
           {/* Botones de Acción Rápida (Pills modernas y redondeadas) */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
             <button
               onClick={handleOpenCreate}
-              className="btn flex items-center gap-2 px-5 py-3 rounded-full font-bold text-sm bg-white text-indigo-900 hover:bg-indigo-50 shadow-md hover:shadow-lg transition-all transform active:scale-95"
+              className="btn"
+              style={{
+                background: '#ffffff',
+                color: '#312e81',
+                fontWeight: 800,
+                fontSize: '0.82rem',
+                padding: '0.65rem 1.25rem',
+                borderRadius: '9999px',
+                border: 'none',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.18)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
             >
-              <Plus size={18} className="text-indigo-600" />
+              <Plus size={16} color="#4338ca" />
               <span>Crear Elemento</span>
             </button>
 
             <button
               onClick={() => setShowTopUpModal(true)}
-              className="btn flex items-center gap-2 px-4 py-3 rounded-full font-semibold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all backdrop-blur-sm"
+              className="btn"
+              style={{
+                background: 'rgba(255, 255, 255, 0.16)',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                padding: '0.65rem 1.15rem',
+                borderRadius: '9999px',
+                border: '1px solid rgba(255, 255, 255, 0.28)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                backdropFilter: 'blur(8px)'
+              }}
             >
-              <ArrowDownLeft size={17} className="text-emerald-400" />
+              <ArrowDownLeft size={16} color="#34d399" />
               <span>Ingresar Dinero</span>
             </button>
+          </div>
 
-            <div className="hidden sm:flex items-center gap-4 ml-auto text-xs text-indigo-200">
-              <div className="flex items-center gap-1.5">
-                <Users size={14} className="text-amber-400" />
-                <span>En Compartidos: <strong>{safeFormatCurrency(metrics.sharedFundsTotal)}</strong></span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <User size={14} className="text-emerald-400" />
-                <span>En Individuales: <strong>{safeFormatCurrency(metrics.individualFundsTotal)}</strong></span>
-              </div>
+          {/* Sub-balances en Elementos (Siempre visible y legible) */}
+          <div 
+            style={{ 
+              display: 'flex', 
+              flexWrap: 'wrap', 
+              alignItems: 'center', 
+              gap: '14px', 
+              paddingTop: '10px', 
+              marginTop: '4px', 
+              borderTop: '1px solid rgba(255, 255, 255, 0.15)', 
+              fontSize: '0.75rem', 
+              color: 'rgba(224, 231, 255, 0.9)' 
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Users size={14} color="#fde047" />
+              <span>En Compartidos: <strong style={{ color: '#fde047', fontWeight: 800 }}>{safeFormatCurrency(metrics.sharedFundsTotal)}</strong></span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <User size={14} color="#6ee7b7" />
+              <span>En Individuales: <strong style={{ color: '#6ee7b7', fontWeight: 800 }}>{safeFormatCurrency(metrics.individualFundsTotal)}</strong></span>
             </div>
           </div>
         </div>
@@ -335,51 +408,39 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
       {/* ======================================================== */}
       {/* 2. SECCIÓN: TUS ELEMENTOS A GESTIONAR                    */}
       {/* ======================================================== */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3.5">
         {/* Cabecera de Sección & Filtros Estilo Pill */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               <span>Elementos & Bolsillos</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 font-bold">
+              <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '9999px', background: '#e2e8f0', color: '#334155', fontWeight: 800 }}>
                 {filteredElements.length}
               </span>
             </h2>
-            <p className="text-xs text-slate-500">
+            <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '3px 0 0 0' }}>
               Cada elemento gestiona sus propios ingresos, egresos y depósitos compartidos.
             </p>
           </div>
 
           {/* Segmented Control / Filtros Pill */}
-          <div className="inline-flex p-1 bg-slate-200/70 rounded-full border border-slate-300/60 self-start sm:self-auto">
+          <div className="fintech-filter-bar">
             <button
               onClick={() => setFilterType('all')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                filterType === 'all' 
-                  ? 'bg-white text-slate-900 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`fintech-filter-btn ${filterType === 'all' ? 'active' : ''}`}
             >
               Todos ({elements.length})
             </button>
             <button
               onClick={() => setFilterType('shared')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                filterType === 'shared' 
-                  ? 'bg-white text-indigo-700 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`fintech-filter-btn ${filterType === 'shared' ? 'active-shared' : ''}`}
             >
               <Users size={13} />
               <span>Compartidos ({elements.filter(e => e.type === 'shared').length})</span>
             </button>
             <button
               onClick={() => setFilterType('individual')}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                filterType === 'individual' 
-                  ? 'bg-white text-emerald-700 shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`fintech-filter-btn ${filterType === 'individual' ? 'active-indiv' : ''}`}
             >
               <User size={13} />
               <span>Individuales ({elements.filter(e => e.type === 'individual').length})</span>
@@ -398,81 +459,133 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
             return (
               <div 
                 key={elem.id}
-                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-4 relative group"
+                className="fintech-card"
               >
                 {/* Cabecera de la Tarjeta */}
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-3">
-                      <span className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-2xl shadow-sm">
+                      <span 
+                        style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '16px',
+                          background: isShared ? '#fef3c7' : '#ecfdf5',
+                          border: isShared ? '1px solid #fde68a' : '1px solid #a7f3d0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.45rem',
+                          flexShrink: 0
+                        }}
+                      >
                         {elem.icon || '📦'}
                       </span>
                       <div>
-                        <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1.25 }}>
                           {elem.name}
                         </h3>
-                        <span className="text-xs text-slate-500 font-medium">
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500 }}>
                           {elem.category || 'General'} • Creado por {elem.creatorName}
                         </span>
                       </div>
                     </div>
 
                     {/* Badge de tipo de gestión */}
-                    <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 ${
-                      isShared 
-                        ? 'bg-amber-50 text-amber-800 border border-amber-200' 
-                        : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                    }`}>
+                    <span 
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        padding: '3px 10px',
+                        borderRadius: '9999px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: isShared ? '#fffbeb' : '#f0fdf4',
+                        color: isShared ? '#b45309' : '#15803d',
+                        border: isShared ? '1px solid #fde68a' : '1px solid #bbf7d0',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
                       {isShared ? <Users size={12} /> : <User size={12} />}
                       {isShared ? `Compartido (${elem.members?.length || 1})` : 'Individual'}
                     </span>
                   </div>
 
                   {elem.description && (
-                    <p className="text-xs text-slate-600 line-clamp-2 mt-1">
+                    <p style={{ fontSize: '0.78rem', color: '#475569', margin: '6px 0 0 0', lineHeight: 1.35 }}>
                       {elem.description}
                     </p>
                   )}
                 </div>
 
-                {/* Saldo y Flujos del Elemento */}
-                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                  <div className="flex items-baseline justify-between mb-1.5">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                {/* Saldo y Flujos del Elemento (Caja con contraste y números nítidos) */}
+                <div 
+                  style={{
+                    background: '#f8fafc',
+                    borderRadius: '16px',
+                    padding: '12px 14px',
+                    border: '1px solid #e2e8f0'
+                  }}
+                >
+                  <div className="flex items-baseline justify-between mb-1">
+                    <span style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>
                       Fondo Disponible
                     </span>
-                    <span className={`text-xl font-extrabold ${stats.currentBalance >= 0 ? 'text-slate-900' : 'text-rose-600'}`}>
+                    <span style={{ fontSize: '1.35rem', fontWeight: 800, color: stats.currentBalance >= 0 ? '#0f172a' : '#dc2626' }}>
                       {safeFormatCurrency(stats.currentBalance, 2)}
                     </span>
                   </div>
 
                   {/* Resumen de Flujos: Ingresos/Depósitos vs Gastos */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-xs">
-                    <div className="flex items-center gap-1.5 text-emerald-700 font-medium">
-                      <TrendingUp size={14} className="text-emerald-500" />
-                      <span>Ingresos/Depósitos:</span>
-                      <strong className="ml-auto">{safeFormatCurrency((stats.totalIncome || 0) + (stats.totalDeposits || 0))}</strong>
+                  <div 
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '8px',
+                      paddingTop: '8px',
+                      marginTop: '6px',
+                      borderTop: '1px solid #e2e8f0',
+                      fontSize: '0.73rem'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#16a34a', fontWeight: 600 }}>
+                      <TrendingUp size={13} color="#16a34a" />
+                      <span>Ingresos:</span>
+                      <strong style={{ marginLeft: 'auto', color: '#15803d' }}>
+                        {safeFormatCurrency((stats.totalIncome || 0) + (stats.totalDeposits || 0))}
+                      </strong>
                     </div>
-                    <div className="flex items-center gap-1.5 text-rose-700 font-medium">
-                      <TrendingDown size={14} className="text-rose-500" />
-                      <span>Gastos/Egresos:</span>
-                      <strong className="ml-auto">{safeFormatCurrency(stats.totalExpense)}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#dc2626', fontWeight: 600 }}>
+                      <TrendingDown size={13} color="#dc2626" />
+                      <span>Gastos:</span>
+                      <strong style={{ marginLeft: 'auto', color: '#b91c1c' }}>
+                        {safeFormatCurrency(stats.totalExpense)}
+                      </strong>
                     </div>
                   </div>
                 </div>
 
                 {/* Integrantes del Elemento (si es compartido) */}
                 {isShared && elem.members && elem.members.length > 0 && (
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span className="font-medium">Integrantes:</span>
-                    <div className="flex items-center gap-1">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.73rem', color: '#64748b' }}>
+                    <span style={{ fontWeight: 600 }}>Integrantes:</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       {elem.members.map((mId) => {
                         const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
                         const contributed = stats.memberContributions[mId] || 0;
                         return (
                           <span 
                             key={mId}
-                            className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium text-[11px] border border-slate-200"
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: '9999px',
+                              background: '#f1f5f9',
+                              color: '#334155',
+                              fontWeight: 600,
+                              fontSize: '0.7rem',
+                              border: '1px solid #e2e8f0'
+                            }}
                             title={`Aportó: ${safeFormatCurrency(contributed)}`}
                           >
                             {mObj.name} {contributed > 0 && `(${safeFormatCurrency(Math.round(contributed / 1000))}k)`}
@@ -483,18 +596,32 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                   </div>
                 )}
 
-                {/* Botones de Acción del Elemento (Redondeados, estilo App Móvil) */}
-                <div className="grid grid-cols-3 gap-2 pt-1">
+                {/* Botones de Acción del Elemento (Píldoras Finas, Modernas) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', paddingTop: '2px' }}>
                   {/* Botón Depositar / Aportar */}
                   <button
                     onClick={() => {
                       setActionModal({ type: 'deposit', element: elem });
                       setActionForm({ amount: '', concept: `Aporte para ${elem.name}`, memberId: currentUser?.id || 'ramiro' });
                     }}
-                    className="btn px-2 py-2 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 flex items-center justify-center gap-1 transition-colors"
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      background: '#eef2ff',
+                      color: '#4338ca',
+                      border: '1px solid #c7d2fe',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease'
+                    }}
                     title="Depositar dinero en este elemento"
                   >
-                    <ArrowDownLeft size={14} />
+                    <ArrowDownLeft size={13} color="#4338ca" />
                     <span>Depositar</span>
                   </button>
 
@@ -504,21 +631,49 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                       setActionModal({ type: 'expense', element: elem });
                       setActionForm({ amount: '', concept: `Gasto de ${elem.name}`, memberId: currentUser?.id || 'ramiro' });
                     }}
-                    className="btn px-2 py-2 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1 transition-colors"
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      background: '#fff1f2',
+                      color: '#e11d48',
+                      border: '1px solid #fecdd3',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease'
+                    }}
                     title="Registrar un gasto o necesidad económica"
                   >
-                    <ArrowUpRight size={14} />
+                    <ArrowUpRight size={13} color="#e11d48" />
                     <span>- Gasto</span>
                   </button>
 
                   {/* Botón Detalle */}
                   <button
                     onClick={() => setSelectedElement(elem)}
-                    className="btn px-2 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center justify-center gap-1 transition-colors"
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      background: '#f8fafc',
+                      color: '#334155',
+                      border: '1px solid #cbd5e1',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '3px',
+                      transition: 'all 0.15s ease'
+                    }}
                     title="Ver detalle completo, historial y aportes"
                   >
                     <span>Detalle</span>
-                    <ChevronRight size={14} />
+                    <ChevronRight size={13} color="#64748b" />
                   </button>
                 </div>
               </div>

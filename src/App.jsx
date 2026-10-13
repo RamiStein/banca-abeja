@@ -609,12 +609,15 @@ function App() {
           </div>
         </div>
 
-        {/* Barra de Navegación Segmentada (Pills fluidas y táctiles) */}
-        <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-slate-200/80">
-          <div className="inline-flex p-1 bg-slate-100 rounded-full border border-slate-200 gap-1 overflow-x-auto max-w-full">
+        {/* Barra de Navegación Segmentada (Pill Bar Unificada sin saltos de línea) */}
+        <div className="w-full pt-1.5 border-t border-slate-200/80">
+          <div 
+            className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-full border border-slate-200 overflow-x-auto"
+            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+          >
             {/* Pestaña Principal: Billetera & Elementos */}
             <button 
-              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all ${
+              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
                 activeTab === 'elements'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'bg-transparent text-slate-600 hover:text-slate-900'
@@ -627,7 +630,7 @@ function App() {
 
             {/* Pestaña: Colmena & Bot */}
             <button 
-              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all ${
+              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
                 activeTab === 'community'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'bg-transparent text-slate-600 hover:text-slate-900'
@@ -640,7 +643,7 @@ function App() {
 
             {/* Pestaña: Historial */}
             <button 
-              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all ${
+              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
                 activeTab === 'history'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'bg-transparent text-slate-600 hover:text-slate-900'
@@ -650,23 +653,26 @@ function App() {
               <History size={15} />
               <span>Historial ({transactions.length})</span>
             </button>
-          </div>
 
-          {/* Menú Más Opciones (Vehículos, Camión, Dashboard) */}
-          <div className="relative">
-            <button 
-              onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className="btn btn-sm px-3 py-1.5 rounded-full text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 flex items-center gap-1"
-            >
-              <Layers size={14} />
-              <span>Más</span>
-            </button>
-
-            {showMoreMenu && (
-              <div 
-                className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-40 flex flex-col"
-                onClick={() => setShowMoreMenu(false)}
+            {/* Menú Más Opciones (Vehículos, Camión, Dashboard) */}
+            <div className="relative ml-auto shrink-0">
+              <button 
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+                className={`btn btn-sm px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition-all ${
+                  showMoreMenu || (activeTab !== 'elements' && activeTab !== 'community' && activeTab !== 'history')
+                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                    : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50'
+                }`}
               >
+                <Layers size={14} />
+                <span>Más</span>
+              </button>
+
+              {showMoreMenu && (
+                <div 
+                  className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-40 flex flex-col"
+                  onClick={() => setShowMoreMenu(false)}
+                >
                 <button
                   className="px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                   onClick={() => setActiveTab('dashboard')}
@@ -701,6 +707,7 @@ function App() {
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
       </header>
