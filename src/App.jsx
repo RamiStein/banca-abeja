@@ -13,6 +13,7 @@ import ReceiptViewerModal from './components/ReceiptViewerModal';
 import VehicleManager from './VehicleManager';
 import CommunityMatrix from './CommunityMatrix';
 import TruckManager from './TruckManager';
+import ElementsManager from './components/ElementsManager';
 import { authService } from './services/authService';
 import AuthScreen from './components/AuthScreen';
 import './index.css';
@@ -132,7 +133,8 @@ function App() {
 
 
   const [isDragging, setIsDragging] = useState(false);
-  const [activeTab, setActiveTab] = useState('community');
+  const [activeTab, setActiveTab] = useState('elements');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Modo Administrador (para módulos exclusivos como Gestión de Camión y alquiler)
   const [isAdmin, setIsAdmin] = useState(() => {
@@ -532,155 +534,174 @@ function App() {
 
   return (
     <div className="container relative">
-      <header className="flex justify-between items-center mb-6 flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <span style={{ fontSize: '1.8rem' }}>🐝</span>
-            Banca Abeja
-          </h1>
-          <p className="text-secondary mt-1">Matriz En Conjunto • Trazabilidad, Comprobantes & Billeteras Comunitarias</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <button 
-            className={`btn ${activeTab === 'community' ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setActiveTab('community')}
-            style={{ 
-               backgroundColor: activeTab === 'community' ? 'var(--accent-color)' : 'transparent',
-               borderColor: activeTab === 'community' ? 'var(--accent-color)' : 'var(--border-color)',
-               color: activeTab === 'community' ? '#fff' : 'inherit'
-            }}
-          >
-            <User size={18} />
-            Mi Espacio & Colmena
-          </button>
-          <button 
-            className={`btn ${activeTab === 'vehicle' ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setActiveTab('vehicle')}
-            style={{ 
-               backgroundColor: activeTab === 'vehicle' ? '#bfe4dd' : 'transparent',
-               borderColor: activeTab === 'vehicle' ? '#bfe4dd' : 'var(--border-color)',
-               color: activeTab === 'vehicle' ? '#0f766e' : 'inherit'
-            }}
-          >
-            <Car size={18} />
-            Vehículos
-          </button>
-          {isAdmin && (
-            <button 
-              className={`btn ${activeTab === 'truck' ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => setActiveTab('truck')}
-              style={{ 
-                 backgroundColor: activeTab === 'truck' ? '#f59e0b' : '#ffffff',
-                 borderColor: activeTab === 'truck' ? '#d97706' : 'var(--border-color)',
-                 color: activeTab === 'truck' ? '#ffffff' : '#b45309',
-                 fontWeight: 600
-              }}
-            >
-              <Truck size={18} />
-              Camión
-            </button>
-          )}
-          <button 
-            className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setActiveTab('dashboard')}
-          >
-            <LayoutDashboard size={18} />
-            Dashboard
-          </button>
-          <button 
-            className={`btn ${activeTab === 'history' ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setActiveTab('history')}
-          >
-            <History size={18} />
-            Historial ({transactions.length})
-          </button>
-          {transactions.length > 0 && (
-             <button className="btn btn-outline" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', background: '#ffffff' }} onClick={clearData} title="Restablecer Datos Semilla">
-               <Trash2 size={18} />
-             </button>
-          )}
+      {/* HEADER PRINCIPAL - ESTILO APP MÓVIL MODERNA */}
+      <header className="mb-6 flex flex-col gap-4">
+        {/* Barra Superior: Logo y Perfil */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-3xl filter drop-shadow-sm">🐝</span>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-none">
+                Banca Abeja
+              </h1>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                Billeteras & Elementos Económicos
+              </p>
+            </div>
+          </div>
 
-          {/* Botón de Modo Administrador */}
-          {isAdmin ? (
-            <button 
-              className="btn btn-outline" 
-              style={{ borderColor: '#fcd34d', color: '#b45309', background: '#fffbeb', padding: '6px 10px', fontSize: '0.8rem' }}
-              onClick={() => {
-                if (window.confirm('¿Cerrar sesión de Administrador?')) {
-                  handleLockAdmin();
-                }
-              }}
-              title="Modo Administrador Activo. Clic para bloquear."
-            >
-              <Unlock size={14} />
-              Admin
-            </button>
-          ) : (
-            <button 
-              className="btn btn-outline" 
-              style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)', background: '#ffffff', padding: '6px 10px', fontSize: '0.8rem' }}
-              onClick={() => {
-                setAdminPinInput('');
-                setAdminPinError('');
-                setShowAdminModal(true);
-              }}
-              title="Acceso exclusivo Administrador"
-            >
-              <Lock size={14} />
-              Admin
-            </button>
-          )}
-
-          {/* Badge de Usuario Logueado & Cerrar Sesión */}
-          {currentUser && (
-            <div className="flex items-center gap-2 pl-2" style={{ borderLeft: '1px solid var(--border-color)' }}>
-              <div 
-                style={{ 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: '6px', 
-                  padding: '5px 12px', 
-                  backgroundColor: '#f8fafc', 
-                  border: '1px solid #e2e8f0', 
-                  borderRadius: '10px',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                  color: '#1e293b'
-                }}
-                title={`Sesión activa: ${currentUser.email || currentUser.id}`}
-              >
-                <span style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  backgroundColor: '#4f46e5',
-                  color: '#ffffff',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.72rem',
-                  fontWeight: 700
-                }}>
-                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
-                </span>
-                <span>{currentUser.name}</span>
-              </div>
-
+          {/* Perfil del Usuario & Acciones */}
+          <div className="flex items-center gap-2">
+            {/* Modo Admin sutil */}
+            {isAdmin ? (
               <button 
-                className="btn btn-outline" 
-                style={{ borderColor: '#fecaca', color: '#dc2626', background: '#fef2f2', padding: '6px 10px', fontSize: '0.8rem' }}
+                className="btn btn-sm px-2.5 py-1 text-amber-700 bg-amber-50 border border-amber-200 text-xs"
                 onClick={() => {
-                  if (window.confirm(`¿Deseas cerrar la sesión de ${currentUser.name}?`)) {
-                    handleLogout();
+                  if (window.confirm('¿Cerrar sesión de Administrador?')) {
+                    handleLockAdmin();
                   }
                 }}
-                title="Cerrar Sesión de Banca Abeja"
+                title="Modo Admin Activo"
               >
-                <LogOut size={14} />
-                <span className="hidden sm:inline">Salir</span>
+                <Unlock size={13} />
+                <span className="hidden sm:inline">Admin</span>
               </button>
-            </div>
-          )}
+            ) : (
+              <button 
+                className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                onClick={() => {
+                  setAdminPinInput('');
+                  setAdminPinError('');
+                  setShowAdminModal(true);
+                }}
+                title="Acceso Administrador"
+              >
+                <Lock size={15} />
+              </button>
+            )}
+
+            {/* Chip de Usuario */}
+            {currentUser && (
+              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
+                <div 
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-800 shadow-sm"
+                  title={`Sesión activa: ${currentUser.email || currentUser.id}`}
+                >
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
+                    {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                  </span>
+                  <span>{currentUser.name}</span>
+                </div>
+
+                <button 
+                  className="p-2 rounded-full text-rose-500 hover:bg-rose-50 transition-colors"
+                  onClick={() => {
+                    if (window.confirm(`¿Deseas cerrar la sesión de ${currentUser.name}?`)) {
+                      handleLogout();
+                    }
+                  }}
+                  title="Cerrar Sesión"
+                >
+                  <LogOut size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Barra de Navegación Segmentada (Pills fluidas y táctiles) */}
+        <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-slate-200/80">
+          <div className="inline-flex p-1 bg-slate-100 rounded-full border border-slate-200 gap-1 overflow-x-auto max-w-full">
+            {/* Pestaña Principal: Billetera & Elementos */}
+            <button 
+              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all ${
+                activeTab === 'elements'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-transparent text-slate-600 hover:text-slate-900'
+              }`}
+              onClick={() => setActiveTab('elements')}
+            >
+              <Wallet size={15} />
+              <span>Elementos & Billetera</span>
+            </button>
+
+            {/* Pestaña: Colmena & Bot */}
+            <button 
+              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all ${
+                activeTab === 'community'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-transparent text-slate-600 hover:text-slate-900'
+              }`}
+              onClick={() => setActiveTab('community')}
+            >
+              <Users size={15} />
+              <span>Colmena & Bot</span>
+            </button>
+
+            {/* Pestaña: Historial */}
+            <button 
+              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all ${
+                activeTab === 'history'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-transparent text-slate-600 hover:text-slate-900'
+              }`}
+              onClick={() => setActiveTab('history')}
+            >
+              <History size={15} />
+              <span>Historial ({transactions.length})</span>
+            </button>
+          </div>
+
+          {/* Menú Más Opciones (Vehículos, Camión, Dashboard) */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              className="btn btn-sm px-3 py-1.5 rounded-full text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 flex items-center gap-1"
+            >
+              <Layers size={14} />
+              <span>Más</span>
+            </button>
+
+            {showMoreMenu && (
+              <div 
+                className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-40 flex flex-col"
+                onClick={() => setShowMoreMenu(false)}
+              >
+                <button
+                  className="px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  onClick={() => setActiveTab('dashboard')}
+                >
+                  <LayoutDashboard size={14} className="text-indigo-600" />
+                  <span>Dashboard & Métricas</span>
+                </button>
+                <button
+                  className="px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                  onClick={() => setActiveTab('vehicle')}
+                >
+                  <Car size={14} className="text-emerald-600" />
+                  <span>Gestor de Vehículos</span>
+                </button>
+                {isAdmin && (
+                  <button
+                    className="px-4 py-2 text-left text-xs font-semibold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
+                    onClick={() => setActiveTab('truck')}
+                  >
+                    <Truck size={14} className="text-amber-600" />
+                    <span>Control de Camión</span>
+                  </button>
+                )}
+                {transactions.length > 0 && (
+                  <button
+                    className="px-4 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100"
+                    onClick={clearData}
+                  >
+                    <Trash2 size={14} />
+                    <span>Restablecer Semillas</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -1407,6 +1428,13 @@ function App() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Módulo Principal: Billetera & Elementos a Gestionar */}
+        {activeTab === 'elements' && (
+          <ElementsManager 
+            currentUser={currentUser} 
+          />
         )}
 
         {/* Módulo de la Matriz Comunitaria y Colmena */}
