@@ -9,6 +9,7 @@ import {
 import { db } from './firebase';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import IndividualPortal from './components/IndividualPortal';
+import ElementsManager from './components/ElementsManager';
 
 // ==========================================
 // PARSER INTELIGENTE DE LENGUAJE COLOQUIAL (WHATSAPP)
@@ -635,71 +636,41 @@ export default function CommunityMatrix({ currentUser = null, onLogout = null })
   return (
     <div className="flex flex-col gap-6" style={{ width: '100%' }}>
 
-      {/* Selector de Modo: Mi Espacio Individual vs La Colmena Colectiva */}
-      <div className="flex items-center justify-between flex-wrap gap-3 p-1.5 rounded-2xl" style={{ backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="flex items-center gap-1.5">
+      {/* Selector de Modo Limpio: Billetera & Elementos vs Matriz de la Colmena */}
+      <div className="flex items-center justify-between flex-wrap gap-2 p-1 bg-slate-100 rounded-full border border-slate-200">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setViewMode('individual')}
-            className="btn"
-            style={{
-              fontSize: '0.88rem',
-              padding: '8px 18px',
-              borderRadius: '12px',
-              backgroundColor: viewMode === 'individual' ? 'var(--accent-color)' : 'transparent',
-              color: viewMode === 'individual' ? '#fff' : 'var(--text-secondary)',
-              fontWeight: viewMode === 'individual' ? 700 : 500,
-              border: viewMode === 'individual' ? '1px solid rgba(99, 102, 241, 0.4)' : 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.2s ease'
-            }}
+            className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all ${
+              viewMode === 'individual' 
+                ? 'bg-indigo-600 text-white shadow-sm' 
+                : 'bg-transparent text-slate-600 hover:text-slate-900'
+            }`}
           >
-            <User size={17} />
-            Mi Espacio (Individual)
+            <Wallet size={15} />
+            <span>Elementos & Billetera</span>
           </button>
 
           <button
             onClick={() => setViewMode('community')}
-            className="btn"
-            style={{
-              fontSize: '0.88rem',
-              padding: '8px 18px',
-              borderRadius: '12px',
-              backgroundColor: viewMode === 'community' ? 'var(--warning)' : 'transparent',
-              color: viewMode === 'community' ? '#000' : 'var(--text-secondary)',
-              fontWeight: viewMode === 'community' ? 700 : 500,
-              border: viewMode === 'community' ? '1px solid rgba(245, 158, 11, 0.4)' : 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.2s ease'
-            }}
+            className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all ${
+              viewMode === 'community' 
+                ? 'bg-indigo-600 text-white shadow-sm' 
+                : 'bg-transparent text-slate-600 hover:text-slate-900'
+            }`}
           >
-            <Layers size={17} />
-            La Colmena (Colectivo)
+            <Layers size={15} />
+            <span>Red & Nodos Comunitarios</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-2 pr-2 text-xs text-secondary">
-          <span>{viewMode === 'individual' ? 'Gestión personal de flujos y WhatsApp Bot' : 'Balances cruzados, fondo común e inversiones de la red'}</span>
+        <div className="hidden sm:flex items-center gap-2 pr-3 text-xs text-slate-500 font-medium">
+          <span>{viewMode === 'individual' ? 'Gestión por elementos y cuenta principal' : 'Balances cruzados de la colmena'}</span>
         </div>
       </div>
 
       {viewMode === 'individual' ? (
-        <IndividualPortal
-          members={members}
-          currentMemberId={currentMemberId}
-          currentUser={currentUser}
-          onLogout={onLogout}
-          onSelectMember={setCurrentMemberId}
-          transactions={transactions}
-          onDeleteTx={handleDeleteTx}
-          onAddTx={handleQuickAddTx}
-          onNavigateToCommunity={() => setViewMode('community')}
-          selectedCurrency={selectedCurrency}
-          setSelectedCurrency={setSelectedCurrency}
-        />
+        <ElementsManager currentUser={currentUser} />
       ) : (
         <>
           {/* 1. Header de la Matriz En Conjunto y Selector de Nodos */}
