@@ -93,7 +93,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
 
   // Miembros disponibles para invitar
   const availableMembers = useMemo(() => {
-    return FOUNDING_MEMBERS.map(m => ({
+    return (FOUNDING_MEMBERS || []).map(m => ({
       id: m.id,
       name: m.name,
       role: m.role
