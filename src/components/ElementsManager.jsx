@@ -356,7 +356,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
           </div>
 
           {/* Botones de Acción Rápida (Pills modernas y redondeadas) */}
-          <div className="flex flex-wrap items-center gap-2.5 pt-1">
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', marginTop: '14px', marginBottom: '8px' }}>
             <button
               onClick={handleOpenCreate}
               className="btn"
@@ -402,18 +402,18 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
             </button>
           </div>
 
-          {/* Sub-balances en Elementos (Siempre visible y legible) */}
+          {/* Sub-balances en Elementos (Separados holgadamente con su divisor) */}
           <div 
             style={{ 
               display: 'flex', 
               flexWrap: 'wrap', 
               alignItems: 'center', 
-              gap: '14px', 
-              paddingTop: '10px', 
-              marginTop: '4px', 
-              borderTop: '1px solid rgba(255, 255, 255, 0.15)', 
-              fontSize: '0.75rem', 
-              color: 'rgba(224, 231, 255, 0.9)' 
+              gap: '16px', 
+              paddingTop: '14px', 
+              marginTop: '12px', 
+              borderTop: '1px solid rgba(255, 255, 255, 0.18)', 
+              fontSize: '0.76rem', 
+              color: 'rgba(224, 231, 255, 0.92)' 
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -435,9 +435,9 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
       {/* ======================================================== */}
       {/* 2. SECCIÓN: TUS ELEMENTOS A GESTIONAR                    */}
       {/* ======================================================== */}
-      <div className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-4" style={{ marginTop: '14px' }}>
         {/* Cabecera de Sección & Filtros Estilo Pill */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               <span>Elementos & Bolsillos</span>
@@ -451,7 +451,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
           </div>
 
           {/* Segmented Control / Filtros Pill */}
-          <div className="fintech-filter-bar">
+          <div className="fintech-filter-bar" style={{ marginTop: '4px' }}>
             <button
               onClick={() => setFilterType('all')}
               className={`fintech-filter-btn ${filterType === 'all' ? 'active' : ''}`}
@@ -484,7 +484,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
         {/* ======================================================== */}
         {/* GRID DE ELEMENTOS (TARJETAS MODERNAS, REDONDEADAS)      */}
         {/* ======================================================== */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ marginTop: '8px' }}>
           {filteredElements.map((elem) => {
             const stats = elementsService.getElementStats(elem.id);
             const isShared = elem.type === 'shared';
@@ -557,8 +557,8 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                     if (linked.length === 0) return null;
                     const totalLinked = linked.reduce((sum, t) => sum + (t.amount || 0), 0);
                     return (
-                      <div style={{ marginTop: '6px' }}>
-                        <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: '9999px', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ marginTop: '8px' }}>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: '9999px', padding: '3px 10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           ✨ {safeFormatCurrency(totalLinked)} invertidos desde Mano a Mano
                         </span>
                       </div>
@@ -571,8 +571,9 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                   style={{
                     background: '#f8fafc',
                     borderRadius: '16px',
-                    padding: '12px 14px',
-                    border: '1px solid #e2e8f0'
+                    padding: '13px 14px',
+                    border: '1px solid #e2e8f0',
+                    marginTop: '10px'
                   }}
                 >
                   <div className="flex items-baseline justify-between mb-1">
@@ -615,7 +616,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
 
                 {/* Integrantes del Elemento */}
                 {(isShared || isBilateral) && elem.members && elem.members.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.73rem', color: '#64748b' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.73rem', color: '#64748b', marginTop: '6px' }}>
                     <span style={{ fontWeight: 600 }}>{isBilateral ? 'Entre:' : 'Integrantes:'}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       {elem.members.map((mId) => {
@@ -644,7 +645,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                 )}
 
                 {/* Botones de Acción del Elemento (Píldoras Finas, Modernas) */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', paddingTop: '2px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', paddingTop: '6px', marginTop: '4px' }}>
                   {/* Botón Depositar / Aportar */}
                   <button
                     onClick={() => {
@@ -756,10 +757,28 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
           >
             {/* Cerrar modal */}
             <button 
+              type="button"
               onClick={() => setShowCreateModal(false)}
-              className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              className="top-5 right-5"
+              style={{
+                position: 'absolute',
+                top: '18px',
+                right: '18px',
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 25
+              }}
+              title="Cerrar ventana"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             {/* Encabezado del modal */}
@@ -1103,10 +1122,28 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
             onClick={e => e.stopPropagation()}
           >
             <button 
+              type="button"
               onClick={() => setActionModal(null)}
-              className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              className="top-4 right-4"
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 25
+              }}
+              title="Cerrar ventana"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             <div className="flex items-center gap-3 mb-4">
@@ -1262,10 +1299,28 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
             onClick={e => e.stopPropagation()}
           >
             <button 
+              type="button"
               onClick={() => setSelectedElement(null)}
-              className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              className="top-5 right-5"
+              style={{
+                position: 'absolute',
+                top: '18px',
+                right: '18px',
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 25
+              }}
+              title="Cerrar ventana"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             {/* Cabecera del Elemento */}
@@ -1534,10 +1589,28 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
             onClick={e => e.stopPropagation()}
           >
             <button 
+              type="button"
               onClick={() => setShowTopUpModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              className="top-4 right-4"
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 25
+              }}
+              title="Cerrar ventana"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             <div className="text-center mb-4">

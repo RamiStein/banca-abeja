@@ -1162,3 +1162,19 @@ select.input option {
   }
 }
 
+/* Utilidades de Posicionamiento para Modales y Botones */
+.top-2 { top: 0.5rem !important; }
+.top-3 { top: 0.75rem !important; }
+.top-4 { top: 1rem !important; }
+.top-5 { top: 1.25rem !important; }
+.top-6 { top: 1.5rem !important; }
+.right-2 { right: 0.5rem !important; }
+.right-3 { right: 0.75rem !important; }
+.right-4 { right: 1rem !important; }
+.right-5 { right: 1.25rem !important; }
+.right-6 { right: 1.5rem !important; }
+.bottom-2 { bottom: 0.5rem !important; }
+.bottom-4 { bottom: 1rem !important; }
+.left-2 { left: 0.5rem !important; }
+.left-4 { left: 1rem !important; }
+

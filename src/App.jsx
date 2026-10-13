@@ -609,11 +609,15 @@ function App() {
           </div>
         </div>
 
-        {/* Barra de Navegación Segmentada (Pill Bar Unificada sin saltos de línea) */}
-        <div className="w-full pt-1.5 border-t border-slate-200/80">
+        {/* Barra de Navegación Segmentada (Pill Bar Unificada con espaciado fluido y moderno) */}
+        <div className="w-full" style={{ marginTop: '10px', marginBottom: '8px' }}>
           <div 
-            className="flex items-center gap-1.5 p-1 bg-slate-100/90 rounded-full border border-slate-200 overflow-x-auto"
-            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+            className="flex items-center gap-2 bg-slate-100/90 rounded-full border border-slate-200/90 overflow-x-auto"
+            style={{ 
+              scrollbarWidth: 'none', 
+              WebkitOverflowScrolling: 'touch',
+              padding: '5px 6px'
+            }}
           >
             {/* Pestaña Principal: Billetera & Elementos */}
             <button 
@@ -764,11 +768,28 @@ function App() {
               style={{ width: '560px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto' }}
             >
               <button 
-                className="btn btn-outline absolute top-4 right-4" 
-                style={{ padding: '0.25rem', border: 'none' }}
+                type="button"
+                className="top-4 right-4" 
+                style={{ 
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'rgba(0,0,0,0.06)',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  zIndex: 10
+                }}
                 onClick={() => setShowManualForm(false)}
+                title="Cerrar"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
 
               <h3 className="text-xl mb-3 font-bold flex items-center gap-2">
@@ -1473,17 +1494,50 @@ function App() {
       {/* Modal de Acceso Administrador */}
       {showAdminModal && (
         <div className="modal-overlay" onClick={() => setShowAdminModal(false)}>
-          <div className="card w-full max-w-sm relative" onClick={e => e.stopPropagation()} style={{ width: '380px' }}>
-            <button className="btn btn-outline absolute top-4 right-4 p-1 border-none" onClick={() => setShowAdminModal(false)}>
-              <X size={20} />
+          <div 
+            className="card w-full max-w-sm relative" 
+            onClick={e => e.stopPropagation()} 
+            style={{ 
+              width: '380px', 
+              maxWidth: '92vw',
+              position: 'relative',
+              padding: '1.75rem 1.5rem',
+              borderRadius: '24px',
+              backgroundColor: '#ffffff'
+            }}
+          >
+            {/* Botón de cierre posicionado estrictamente en la esquina superior derecha */}
+            <button 
+              type="button"
+              className="top-4 right-4"
+              onClick={() => setShowAdminModal(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 20
+              }}
+              title="Cerrar ventana"
+            >
+              <X size={18} />
             </button>
 
-            <div className="text-center mb-4">
-              <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center mb-2" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
+            <div className="text-center mb-4" style={{ paddingTop: '8px' }}>
+              <div className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center mb-2.5" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
                 <KeyRound size={24} />
               </div>
-              <h3 className="text-lg font-bold">Acceso de Administrador</h3>
-              <p className="text-xs text-secondary mt-1">
+              <h3 className="text-lg font-bold text-slate-900" style={{ margin: '0 0 4px 0' }}>Acceso de Administrador</h3>
+              <p className="text-xs text-secondary mt-1" style={{ margin: 0, lineHeight: 1.4 }}>
                 Ingresá tu PIN para desbloquear la gestión del camión y control de alquiler.
               </p>
             </div>
