@@ -69,6 +69,34 @@ export const DEFAULT_ELEMENTS = [
     initialBalance: 0,
     currency: 'ARS',
     createdAt: Date.now() - 86400000 * 2
+  },
+  {
+    id: 'elem-mano-mano-cris',
+    name: 'Mano a Mano con Cris',
+    type: 'bilateral',
+    creatorId: 'ramiro',
+    creatorName: 'Ramiro',
+    icon: '🤝',
+    category: 'Intercambios',
+    description: 'Intercambios directos, adelantos y compras bilaterales entre Cris y Ramiro.',
+    members: ['ramiro', 'cristian'],
+    initialBalance: 0,
+    currency: 'ARS',
+    createdAt: Date.now() - 86400000 * 1
+  },
+  {
+    id: 'elem-feria',
+    name: 'Feria Comunitaria',
+    type: 'shared',
+    creatorId: 'ramiro',
+    creatorName: 'Ramiro',
+    icon: '🎪',
+    category: 'Feria',
+    description: 'Fondo de inversión, insumos de producción y ventas de la feria colectiva.',
+    members: ['ramiro', 'cristian', 'agustina'],
+    initialBalance: 0,
+    currency: 'ARS',
+    createdAt: Date.now() - 86400000 * 2
   }
 ];
 
@@ -97,6 +125,21 @@ export const DEFAULT_ELEMENT_TXS = [
     currency: 'ARS',
     timestamp: Date.now() - 86400000 * 3,
     date: new Date(Date.now() - 86400000 * 3).toLocaleDateString('es-AR')
+  },
+  {
+    id: 'etx-maiz-1',
+    elementId: 'elem-mano-mano-cris',
+    type: 'expense',
+    amount: 5000,
+    concept: 'Maíz partido ($3.000 blanco + $2.000 amarillo) a pedido de Cris',
+    memberId: 'ramiro',
+    memberName: 'Ramiro',
+    targetMemberId: 'cristian',
+    linkedElementId: 'elem-feria',
+    linkedElementName: 'Feria Comunitaria',
+    currency: 'ARS',
+    timestamp: Date.now() - 3600000,
+    date: new Date().toLocaleDateString('es-AR')
   },
   {
     id: 'etx-3',
@@ -149,7 +192,16 @@ class ElementsService {
       const saved = localStorage.getItem(STORAGE_ELEMENTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const existingIds = new Set(parsed.map(e => e.id));
+          const missingDefaults = DEFAULT_ELEMENTS.filter(d => !existingIds.has(d.id));
+          if (missingDefaults.length > 0) {
+            const combined = [...parsed, ...missingDefaults];
+            localStorage.setItem(STORAGE_ELEMENTS_KEY, JSON.stringify(combined));
+            return combined;
+          }
+          return parsed;
+        }
       }
     } catch (e) {
       console.warn("Error leyendo elementos locales:", e);
@@ -169,7 +221,16 @@ class ElementsService {
       const saved = localStorage.getItem(STORAGE_ELEMENT_TXS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const existingIds = new Set(parsed.map(t => t.id));
+          const missingDefaults = DEFAULT_ELEMENT_TXS.filter(d => !existingIds.has(d.id));
+          if (missingDefaults.length > 0) {
+            const combined = [...missingDefaults, ...parsed];
+            localStorage.setItem(STORAGE_ELEMENT_TXS_KEY, JSON.stringify(combined));
+            return combined;
+          }
+          return parsed;
+        }
       }
     } catch (e) {
       console.warn("Error leyendo transacciones de elementos:", e);
@@ -434,6 +495,9 @@ class ElementsService {
     memberName,
     amount,
     concept,
+    linkedElementId = null,
+    linkedElementName = null,
+    targetMemberId = null,
     currency = 'ARS'
   }) {
     const numAmount = Math.abs(parseFloat(amount) || 0);
@@ -447,6 +511,9 @@ class ElementsService {
       concept: concept.trim() || 'Egreso / Necesidad económica',
       memberId,
       memberName: memberName || (memberId.charAt(0).toUpperCase() + memberId.slice(1)),
+      linkedElementId: linkedElementId || null,
+      linkedElementName: linkedElementName || null,
+      targetMemberId: targetMemberId || null,
       currency,
       timestamp: Date.now(),
       date: new Date().toLocaleDateString('es-AR')
@@ -464,6 +531,12 @@ class ElementsService {
     }
 
     return tx;
+  }
+
+  // Obtener movimientos vinculados desde otros elementos (ej: compras del mano a mano vinculadas a la Feria)
+  getLinkedTransactions(elementId) {
+    if (!this.transactions || !Array.isArray(this.transactions)) return [];
+    return this.transactions.filter(t => t && t.linkedElementId === elementId);
   }
 
   // --- CÁLCULO DE BALANCE DE UN ELEMENTO ---

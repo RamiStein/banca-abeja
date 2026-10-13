@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Wallet, Plus, Users, User, ArrowUpRight, ArrowDownLeft, 
-  TrendingUp, TrendingDown, Eye, EyeOff, ShieldCheck, 
-  Car, Sparkles, ChevronRight, X, Check, HelpCircle, 
-  AlertCircle, DollarSign, Layers, ArrowRight, Share2, 
-  Trash2, RefreshCw
+  Plus, Users, User, ArrowUpRight, ArrowDownLeft, 
+  TrendingUp, TrendingDown, Eye, EyeOff, 
+  ChevronRight, X, Check, ArrowRight, Trash2
 } from 'lucide-react';
 import { elementsService, DEFAULT_ELEMENTS } from '../services/elementsService';
 import { FOUNDING_MEMBERS } from '../services/authService';
 
 const AVAILABLE_ICONS = [
+  { icon: '🤝', label: 'Intercambio / Mano a Mano', category: 'Intercambios' },
+  { icon: '🎪', label: 'Feria & Eventos', category: 'Feria' },
+  { icon: '🌽', label: 'Granja & Animales', category: 'Alimentos' },
   { icon: '🚗', label: 'Vehículo / Movilidad', category: 'Movilidad' },
   { icon: '🥗', label: 'Comida & Despensa', category: 'Alimentos' },
   { icon: '🏡', label: 'Hogar & Hábitat', category: 'Hábitat' },
@@ -59,11 +60,12 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
   // Formulario de creación
   const [newElemForm, setNewElemForm] = useState({
     name: '',
-    type: 'shared', // 'shared' | 'individual'
+    type: 'shared', // 'shared' | 'bilateral' | 'individual'
     icon: '🚗',
     category: 'Movilidad',
     description: '',
     members: ['ramiro', 'agustina', 'cristian'],
+    partnerId: 'cristian',
     initialDeposit: ''
   });
 
@@ -71,7 +73,9 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
   const [actionForm, setActionForm] = useState({
     amount: '',
     concept: '',
-    memberId: currentUser?.id || 'ramiro'
+    memberId: currentUser?.id || 'ramiro',
+    linkedElementId: '',
+    targetMemberId: ''
   });
 
   // Monto para fondear cuenta principal
@@ -104,6 +108,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
   const filteredElements = useMemo(() => {
     return elements.filter(elem => {
       if (filterType === 'shared' && elem.type !== 'shared') return false;
+      if (filterType === 'bilateral' && elem.type !== 'bilateral') return false;
       if (filterType === 'individual' && elem.type !== 'individual') return false;
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
@@ -118,12 +123,15 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
   // Totales acumulados
   const metrics = useMemo(() => {
     let sharedFundsTotal = 0;
+    let bilateralFundsTotal = 0;
     let individualFundsTotal = 0;
 
     elements.forEach(elem => {
       const stats = elementsService.getElementStats(elem.id);
       if (elem.type === 'shared') {
         sharedFundsTotal += Math.max(0, stats.currentBalance);
+      } else if (elem.type === 'bilateral') {
+        bilateralFundsTotal += Math.max(0, stats.currentBalance);
       } else {
         individualFundsTotal += Math.max(0, stats.currentBalance);
       }
@@ -131,6 +139,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
 
     return {
       sharedFundsTotal,
+      bilateralFundsTotal,
       individualFundsTotal,
       totalPockets: elements.length
     };
@@ -145,6 +154,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
       category: 'Movilidad',
       description: '',
       members: [currentUser?.id || 'ramiro', 'agustina', 'cristian'],
+      partnerId: 'cristian',
       initialDeposit: ''
     });
     setCreateStep(1);
@@ -157,16 +167,25 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
     if (!newElemForm.name.trim()) return;
 
     const initialDep = parseFloat(newElemForm.initialDeposit) || 0;
+    const myId = currentUser?.id || 'ramiro';
+    let membersList = [myId];
+
+    if (newElemForm.type === 'shared') {
+      membersList = newElemForm.members && newElemForm.members.length > 0 ? newElemForm.members : [myId];
+    } else if (newElemForm.type === 'bilateral') {
+      const partner = newElemForm.partnerId || 'cristian';
+      membersList = Array.from(new Set([myId, partner]));
+    }
 
     await elementsService.createElement({
       name: newElemForm.name,
       type: newElemForm.type,
-      creatorId: currentUser?.id || 'ramiro',
+      creatorId: myId,
       creatorName: currentUser?.name || 'Ramiro',
       icon: newElemForm.icon,
       category: newElemForm.category,
       description: newElemForm.description,
-      members: newElemForm.type === 'shared' ? newElemForm.members : [currentUser?.id || 'ramiro'],
+      members: membersList,
       initialDeposit: initialDep,
       currency: 'ARS'
     });
@@ -209,18 +228,22 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
         concept: actionForm.concept || `Ingreso generado por ${elem.name}`
       });
     } else if (actionModal.type === 'expense') {
+      const linkedElem = elements.find(el => el.id === actionForm.linkedElementId);
       await elementsService.addExpenseToElement({
         elementId: elem.id,
         memberId: memberObj.id,
         memberName: memberObj.name,
         amount: amountNum,
-        concept: actionForm.concept || `Necesidad / Gasto de ${elem.name}`
+        concept: actionForm.concept || `Necesidad / Gasto de ${elem.name}`,
+        linkedElementId: linkedElem ? linkedElem.id : null,
+        linkedElementName: linkedElem ? linkedElem.name : null,
+        targetMemberId: actionForm.targetMemberId || null
       });
     }
 
     refreshData();
     setActionModal(null);
-    setActionForm({ amount: '', concept: '', memberId: currentUser?.id || 'ramiro' });
+    setActionForm({ amount: '', concept: '', memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '' });
   };
 
   // Recargar cuenta principal
@@ -395,11 +418,15 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <Users size={14} color="#fde047" />
-              <span>En Compartidos: <strong style={{ color: '#fde047', fontWeight: 800 }}>{safeFormatCurrency(metrics.sharedFundsTotal)}</strong></span>
+              <span>Colectivos: <strong style={{ color: '#fde047', fontWeight: 800 }}>{safeFormatCurrency(metrics.sharedFundsTotal)}</strong></span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontSize: '13px' }}>🤝</span>
+              <span>Mano a Mano: <strong style={{ color: '#c084fc', fontWeight: 800 }}>{safeFormatCurrency(metrics.bilateralFundsTotal)}</strong></span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <User size={14} color="#6ee7b7" />
-              <span>En Individuales: <strong style={{ color: '#6ee7b7', fontWeight: 800 }}>{safeFormatCurrency(metrics.individualFundsTotal)}</strong></span>
+              <span>Individuales: <strong style={{ color: '#6ee7b7', fontWeight: 800 }}>{safeFormatCurrency(metrics.individualFundsTotal)}</strong></span>
             </div>
           </div>
         </div>
@@ -432,11 +459,17 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
               Todos ({elements.length})
             </button>
             <button
+              onClick={() => setFilterType('bilateral')}
+              className={`fintech-filter-btn ${filterType === 'bilateral' ? 'active-shared' : ''}`}
+            >
+              <span>🤝 Mano a Mano ({elements.filter(e => e.type === 'bilateral').length})</span>
+            </button>
+            <button
               onClick={() => setFilterType('shared')}
               className={`fintech-filter-btn ${filterType === 'shared' ? 'active-shared' : ''}`}
             >
               <Users size={13} />
-              <span>Compartidos ({elements.filter(e => e.type === 'shared').length})</span>
+              <span>Colectivos ({elements.filter(e => e.type === 'shared').length})</span>
             </button>
             <button
               onClick={() => setFilterType('individual')}
@@ -455,6 +488,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
           {filteredElements.map((elem) => {
             const stats = elementsService.getElementStats(elem.id);
             const isShared = elem.type === 'shared';
+            const isBilateral = elem.type === 'bilateral';
 
             return (
               <div 
@@ -470,8 +504,8 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                           width: '46px',
                           height: '46px',
                           borderRadius: '16px',
-                          background: isShared ? '#fef3c7' : '#ecfdf5',
-                          border: isShared ? '1px solid #fde68a' : '1px solid #a7f3d0',
+                          background: isBilateral ? '#ede9fe' : isShared ? '#fef3c7' : '#ecfdf5',
+                          border: isBilateral ? '1px solid #ddd6fe' : isShared ? '1px solid #fde68a' : '1px solid #a7f3d0',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -501,14 +535,13 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '4px',
-                        background: isShared ? '#fffbeb' : '#f0fdf4',
-                        color: isShared ? '#b45309' : '#15803d',
-                        border: isShared ? '1px solid #fde68a' : '1px solid #bbf7d0',
+                        background: isBilateral ? '#ede9fe' : isShared ? '#fffbeb' : '#f0fdf4',
+                        color: isBilateral ? '#6d28d9' : isShared ? '#b45309' : '#15803d',
+                        border: isBilateral ? '1px solid #ddd6fe' : isShared ? '1px solid #fde68a' : '1px solid #bbf7d0',
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      {isShared ? <Users size={12} /> : <User size={12} />}
-                      {isShared ? `Compartido (${elem.members?.length || 1})` : 'Individual'}
+                      {isBilateral ? <span>🤝 Mano a Mano</span> : isShared ? <><Users size={12} /> Colectivo ({elem.members?.length || 1})</> : <><User size={12} /> Individual</>}
                     </span>
                   </div>
 
@@ -517,6 +550,20 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                       {elem.description}
                     </p>
                   )}
+
+                  {/* Si el proyecto recibió inversiones vinculadas desde un mano a mano */}
+                  {(() => {
+                    const linked = elementsService.getLinkedTransactions(elem.id);
+                    if (linked.length === 0) return null;
+                    const totalLinked = linked.reduce((sum, t) => sum + (t.amount || 0), 0);
+                    return (
+                      <div style={{ marginTop: '6px' }}>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: '9999px', padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          ✨ {safeFormatCurrency(totalLinked)} invertidos desde Mano a Mano
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Saldo y Flujos del Elemento (Caja con contraste y números nítidos) */}
@@ -530,7 +577,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                 >
                   <div className="flex items-baseline justify-between mb-1">
                     <span style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>
-                      Fondo Disponible
+                      {isBilateral ? 'Balanza del Intercambio' : 'Fondo Disponible'}
                     </span>
                     <span style={{ fontSize: '1.35rem', fontWeight: 800, color: stats.currentBalance >= 0 ? '#0f172a' : '#dc2626' }}>
                       {safeFormatCurrency(stats.currentBalance, 2)}
@@ -551,14 +598,14 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#16a34a', fontWeight: 600 }}>
                       <TrendingUp size={13} color="#16a34a" />
-                      <span>Ingresos:</span>
+                      <span>{isBilateral ? 'Abonado/Saldado:' : 'Ingresos:'}</span>
                       <strong style={{ marginLeft: 'auto', color: '#15803d' }}>
                         {safeFormatCurrency((stats.totalIncome || 0) + (stats.totalDeposits || 0))}
                       </strong>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#dc2626', fontWeight: 600 }}>
                       <TrendingDown size={13} color="#dc2626" />
-                      <span>Gastos:</span>
+                      <span>{isBilateral ? 'Adelantos/Gastos:' : 'Gastos:'}</span>
                       <strong style={{ marginLeft: 'auto', color: '#b91c1c' }}>
                         {safeFormatCurrency(stats.totalExpense)}
                       </strong>
@@ -566,10 +613,10 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                   </div>
                 </div>
 
-                {/* Integrantes del Elemento (si es compartido) */}
-                {isShared && elem.members && elem.members.length > 0 && (
+                {/* Integrantes del Elemento */}
+                {(isShared || isBilateral) && elem.members && elem.members.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.73rem', color: '#64748b' }}>
-                    <span style={{ fontWeight: 600 }}>Integrantes:</span>
+                    <span style={{ fontWeight: 600 }}>{isBilateral ? 'Entre:' : 'Integrantes:'}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       {elem.members.map((mId) => {
                         const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
@@ -730,25 +777,25 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
               </p>
             </div>
 
-            {/* PASO 1: SELECCIÓN DE TIPO (INDIVIDUAL VS COMPARTIDO) */}
+            {/* PASO 1: SELECCIÓN DE TIPO (COMPARTIDO VS MANO A MANO VS INDIVIDUAL) */}
             {createStep === 1 && (
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3.5">
                 {/* Opción Compartida (Recomendada para la Colmena) */}
                 <div
                   onClick={() => setNewElemForm(prev => ({ ...prev, type: 'shared' }))}
-                  className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-4 ${
+                  className={`p-4 sm:p-5 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3.5 ${
                     newElemForm.type === 'shared'
-                      ? 'border-indigo-600 bg-indigo-50/60 shadow-sm'
+                      ? 'border-indigo-600 bg-indigo-50/70 shadow-sm'
                       : 'border-slate-200 hover:border-slate-300 bg-white'
                   }`}
                 >
-                  <span className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-md shrink-0">
-                    <Users size={24} />
+                  <span className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl shadow-md shrink-0">
+                    <Users size={22} />
                   </span>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-slate-900 text-base">
-                        Gestión Compartida / Comunitaria
+                      <h4 className="font-bold text-slate-900 text-sm sm:text-base">
+                        Gestión Compartida / Colectiva
                       </h4>
                       {newElemForm.type === 'shared' && (
                         <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs">
@@ -757,12 +804,51 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                       )}
                     </div>
                     <p className="text-xs text-slate-600 mt-1">
-                      Ideal para vehículos como el <strong>Clio</strong>, compras de <strong>Comida</strong>, insumos de huerta o gastos de la colmena.
+                      Ideal para vehículos (<strong>Clio</strong>), compras de <strong>Comida</strong>, insumos de huerta o proyectos comunitarios.
                     </p>
-                    <ul className="text-[11px] text-slate-500 mt-2 space-y-1">
+                    <ul className="text-[11px] text-slate-500 mt-1.5 space-y-1">
                       <li>• Varios integrantes pueden depositar dinero en el elemento.</li>
-                      <li>• Se registran egresos (combustible, service, compras).</li>
-                      <li>• Se pueden recibir reintegros o excedentes.</li>
+                      <li>• Se registran egresos y gastos colectivos transparentes.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Opción Mano a Mano Bilateral */}
+                <div
+                  onClick={() => setNewElemForm(prev => ({ 
+                    ...prev, 
+                    type: 'bilateral',
+                    icon: '🤝',
+                    category: 'Intercambios',
+                    name: prev.name && !prev.name.startsWith('Mano a Mano') ? prev.name : 'Mano a Mano con Cris'
+                  }))}
+                  className={`p-4 sm:p-5 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3.5 ${
+                    newElemForm.type === 'bilateral'
+                      ? 'border-purple-600 bg-purple-50/80 shadow-sm'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <span className="w-11 h-11 rounded-2xl bg-purple-600 text-white flex items-center justify-center text-xl shadow-md shrink-0">
+                    🤝
+                  </span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-slate-900 text-sm sm:text-base">
+                        Intercambio Bilateral (Mano a Mano)
+                      </h4>
+                      {newElemForm.type === 'bilateral' && (
+                        <span className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs">
+                          <Check size={13} />
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Para compras por encargo, préstamos y devoluciones 1 a 1 entre dos integrantes (ej: <strong>Cris y Ramiro</strong>).
+                    </p>
+                    <ul className="text-[11px] text-slate-500 mt-1.5 space-y-1">
+                      <li>• Balanza neta clara de intercambio (sin mezclar con fondos generales).</li>
+                      <li>• <strong>Vínculo a Proyecto:</strong> Podés tallar gastos como inversión a la Feria o Huerta.</li>
+                      <li>• Envío de comprobante por WhatsApp con código de referencia unívoco.</li>
                     </ul>
                   </div>
                 </div>
@@ -770,18 +856,18 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                 {/* Opción Individual */}
                 <div
                   onClick={() => setNewElemForm(prev => ({ ...prev, type: 'individual' }))}
-                  className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-4 ${
+                  className={`p-4 sm:p-5 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3.5 ${
                     newElemForm.type === 'individual'
-                      ? 'border-emerald-600 bg-emerald-50/60 shadow-sm'
+                      ? 'border-emerald-600 bg-emerald-50/70 shadow-sm'
                       : 'border-slate-200 hover:border-slate-300 bg-white'
                   }`}
                 >
-                  <span className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow-md shrink-0">
-                    <User size={24} />
+                  <span className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow-md shrink-0">
+                    <User size={22} />
                   </span>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-slate-900 text-base">
+                      <h4 className="font-bold text-slate-900 text-sm sm:text-base">
                         Gestión Individual
                       </h4>
                       {newElemForm.type === 'individual' && (
@@ -791,11 +877,10 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                       )}
                     </div>
                     <p className="text-xs text-slate-600 mt-1">
-                      Exclusivo para vos ({currentUser?.name || 'Ramiro'}). Controlá tus compras personales, ahorros o proyectos propios.
+                      Exclusivo para vos ({currentUser?.name || 'Ramiro'}). Controlá compras personales o ahorros propios.
                     </p>
-                    <ul className="text-[11px] text-slate-500 mt-2 space-y-1">
+                    <ul className="text-[11px] text-slate-500 mt-1.5 space-y-1">
                       <li>• Solo vos ves y operás este elemento.</li>
-                      <li>• No se comparte con el resto de la colmena.</li>
                     </ul>
                   </div>
                 </div>
@@ -804,7 +889,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                 <button
                   type="button"
                   onClick={() => setCreateStep(2)}
-                  className="btn mt-2 py-3.5 rounded-full font-bold text-sm bg-indigo-600 text-white hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-lg"
+                  className="btn mt-1 py-3.5 rounded-full font-bold text-sm bg-indigo-600 text-white hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-lg"
                 >
                   <span>Continuar al Paso 2</span>
                   <ArrowRight size={16} />
@@ -917,6 +1002,49 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                     </div>
                     <p className="text-[11px] text-slate-500 mt-1">
                       Los integrantes seleccionados podrán depositar dinero y registrar necesidades económicas en este elemento.
+                    </p>
+                  </div>
+                )}
+
+                {/* Si es Mano a Mano Bilateral: Selector de la contraparte */}
+                {newElemForm.type === 'bilateral' && (
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+                      ¿Con quién es este intercambio Mano a Mano?
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {availableMembers
+                        .filter(m => m.id !== (currentUser?.id || 'ramiro'))
+                        .map((member) => {
+                          const isSelected = newElemForm.partnerId === member.id;
+                          return (
+                            <button
+                              key={member.id}
+                              type="button"
+                              onClick={() => {
+                                const newName = (!newElemForm.name || newElemForm.name.startsWith('Mano a Mano'))
+                                  ? `Mano a Mano con ${member.name}`
+                                  : newElemForm.name;
+                                setNewElemForm({
+                                  ...newElemForm,
+                                  partnerId: member.id,
+                                  name: newName
+                                });
+                              }}
+                              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+                                isSelected
+                                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                                  : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                              }`}
+                            >
+                              <span>{member.name} ({member.role})</span>
+                              {isSelected && <Check size={12} />}
+                            </button>
+                          );
+                        })}
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Llevará el registro de compras por encargo, préstamos y devoluciones directas entre ustedes dos.
                     </p>
                   </div>
                 )}
@@ -1045,7 +1173,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                   type="text"
                   placeholder={
                     actionModal.type === 'deposit' ? 'Ej: Nafta para viaje a Bariloche' :
-                    actionModal.type === 'expense' ? 'Ej: Nafta Infinia YPF' :
+                    actionModal.type === 'expense' ? 'Ej: Maíz partido blanco y amarillo' :
                     actionModal.type === 'income' ? 'Ej: Cobro de viaje / flete' : 'Ej: Reintegro'
                   }
                   value={actionForm.concept}
@@ -1053,6 +1181,61 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs"
                 />
               </div>
+
+              {/* Para quién fue el encargo o gasto en el Mano a Mano */}
+              {actionModal.element.type === 'bilateral' && actionModal.type === 'expense' && (
+                <div>
+                  <label className="text-xs font-bold text-slate-700 mb-1 block">
+                    ¿A pedido / beneficio de quién fue este gasto?
+                  </label>
+                  <select
+                    value={actionForm.targetMemberId || (actionModal.element.members?.find(m => m !== (currentUser?.id || 'ramiro')) || 'cristian')}
+                    onChange={e => setActionForm({ ...actionForm, targetMemberId: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  >
+                    {actionModal.element.members?.map(mId => {
+                      const mObj = availableMembers.find(m => m.id === mId) || { id: mId, name: mId };
+                      const isMe = mId === (currentUser?.id || 'ramiro');
+                      return (
+                        <option key={mId} value={mId}>
+                          {mObj.name} {isMe ? '(Para mí)' : '(Por encargo / le adelanto yo)'}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
+
+              {/* Vincular a un Proyecto Colectivo (Opcional) */}
+              {actionModal.type === 'expense' && (
+                <div className="p-3 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                      <span>🔗 ¿Vincular a un Proyecto Colectivo?</span>
+                    </label>
+                    <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-100/80 px-2 py-0.5 rounded-full">
+                      Opcional
+                    </span>
+                  </div>
+                  <select
+                    value={actionForm.linkedElementId || ''}
+                    onChange={e => setActionForm({ ...actionForm, linkedElementId: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  >
+                    <option value="">-- Sin vincular (Gasto o intercambio directo) --</option>
+                    {elements
+                      .filter(el => el.id !== actionModal.element.id && el.type === 'shared')
+                      .map(el => (
+                        <option key={el.id} value={el.id}>
+                          {el.icon} {el.name} ({el.category})
+                        </option>
+                      ))}
+                  </select>
+                  <p className="text-[11px] text-slate-500 leading-snug">
+                    Ej: Si compraste maíz para la <strong>Feria Comunitaria</strong>, quedará registrado en tu mano a mano con Cris y además se computará como inversión del proyecto colectivo.
+                  </p>
+                </div>
+              )}
 
               <button
                 type="submit"
@@ -1095,12 +1278,14 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                   <h3 className="text-xl font-bold text-slate-900">
                     {selectedElement.name}
                   </h3>
-                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                    selectedElement.type === 'shared' 
+                  <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
+                    selectedElement.type === 'bilateral'
+                      ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                      : selectedElement.type === 'shared' 
                       ? 'bg-amber-100 text-amber-800' 
                       : 'bg-emerald-100 text-emerald-800'
                   }`}>
-                    {selectedElement.type === 'shared' ? 'Compartido' : 'Individual'}
+                    {selectedElement.type === 'bilateral' ? '🤝 Mano a Mano' : selectedElement.type === 'shared' ? 'Compartido' : 'Individual'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -1177,7 +1362,36 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                     </button>
                   </div>
 
-                  {/* Aportes por Integrante */}
+                  {/* Si es Mano a Mano Bilateral: Balanza y Acuerdo entre integrantes */}
+                  {selectedElement.type === 'bilateral' && selectedElement.members && (
+                    <div className="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-200 text-xs">
+                      <div className="flex items-center justify-between font-bold text-purple-900 mb-1.5">
+                        <span className="flex items-center gap-1.5">
+                          <span>🤝 Intercambio Bilateral</span>
+                          <span className="text-[10px] bg-purple-200/80 text-purple-800 px-2 py-0.5 rounded-full">1 a 1</span>
+                        </span>
+                        <span className="text-purple-700 text-[11px]">Balanza Directa</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-700">
+                        {selectedElement.members.map((mId, idx) => {
+                          const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
+                          return (
+                            <React.Fragment key={mId}>
+                              {idx > 0 && <span className="text-purple-500 font-bold text-sm">⇄</span>}
+                              <span className="font-semibold px-2.5 py-1 bg-white rounded-lg border border-purple-100 shadow-2xs">
+                                {mObj.name}
+                              </span>
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[11px] text-purple-900/80 mt-2 mb-0 leading-snug">
+                        Intercambios, compras por encargo y deudas mutuas. Cualquier gasto puede tallarse a un proyecto colectivo (como la Feria o la Huerta) para computarse como inversión.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Aportes por Integrante (en proyectos compartidos) */}
                   {selectedElement.type === 'shared' && (
                     <div>
                       <h4 className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
@@ -1200,26 +1414,93 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                     </div>
                   )}
 
+                  {/* Inversiones vinculadas desde Mano a Mano a este Proyecto */}
+                  {(() => {
+                    const linkedTxs = elementsService.getLinkedTransactions(selectedElement.id);
+                    if (linkedTxs.length === 0) return null;
+                    const totalLinked = linkedTxs.reduce((sum, t) => sum + (t.amount || 0), 0);
+                    return (
+                      <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                            <span>✨ Inversiones desde Mano a Mano ({linkedTxs.length})</span>
+                          </span>
+                          <span className="text-xs font-extrabold text-amber-900">
+                            {safeFormatCurrency(totalLinked)}
+                          </span>
+                        </div>
+                        <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                          {linkedTxs.map(ltx => (
+                            <div key={ltx.id} className="p-2 rounded-xl bg-white border border-amber-100 flex items-center justify-between text-xs">
+                              <div>
+                                <div className="font-bold text-slate-800">{ltx.concept}</div>
+                                <div className="text-[10px] text-slate-500">
+                                  {ltx.date} • Aportado por {ltx.memberName} {ltx.targetMemberId ? `(pedido por ${ltx.targetMemberId})` : ''}
+                                </div>
+                              </div>
+                              <span className="font-extrabold text-amber-800">{safeFormatCurrency(ltx.amount)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* Historial de Movimientos de este Elemento */}
                   <div>
                     <h4 className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
                       Movimientos de {selectedElement.name} ({stats.recentTxs.length})
                     </h4>
                     {stats.recentTxs.length > 0 ? (
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                        {stats.recentTxs.map(tx => (
-                          <div key={tx.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-                            <div>
-                              <div className="font-semibold text-slate-900">{tx.concept}</div>
-                              <span className="text-[10px] text-slate-500">
-                                {tx.date} • {tx.memberName} • {tx.type === 'deposit' ? 'Depósito' : tx.type === 'expense' ? 'Egreso' : 'Ingreso'}
-                              </span>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {stats.recentTxs.map(tx => {
+                          const targetId = tx.targetMemberId || (selectedElement.members?.find(m => m !== tx.memberId) || 'cristian');
+                          const targetMember = availableMembers.find(m => m.id === targetId) || { name: 'Compañero', cleanPhone: '5491149748673' };
+                          const refCode = tx.id.replace('etx-', '').slice(-6).toUpperCase();
+
+                          return (
+                            <div key={tx.id} className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs flex flex-col gap-1.5">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                  <div className="font-bold text-slate-900 text-xs">{tx.concept}</div>
+                                  <div className="text-[10px] text-slate-500 mt-0.5">
+                                    {tx.date} • Por <strong>{tx.memberName}</strong> {tx.targetMemberId ? `(Para: ${tx.targetMemberId})` : ''} • {tx.type === 'deposit' ? 'Depósito' : tx.type === 'expense' ? 'Gasto/Adelanto' : 'Ingreso'}
+                                  </div>
+                                  {tx.linkedElementName && (
+                                    <div className="mt-1">
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-full">
+                                        ✨ Inversión vinculada a: {tx.linkedElementName}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                <span className={`font-extrabold text-sm shrink-0 ${tx.type === 'expense' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                  {tx.type === 'expense' ? '-' : '+'}{safeFormatCurrency(tx.amount)}
+                                </span>
+                              </div>
+
+                              {/* Barra de Notificación y Código de Referencia Unívoco */}
+                              <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/70 mt-0.5">
+                                <span className="text-[10px] font-mono font-bold text-slate-400">
+                                  Ref: #{refCode}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const msg = `👋 Hola ${targetMember.name}! Registré en Banca Abeja:\n\n📝 Detalle: ${tx.concept}\n💰 Monto: ${safeFormatCurrency(tx.amount)}\n📅 Fecha: ${tx.date}\n🏷️ Ref: #${refCode}\n${tx.linkedElementName ? `🎪 Vinculado a: ${tx.linkedElementName}\n` : ''}\nPodés revisarlo en https://www.bancaabeja.org/`;
+                                    const phone = targetMember.cleanPhone || '5491149748673';
+                                    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+                                    window.open(url, '_blank');
+                                  }}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-2xs"
+                                  title="Enviar comprobante con referencia unívoca a WhatsApp"
+                                >
+                                  <span>📲 Avisar a {targetMember.name}</span>
+                                </button>
+                              </div>
                             </div>
-                            <span className={`font-bold ${tx.type === 'expense' ? 'text-rose-600' : 'text-emerald-600'}`}>
-                              {tx.type === 'expense' ? '-' : '+'}{safeFormatCurrency(tx.amount)}
-                            </span>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="text-xs text-slate-400 italic">No hay movimientos registrados aún en este elemento.</p>
