@@ -193,7 +193,7 @@ export default function CreateWalletModal({
         </button>
 
         {/* Encabezado */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 pr-8">
           <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-2xl shadow-sm">
             {icon}
           </div>

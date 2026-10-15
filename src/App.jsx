@@ -587,202 +587,63 @@ function App() {
       {/* HEADER PRINCIPAL - ESTILO APP MÓVIL MODERNA */}
       <header className="mb-6 flex flex-col gap-4">
         {/* Barra Superior: Logo y Perfil */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <span className="text-3xl filter drop-shadow-sm">🐝</span>
+        {/* Barra Superior: Logo, Navegación y Perfil */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-2xl shadow-sm shrink-0">
+              🐝
+            </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-none">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight tracking-tight">
                 Banca Abeja
               </h1>
-              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                Billeteras & Elementos Económicos
+              <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
+                Gestión Comunitaria de Billeteras
               </p>
             </div>
           </div>
 
-          {/* Perfil del Usuario & Acciones */}
-          <div className="flex items-center gap-2">
-            {/* Modo Admin sutil */}
-            {isAdmin ? (
-              <button 
-                className="btn btn-sm px-2.5 py-1 text-amber-700 bg-amber-50 border border-amber-200 text-xs"
-                onClick={() => {
-                  if (window.confirm('¿Cerrar sesión de Administrador?')) {
-                    handleLockAdmin();
-                  }
-                }}
-                title="Modo Admin Activo"
-              >
-                <Unlock size={13} />
-                <span className="hidden sm:inline">Admin</span>
-              </button>
-            ) : (
-              <button 
-                className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-                onClick={() => {
-                  setAdminPinInput('');
-                  setAdminPinError('');
-                  setShowAdminModal(true);
-                }}
-                title="Acceso Administrador"
-              >
-                <Lock size={15} />
-              </button>
-            )}
-
-            {/* Chip de Usuario */}
-            {currentUser && (
-              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
-                <div 
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-800 shadow-sm"
-                  title={`Sesión activa: ${currentUser.email || currentUser.id}`}
-                >
-                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
-                    {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
-                  </span>
-                  <span>{currentUser.name}</span>
-                </div>
-
-                <button 
-                  className="p-2 rounded-full text-rose-500 hover:bg-rose-50 transition-colors"
-                  onClick={() => {
-                    if (window.confirm(`¿Deseas cerrar la sesión de ${currentUser.name}?`)) {
-                      handleLogout();
-                    }
-                  }}
-                  title="Cerrar Sesión"
-                >
-                  <LogOut size={16} />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Barra de Billeteras y Navegación Principal (Multi-Billeteras) */}
-        <div className="w-full" style={{ marginTop: '10px', marginBottom: '8px' }}>
-          <div 
-            className="flex items-center gap-2 bg-slate-100/90 rounded-full border border-slate-200/90 overflow-x-auto"
-            style={{ 
-              scrollbarWidth: 'none', 
-              WebkitOverflowScrolling: 'touch',
-              padding: '5px 6px'
-            }}
-          >
-            {/* Indicador de sección de Billeteras */}
-            <div className="flex items-center gap-1.5 px-3 py-1 text-slate-500 font-bold text-xs uppercase tracking-wider shrink-0 select-none">
-              <Wallet size={15} className="text-indigo-600" />
-              <span className="hidden sm:inline">Billeteras:</span>
-            </div>
-
-            {/* Píldoras de Billeteras Activas y Editables */}
-            {wallets.map((w) => {
-              const isActive = activeWalletId === w.id && activeTab === 'elements';
-              const walletElements = (elementsService.elements || []).filter(
-                e => (e.walletId || 'wallet-elementales') === w.id
-              );
-
-              return (
-                <div
-                  key={w.id}
-                  onClick={() => handleSelectWallet(w.id)}
-                  className={`group relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                    isActive
-                      ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-300'
-                      : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90'
-                  }`}
-                  title={`Billetera ${w.name} (@${w.alias || ''}) - ${walletElements.length} elementos`}
-                >
-                  <span className="text-sm">{w.icon || '🐝'}</span>
-                  <span>{w.name}</span>
-                  <span 
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
-                      isActive 
-                        ? 'bg-indigo-500/70 text-white' 
-                        : 'bg-slate-100 text-slate-500'
-                    }`}
-                  >
-                    {walletElements.length}
-                  </span>
-
-                  {/* Botón para sacar / eliminar billetera de la barra */}
-                  {wallets.length > 1 && (
-                    <button
-                      type="button"
-                      className={`ml-1 w-4 h-4 rounded-full flex items-center justify-center transition-all ${
-                        isActive
-                          ? 'hover:bg-indigo-700 text-indigo-200 hover:text-white'
-                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-                      }`}
-                      title={`Eliminar billetera "${w.name}"`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteWallet(w);
-                      }}
-                    >
-                      <X size={11} strokeWidth={2.5} />
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Botón + Billetera (Reemplaza al botón Más como botón principal para sumar una billetera) */}
-            <button
-              type="button"
-              className="btn btn-sm px-3.5 py-1.5 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 border border-dashed border-indigo-400 text-indigo-700 bg-indigo-50/90 hover:bg-indigo-100 shadow-sm"
-              onClick={() => setShowCreateWalletModal(true)}
-              title="Crear y sumar una nueva billetera al sistema"
-            >
-              <Plus size={14} className="text-indigo-600" />
-              <span>+ Billetera</span>
-            </button>
-
-            {/* Separador sutil */}
-            <div className="h-5 w-px bg-slate-300 mx-1 shrink-0" />
-
-            {/* Accesos a Colmena & Bot e Historial */}
+          {/* Acciones y Perfil del Usuario de Alta Estética */}
+          <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+            {/* Accesos a Colmena & Bot e Historial (Ubicados elegantemente en la cabecera) */}
             <button 
-              className={`btn btn-sm px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
+              className={`px-3.5 py-1.5 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
                 activeTab === 'community'
                   ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-transparent text-slate-600 hover:text-slate-900'
+                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/90 hover:bg-slate-50'
               }`}
               onClick={() => setActiveTab('community')}
               title="Colmena comunitaria y Bot de WhatsApp"
             >
               <Users size={14} />
-              <span className="hidden sm:inline">Colmena & Bot</span>
-              <span className="sm:hidden">Colmena</span>
+              <span>Colmena & Bot</span>
             </button>
 
             <button 
-              className={`btn btn-sm px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
+              className={`px-3.5 py-1.5 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
                 activeTab === 'history'
                   ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-transparent text-slate-600 hover:text-slate-900'
+                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/90 hover:bg-slate-50'
               }`}
               onClick={() => setActiveTab('history')}
               title="Historial de movimientos y comprobantes"
             >
               <History size={14} />
-              <span className="hidden sm:inline">Historial ({transactions.length})</span>
-              <span className="sm:hidden">Historial</span>
+              <span>Historial ({transactions.length})</span>
             </button>
 
-            {/* Menú Más Opciones (Vehículos, Camión, Dashboard, Restablecer) */}
-            <div className="relative ml-auto shrink-0">
+            {/* Menú de Más Herramientas */}
+            <div className="relative">
               <button 
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className={`btn btn-sm px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition-all ${
+                className={`p-2 rounded-full text-xs transition-all ${
                   showMoreMenu || (activeTab !== 'elements' && activeTab !== 'community' && activeTab !== 'history')
                     ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                    : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50'
+                    : 'text-slate-500 hover:text-slate-800 bg-white border border-slate-200/90 hover:bg-slate-50'
                 }`}
                 title="Más herramientas del sistema"
               >
-                <Layers size={13} />
-                <span className="hidden md:inline">Herramientas</span>
+                <Layers size={14} />
               </button>
 
               {showMoreMenu && (
@@ -825,6 +686,135 @@ function App() {
                 </div>
               )}
             </div>
+
+            {/* Modo Admin sutil */}
+            {isAdmin ? (
+              <button 
+                className="px-2.5 py-1 text-amber-700 bg-amber-50 border border-amber-200 rounded-full text-xs font-bold flex items-center gap-1"
+                onClick={() => {
+                  if (window.confirm('¿Cerrar sesión de Administrador?')) {
+                    handleLockAdmin();
+                  }
+                }}
+                title="Modo Admin Activo"
+              >
+                <Unlock size={13} />
+                <span className="hidden sm:inline">Admin</span>
+              </button>
+            ) : (
+              <button 
+                className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                onClick={() => {
+                  setAdminPinInput('');
+                  setAdminPinError('');
+                  setShowAdminModal(true);
+                }}
+                title="Acceso Administrador"
+              >
+                <Lock size={15} />
+              </button>
+            )}
+
+            {/* Chip de Usuario con Estética Mejorada */}
+            {currentUser && (
+              <div 
+                className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 bg-white border border-slate-200/90 rounded-full shadow-sm hover:border-slate-300 transition-all"
+                title={`Sesión activa: ${currentUser.email || currentUser.id}`}
+              >
+                <div className="relative">
+                  <div 
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold text-white shadow-sm"
+                    style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}
+                  >
+                    {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <span 
+                    className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border border-white"
+                    title="En línea"
+                  />
+                </div>
+
+                <span className="text-xs font-bold text-slate-800">
+                  {currentUser.name}
+                </span>
+
+                <button 
+                  type="button"
+                  className="p-1 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-0.5"
+                  onClick={() => {
+                    if (window.confirm(`¿Deseas cerrar la sesión de ${currentUser.name}?`)) {
+                      handleLogout();
+                    }
+                  }}
+                  title="Cerrar Sesión"
+                >
+                  <LogOut size={13} />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Barra de Billeteras Exclusiva (Sin cruces, solo billeteras y + Billetera con espacio fluido) */}
+        <div className="w-full" style={{ marginTop: '12px', marginBottom: '12px' }}>
+          <div 
+            className="flex items-center gap-2.5 bg-slate-100/95 rounded-full border border-slate-200/90 overflow-x-auto"
+            style={{ 
+              scrollbarWidth: 'none', 
+              WebkitOverflowScrolling: 'touch',
+              padding: '7px 8px'
+            }}
+          >
+            {/* Indicador de sección de Billeteras */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 text-slate-500 font-bold text-xs uppercase tracking-wider shrink-0 select-none">
+              <Wallet size={15} className="text-indigo-600" />
+              <span>Billeteras:</span>
+            </div>
+
+            {/* Píldoras de Billeteras Activas (Limpias, sin cruces) */}
+            {wallets.map((w) => {
+              const isActive = activeWalletId === w.id && activeTab === 'elements';
+              const walletElements = (elementsService.elements || []).filter(
+                e => (e.walletId || 'wallet-elementales') === w.id
+              );
+
+              return (
+                <button
+                  key={w.id}
+                  type="button"
+                  onClick={() => handleSelectWallet(w.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 border ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-md border-indigo-600'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200/90 hover:border-slate-300'
+                  }`}
+                  title={`Billetera ${w.name} (@${w.alias || ''}) - ${walletElements.length} elementos`}
+                >
+                  <span className="text-base">{w.icon || '🐝'}</span>
+                  <span>{w.name}</span>
+                  <span 
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                      isActive 
+                        ? 'bg-indigo-500/80 text-white' 
+                        : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {walletElements.length}
+                  </span>
+                </button>
+              );
+            })}
+
+            {/* Botón + Billetera para crear nueva billetera */}
+            <button
+              type="button"
+              className="btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 border border-dashed border-indigo-400 text-indigo-700 bg-indigo-50/90 hover:bg-indigo-100 shadow-sm"
+              onClick={() => setShowCreateWalletModal(true)}
+              title="Crear y sumar una nueva billetera al sistema"
+            >
+              <Plus size={14} className="text-indigo-600" />
+              <span>+ Billetera</span>
+            </button>
           </div>
         </div>
       </header>

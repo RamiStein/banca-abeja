@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, Users, User, ArrowUpRight, ArrowDownLeft, 
   TrendingUp, TrendingDown, Eye, EyeOff, 
-  ChevronRight, X, Check, ArrowRight, Trash2
+  ChevronRight, X, Check, ArrowRight, Trash2, Info
 } from 'lucide-react';
 import { elementsService, DEFAULT_ELEMENTS } from '../services/elementsService';
 import { FOUNDING_MEMBERS } from '../services/authService';
@@ -66,6 +66,7 @@ export default function ElementsManager({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createStep, setCreateStep] = useState(1); // 1: Tipo (individual vs compartido), 2: Info
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
   const [selectedElement, setSelectedElement] = useState(null);
   const [actionModal, setActionModal] = useState(null); // { type: 'deposit' | 'withdraw' | 'income' | 'expense', element: obj }
 
@@ -318,8 +319,22 @@ export default function ElementsManager({
     }
   };
 
+  // Eliminar la billetera activa desde Información de Billetera
+  const handleDeleteCurrentWallet = async () => {
+    if (wallets.length <= 1) {
+      alert("No puedes eliminar la única billetera activa.");
+      return;
+    }
+    const confirmMsg = `¿Estás seguro de que deseas eliminar la billetera "${currentWallet.name}"?\n\nLos elementos económicos asociados no se perderán; se reasignarán automáticamente a la Billetera Principal.`;
+    if (window.confirm(confirmMsg)) {
+      await elementsService.deleteWallet(currentWallet.id);
+      setShowWalletInfoModal(false);
+      refreshData();
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto pb-12" style={{ padding: '0 2px' }}>
+    <div className="flex flex-col gap-7 w-full max-w-5xl mx-auto pb-16 px-1 sm:px-3">
 
       {/* ======================================================== */}
       {/* 1. CUENTA PRINCIPAL DEL USUARIO (HERO CARD ESTILO FINTECH) */}
@@ -328,11 +343,11 @@ export default function ElementsManager({
         className="fintech-hero"
         style={{
           background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #4338ca 100%)',
-          borderRadius: '26px',
-          padding: '1.6rem 1.4rem',
+          borderRadius: '28px',
+          padding: '2.2rem 2rem',
           color: '#ffffff',
-          boxShadow: '0 16px 36px -8px rgba(49, 46, 129, 0.42), 0 4px 12px rgba(0, 0, 0, 0.08)',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
+          boxShadow: '0 18px 40px -10px rgba(49, 46, 129, 0.45), 0 4px 14px rgba(0, 0, 0, 0.08)',
+          border: '1px solid rgba(255, 255, 255, 0.16)',
           position: 'relative',
           overflow: 'hidden'
         }}
@@ -387,22 +402,21 @@ export default function ElementsManager({
             </div>
 
             <div className="flex items-center gap-2">
-              {onOpenCreateWallet && (
-                <button
-                  type="button"
-                  onClick={onOpenCreateWallet}
-                  className="px-2.5 py-1 rounded-full text-xs font-bold text-indigo-100 hover:text-white transition-all flex items-center gap-1"
-                  style={{ background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
-                  title="Crear una nueva billetera"
-                >
-                  <Plus size={13} />
-                  <span>+ Billetera</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowWalletInfoModal(true)}
+                className="px-3.5 py-1.5 rounded-full text-xs font-bold text-white transition-all flex items-center gap-1.5 shadow-sm"
+                style={{ background: 'rgba(255, 255, 255, 0.18)', border: '1px solid rgba(255,255,255,0.25)', cursor: 'pointer' }}
+                title="Ver información y gestión de esta billetera"
+              >
+                <Info size={14} />
+                <span>Info de Billetera</span>
+              </button>
+
               <button
                 onClick={() => setShowBalance(!showBalance)}
                 className="p-1.5 rounded-full transition-colors"
-                style={{ background: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', border: 'none', cursor: 'pointer' }}
+                style={{ background: 'rgba(255, 255, 255, 0.14)', color: '#ffffff', border: 'none', cursor: 'pointer' }}
                 title={showBalance ? "Ocultar saldo" : "Mostrar saldo"}
               >
                 {showBalance ? <Eye size={17} color="#ffffff" /> : <EyeOff size={17} color="#ffffff" />}
@@ -683,17 +697,17 @@ export default function ElementsManager({
                 <div 
                   style={{
                     background: '#f8fafc',
-                    borderRadius: '16px',
-                    padding: '13px 14px',
+                    borderRadius: '20px',
+                    padding: '16px 18px',
                     border: '1px solid #e2e8f0',
-                    marginTop: '10px'
+                    marginTop: '14px'
                   }}
                 >
-                  <div className="flex items-baseline justify-between mb-1">
-                    <span style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>
+                  <div className="flex items-baseline justify-between mb-1.5">
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>
                       {isBilateral ? 'Balanza del Intercambio' : 'Fondo Disponible'}
                     </span>
-                    <span style={{ fontSize: '1.35rem', fontWeight: 800, color: stats.currentBalance >= 0 ? '#0f172a' : '#dc2626' }}>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: stats.currentBalance >= 0 ? '#0f172a' : '#dc2626' }}>
                       {safeFormatCurrency(stats.currentBalance, 2)}
                     </span>
                   </div>
@@ -703,23 +717,23 @@ export default function ElementsManager({
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '1fr 1fr',
-                      gap: '8px',
-                      paddingTop: '8px',
-                      marginTop: '6px',
+                      gap: '10px',
+                      paddingTop: '10px',
+                      marginTop: '10px',
                       borderTop: '1px solid #e2e8f0',
-                      fontSize: '0.73rem'
+                      fontSize: '0.74rem'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#16a34a', fontWeight: 600 }}>
-                      <TrendingUp size={13} color="#16a34a" />
-                      <span>{isBilateral ? 'Abonado/Saldado:' : 'Ingresos:'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#16a34a', fontWeight: 600 }}>
+                      <TrendingUp size={14} color="#16a34a" />
+                      <span>{isBilateral ? 'Abonado:' : 'Ingresos:'}</span>
                       <strong style={{ marginLeft: 'auto', color: '#15803d' }}>
                         {safeFormatCurrency((stats.totalIncome || 0) + (stats.totalDeposits || 0))}
                       </strong>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#dc2626', fontWeight: 600 }}>
-                      <TrendingDown size={13} color="#dc2626" />
-                      <span>{isBilateral ? 'Adelantos/Gastos:' : 'Gastos:'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#dc2626', fontWeight: 600 }}>
+                      <TrendingDown size={14} color="#dc2626" />
+                      <span>{isBilateral ? 'Gastos:' : 'Gastos:'}</span>
                       <strong style={{ marginLeft: 'auto', color: '#b91c1c' }}>
                         {safeFormatCurrency(stats.totalExpense)}
                       </strong>
@@ -729,7 +743,7 @@ export default function ElementsManager({
 
                 {/* Integrantes del Elemento */}
                 {(isShared || isBilateral) && elem.members && elem.members.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.73rem', color: '#64748b', marginTop: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.74rem', color: '#64748b', marginTop: '12px', padding: '0 2px' }}>
                     <span style={{ fontWeight: 600 }}>{isBilateral ? 'Entre:' : 'Integrantes:'}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       {elem.members.map((mId) => {
@@ -739,12 +753,12 @@ export default function ElementsManager({
                           <span 
                             key={mId}
                             style={{
-                              padding: '2px 8px',
+                              padding: '2px 9px',
                               borderRadius: '9999px',
                               background: '#f1f5f9',
                               color: '#334155',
                               fontWeight: 600,
-                              fontSize: '0.7rem',
+                              fontSize: '0.72rem',
                               border: '1px solid #e2e8f0'
                             }}
                             title={`Aportó: ${safeFormatCurrency(contributed)}`}
@@ -758,7 +772,7 @@ export default function ElementsManager({
                 )}
 
                 {/* Botones de Acción del Elemento (Píldoras Finas, Modernas) */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', paddingTop: '6px', marginTop: '4px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', paddingTop: '10px', marginTop: '6px' }}>
                   {/* Botón Depositar / Aportar */}
                   <button
                     onClick={() => {
@@ -766,9 +780,9 @@ export default function ElementsManager({
                       setActionForm({ amount: '', concept: `Aporte para ${elem.name}`, memberId: currentUser?.id || 'ramiro' });
                     }}
                     style={{
-                      padding: '8px 4px',
+                      padding: '9px 8px',
                       borderRadius: '9999px',
-                      fontSize: '0.75rem',
+                      fontSize: '0.78rem',
                       fontWeight: 700,
                       background: '#eef2ff',
                       color: '#4338ca',
@@ -777,12 +791,12 @@ export default function ElementsManager({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '4px',
+                      gap: '5px',
                       transition: 'all 0.15s ease'
                     }}
                     title="Depositar dinero en este elemento"
                   >
-                    <ArrowDownLeft size={13} color="#4338ca" />
+                    <ArrowDownLeft size={14} color="#4338ca" />
                     <span>Depositar</span>
                   </button>
 
@@ -793,9 +807,9 @@ export default function ElementsManager({
                       setActionForm({ amount: '', concept: `Gasto de ${elem.name}`, memberId: currentUser?.id || 'ramiro' });
                     }}
                     style={{
-                      padding: '8px 4px',
+                      padding: '9px 8px',
                       borderRadius: '9999px',
-                      fontSize: '0.75rem',
+                      fontSize: '0.78rem',
                       fontWeight: 700,
                       background: '#fff1f2',
                       color: '#e11d48',
@@ -804,12 +818,12 @@ export default function ElementsManager({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '4px',
+                      gap: '5px',
                       transition: 'all 0.15s ease'
                     }}
                     title="Registrar un gasto o necesidad económica"
                   >
-                    <ArrowUpRight size={13} color="#e11d48" />
+                    <ArrowUpRight size={14} color="#e11d48" />
                     <span>- Gasto</span>
                   </button>
 
@@ -817,9 +831,9 @@ export default function ElementsManager({
                   <button
                     onClick={() => setSelectedElement(elem)}
                     style={{
-                      padding: '8px 4px',
+                      padding: '9px 8px',
                       borderRadius: '9999px',
-                      fontSize: '0.75rem',
+                      fontSize: '0.78rem',
                       fontWeight: 700,
                       background: '#f8fafc',
                       color: '#334155',
@@ -828,13 +842,13 @@ export default function ElementsManager({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '3px',
+                      gap: '4px',
                       transition: 'all 0.15s ease'
                     }}
                     title="Ver detalle completo, historial y aportes"
                   >
                     <span>Detalle</span>
-                    <ChevronRight size={13} color="#64748b" />
+                    <ChevronRight size={14} color="#64748b" />
                   </button>
                 </div>
               </div>
@@ -897,7 +911,7 @@ export default function ElementsManager({
             </button>
 
             {/* Encabezado del modal */}
-            <div className="mb-5">
+            <div className="mb-5 pr-10">
               <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
                 Paso {createStep} de 2
               </span>
@@ -1289,7 +1303,7 @@ export default function ElementsManager({
               <X size={18} />
             </button>
 
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-4 pr-10">
               <span className="text-3xl p-2 bg-indigo-50 rounded-2xl border border-indigo-100">
                 {actionModal.element.icon || '📦'}
               </span>
@@ -1467,7 +1481,7 @@ export default function ElementsManager({
             </button>
 
             {/* Cabecera del Elemento */}
-            <div className="flex items-center gap-3.5 mb-5">
+            <div className="flex items-center gap-3.5 mb-5 pr-10">
               <span className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-3xl shadow-sm">
                 {selectedElement.icon || '📦'}
               </span>
@@ -1756,7 +1770,7 @@ export default function ElementsManager({
               <X size={18} />
             </button>
 
-            <div className="text-center mb-4">
+            <div className="text-center mb-4 px-6">
               <span className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl mx-auto mb-2 border border-emerald-100">
                 💵
               </span>
@@ -1808,6 +1822,186 @@ export default function ElementsManager({
                 Cargar Saldo
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 5: INFORMACIÓN Y GESTIÓN DE LA BILLETERA           */}
+      {/* ======================================================== */}
+      {showWalletInfoModal && currentWallet && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div 
+            className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Cerrar modal */}
+            <button 
+              type="button"
+              onClick={() => setShowWalletInfoModal(false)}
+              style={{
+                position: 'absolute',
+                top: '18px',
+                right: '18px',
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 25
+              }}
+              title="Cerrar ventana"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Cabecera de la Billetera */}
+            <div className="flex items-center gap-4 mb-6 pr-10">
+              <span className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-3xl shadow-sm shrink-0">
+                {currentWallet.icon || '🐝'}
+              </span>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-xl font-black text-slate-900 leading-tight">
+                    {currentWallet.name}
+                  </h3>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Activa
+                  </span>
+                </div>
+                {currentWallet.alias && (
+                  <span className="text-xs text-indigo-600 font-mono font-semibold block mt-0.5">
+                    @{currentWallet.alias}
+                  </span>
+                )}
+                {currentWallet.description && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    {currentWallet.description}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Resumen de Saldo y Elementos en esta Billetera */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {(() => {
+                const walletElements = (elements || []).filter(e => (e.walletId || 'wallet-elementales') === currentWallet.id);
+                const totalBalance = walletElements.reduce((sum, e) => {
+                  const st = elementsService.getElementStats(e.id);
+                  return sum + (st.currentBalance || 0);
+                }, 0);
+                return (
+                  <>
+                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                      <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider block">
+                        Saldo en Elementos
+                      </span>
+                      <span className="text-lg font-black text-slate-900 block mt-1">
+                        {safeFormatCurrency(totalBalance)}
+                      </span>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                      <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider block">
+                        Elementos Asociados
+                      </span>
+                      <span className="text-lg font-black text-indigo-700 block mt-1">
+                        {walletElements.length} elemento{walletElements.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Integrantes con Acceso a la Billetera */}
+            <div className="mb-6">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                Integrantes de la Billetera
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {(currentWallet.members && currentWallet.members.length > 0 ? currentWallet.members : ['ramiro', 'agustina', 'cristian']).map((mId) => {
+                  const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
+                  return (
+                    <span 
+                      key={mId} 
+                      className="px-3 py-1.5 rounded-full text-xs font-bold bg-indigo-50/80 text-indigo-800 border border-indigo-100 flex items-center gap-1.5 shadow-sm"
+                    >
+                      <span>👤</span>
+                      <span>{mObj.name}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Listado de Elementos que contiene */}
+            <div className="mb-6">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                Elementos en esta Billetera
+              </h4>
+              <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                {(() => {
+                  const walletElements = (elements || []).filter(e => (e.walletId || 'wallet-elementales') === currentWallet.id);
+                  if (walletElements.length === 0) {
+                    return (
+                      <div className="p-3 rounded-xl bg-slate-50 text-center text-xs text-slate-500 border border-slate-100">
+                        No hay elementos en esta billetera todavía.
+                      </div>
+                    );
+                  }
+                  return walletElements.map(e => {
+                    const st = elementsService.getElementStats(e.id);
+                    return (
+                      <div key={e.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{e.icon || '📦'}</span>
+                          <div>
+                            <span className="font-bold text-slate-800 block">{e.name}</span>
+                            <span className="text-[10px] text-slate-500">{e.type === 'bilateral' ? '🤝 Mano a Mano' : e.type === 'shared' ? 'Colectivo' : 'Individual'}</span>
+                          </div>
+                        </div>
+                        <span className="font-extrabold text-slate-900">
+                          {safeFormatCurrency(st.currentBalance)}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+
+            {/* Zona de Peligro: Eliminar Billetera */}
+            <div className="pt-4 border-t border-slate-200 flex flex-col gap-2">
+              <div className="p-3 rounded-2xl bg-rose-50/80 border border-rose-200 flex items-start gap-2.5">
+                <Trash2 size={16} className="text-rose-600 mt-0.5 shrink-0" />
+                <div className="text-xs text-rose-900">
+                  <span className="font-bold block">Zona de Gestión de Billetera</span>
+                  <span className="text-rose-700 text-[11px] leading-tight block mt-0.5">
+                    Si eliminas esta billetera, sus elementos económicos se reasignarán automáticamente a la billetera principal para que no pierdas ningún dato.
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleDeleteCurrentWallet}
+                disabled={wallets.length <= 1}
+                className={`btn py-2.5 px-4 rounded-full font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                  wallets.length <= 1
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                    : 'bg-white hover:bg-rose-50 text-rose-600 border border-rose-300 shadow-sm'
+                }`}
+                title={wallets.length <= 1 ? "No se puede eliminar la única billetera activa" : "Eliminar esta billetera"}
+              >
+                <Trash2 size={14} />
+                <span>{wallets.length <= 1 ? "Billetera principal requerida (no se puede borrar)" : `Eliminar Billetera "${currentWallet.name}"`}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
