@@ -14,6 +14,8 @@ import VehicleManager from './VehicleManager';
 import CommunityMatrix from './CommunityMatrix';
 import TruckManager from './TruckManager';
 import ElementsManager from './components/ElementsManager';
+import CreateWalletModal from './components/CreateWalletModal';
+import { elementsService } from './services/elementsService';
 import { authService } from './services/authService';
 import AuthScreen from './components/AuthScreen';
 import './index.css';
@@ -135,6 +137,54 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [activeTab, setActiveTab] = useState('elements');
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  // Sistema Multi-Billeteras
+  const [wallets, setWallets] = useState(() => elementsService.getWallets());
+  const [activeWalletId, setActiveWalletId] = useState(() => elementsService.getActiveWalletId());
+  const [showCreateWalletModal, setShowCreateWalletModal] = useState(false);
+
+  useEffect(() => {
+    const handleWalletsUpdated = () => {
+      setWallets(elementsService.getWallets());
+      setActiveWalletId(elementsService.getActiveWalletId());
+    };
+    const handleWalletChanged = (e) => {
+      if (e?.detail?.walletId) {
+        setActiveWalletId(e.detail.walletId);
+      }
+    };
+    window.addEventListener('banca_wallets_updated', handleWalletsUpdated);
+    window.addEventListener('banca_wallet_changed', handleWalletChanged);
+    return () => {
+      window.removeEventListener('banca_wallets_updated', handleWalletsUpdated);
+      window.removeEventListener('banca_wallet_changed', handleWalletChanged);
+    };
+  }, []);
+
+  const handleSelectWallet = (wId) => {
+    elementsService.setActiveWalletId(wId);
+    setActiveWalletId(wId);
+    setActiveTab('elements');
+  };
+
+  const handleDeleteWallet = async (wallet) => {
+    if (wallets.length <= 1) {
+      alert("No puedes eliminar la única billetera del sistema.");
+      return;
+    }
+    const confirmMsg = `¿Eliminar la billetera "${wallet.name}"?\n\nLos elementos de esta billetera se transferirán a la billetera principal.`;
+    if (window.confirm(confirmMsg)) {
+      await elementsService.deleteWallet(wallet.id);
+      setWallets(elementsService.getWallets());
+      setActiveWalletId(elementsService.getActiveWalletId());
+    }
+  };
+
+  const handleWalletCreated = (newWallet) => {
+    setWallets(elementsService.getWallets());
+    setActiveWalletId(newWallet.id);
+    setActiveTab('elements');
+  };
 
   // Modo Administrador (para módulos exclusivos como Gestión de Camión y alquiler)
   const [isAdmin, setIsAdmin] = useState(() => {
@@ -609,7 +659,7 @@ function App() {
           </div>
         </div>
 
-        {/* Barra de Navegación Segmentada (Pill Bar Unificada con espaciado fluido y moderno) */}
+        {/* Barra de Billeteras y Navegación Principal (Multi-Billeteras) */}
         <div className="w-full" style={{ marginTop: '10px', marginBottom: '8px' }}>
           <div 
             className="flex items-center gap-2 bg-slate-100/90 rounded-full border border-slate-200/90 overflow-x-auto"
@@ -619,57 +669,120 @@ function App() {
               padding: '5px 6px'
             }}
           >
-            {/* Pestaña Principal: Billetera & Elementos */}
-            <button 
-              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
-                activeTab === 'elements'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-transparent text-slate-600 hover:text-slate-900'
-              }`}
-              onClick={() => setActiveTab('elements')}
+            {/* Indicador de sección de Billeteras */}
+            <div className="flex items-center gap-1.5 px-3 py-1 text-slate-500 font-bold text-xs uppercase tracking-wider shrink-0 select-none">
+              <Wallet size={15} className="text-indigo-600" />
+              <span className="hidden sm:inline">Billeteras:</span>
+            </div>
+
+            {/* Píldoras de Billeteras Activas y Editables */}
+            {wallets.map((w) => {
+              const isActive = activeWalletId === w.id && activeTab === 'elements';
+              const walletElements = (elementsService.elements || []).filter(
+                e => (e.walletId || 'wallet-elementales') === w.id
+              );
+
+              return (
+                <div
+                  key={w.id}
+                  onClick={() => handleSelectWallet(w.id)}
+                  className={`group relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-300'
+                      : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/90'
+                  }`}
+                  title={`Billetera ${w.name} (@${w.alias || ''}) - ${walletElements.length} elementos`}
+                >
+                  <span className="text-sm">{w.icon || '🐝'}</span>
+                  <span>{w.name}</span>
+                  <span 
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                      isActive 
+                        ? 'bg-indigo-500/70 text-white' 
+                        : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {walletElements.length}
+                  </span>
+
+                  {/* Botón para sacar / eliminar billetera de la barra */}
+                  {wallets.length > 1 && (
+                    <button
+                      type="button"
+                      className={`ml-1 w-4 h-4 rounded-full flex items-center justify-center transition-all ${
+                        isActive
+                          ? 'hover:bg-indigo-700 text-indigo-200 hover:text-white'
+                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                      }`}
+                      title={`Eliminar billetera "${w.name}"`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteWallet(w);
+                      }}
+                    >
+                      <X size={11} strokeWidth={2.5} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Botón + Billetera (Reemplaza al botón Más como botón principal para sumar una billetera) */}
+            <button
+              type="button"
+              className="btn btn-sm px-3.5 py-1.5 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 border border-dashed border-indigo-400 text-indigo-700 bg-indigo-50/90 hover:bg-indigo-100 shadow-sm"
+              onClick={() => setShowCreateWalletModal(true)}
+              title="Crear y sumar una nueva billetera al sistema"
             >
-              <Wallet size={15} />
-              <span>Elementos & Billetera</span>
+              <Plus size={14} className="text-indigo-600" />
+              <span>+ Billetera</span>
             </button>
 
-            {/* Pestaña: Colmena & Bot */}
+            {/* Separador sutil */}
+            <div className="h-5 w-px bg-slate-300 mx-1 shrink-0" />
+
+            {/* Accesos a Colmena & Bot e Historial */}
             <button 
-              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
+              className={`btn btn-sm px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
                 activeTab === 'community'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'bg-transparent text-slate-600 hover:text-slate-900'
               }`}
               onClick={() => setActiveTab('community')}
+              title="Colmena comunitaria y Bot de WhatsApp"
             >
-              <Users size={15} />
-              <span>Colmena & Bot</span>
+              <Users size={14} />
+              <span className="hidden sm:inline">Colmena & Bot</span>
+              <span className="sm:hidden">Colmena</span>
             </button>
 
-            {/* Pestaña: Historial */}
             <button 
-              className={`btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
+              className={`btn btn-sm px-3 py-1.5 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
                 activeTab === 'history'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'bg-transparent text-slate-600 hover:text-slate-900'
               }`}
               onClick={() => setActiveTab('history')}
+              title="Historial de movimientos y comprobantes"
             >
-              <History size={15} />
-              <span>Historial ({transactions.length})</span>
+              <History size={14} />
+              <span className="hidden sm:inline">Historial ({transactions.length})</span>
+              <span className="sm:hidden">Historial</span>
             </button>
 
-            {/* Menú Más Opciones (Vehículos, Camión, Dashboard) */}
+            {/* Menú Más Opciones (Vehículos, Camión, Dashboard, Restablecer) */}
             <div className="relative ml-auto shrink-0">
               <button 
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className={`btn btn-sm px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition-all ${
+                className={`btn btn-sm px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition-all ${
                   showMoreMenu || (activeTab !== 'elements' && activeTab !== 'community' && activeTab !== 'history')
                     ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                     : 'text-slate-600 bg-white border border-slate-200 hover:bg-slate-50'
                 }`}
+                title="Más herramientas del sistema"
               >
-                <Layers size={14} />
-                <span>Más</span>
+                <Layers size={13} />
+                <span className="hidden md:inline">Herramientas</span>
               </button>
 
               {showMoreMenu && (
@@ -677,40 +790,40 @@ function App() {
                   className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-40 flex flex-col"
                   onClick={() => setShowMoreMenu(false)}
                 >
-                <button
-                  className="px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                  onClick={() => setActiveTab('dashboard')}
-                >
-                  <LayoutDashboard size={14} className="text-indigo-600" />
-                  <span>Dashboard & Métricas</span>
-                </button>
-                <button
-                  className="px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                  onClick={() => setActiveTab('vehicle')}
-                >
-                  <Car size={14} className="text-emerald-600" />
-                  <span>Gestor de Vehículos</span>
-                </button>
-                {isAdmin && (
                   <button
-                    className="px-4 py-2 text-left text-xs font-semibold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
-                    onClick={() => setActiveTab('truck')}
+                    className="px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    onClick={() => setActiveTab('dashboard')}
                   >
-                    <Truck size={14} className="text-amber-600" />
-                    <span>Control de Camión</span>
+                    <LayoutDashboard size={14} className="text-indigo-600" />
+                    <span>Dashboard & Métricas</span>
                   </button>
-                )}
-                {transactions.length > 0 && (
                   <button
-                    className="px-4 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100"
-                    onClick={clearData}
+                    className="px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    onClick={() => setActiveTab('vehicle')}
                   >
-                    <Trash2 size={14} />
-                    <span>Restablecer Semillas</span>
+                    <Car size={14} className="text-emerald-600" />
+                    <span>Gestor de Vehículos</span>
                   </button>
-                )}
-              </div>
-            )}
+                  {isAdmin && (
+                    <button
+                      className="px-4 py-2 text-left text-xs font-semibold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
+                      onClick={() => setActiveTab('truck')}
+                    >
+                      <Truck size={14} className="text-amber-600" />
+                      <span>Control de Camión</span>
+                    </button>
+                  )}
+                  {transactions.length > 0 && (
+                    <button
+                      className="px-4 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100"
+                      onClick={clearData}
+                    >
+                      <Trash2 size={14} />
+                      <span>Restablecer Semillas</span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1461,7 +1574,9 @@ function App() {
         {/* Módulo Principal: Billetera & Elementos a Gestionar */}
         {activeTab === 'elements' && (
           <ElementsManager 
-            currentUser={currentUser} 
+            currentUser={currentUser}
+            activeWalletId={activeWalletId}
+            onOpenCreateWallet={() => setShowCreateWalletModal(true)}
           />
         )}
 
@@ -1571,6 +1686,15 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Modal para Crear Nueva Billetera */}
+      <CreateWalletModal
+        isOpen={showCreateWalletModal}
+        onClose={() => setShowCreateWalletModal(false)}
+        onCreated={handleWalletCreated}
+        existingElements={elementsService.elements}
+        currentUser={currentUser}
+      />
     </div>
   );
 }

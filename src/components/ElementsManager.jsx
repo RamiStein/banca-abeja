@@ -32,7 +32,12 @@ const safeFormatCurrency = (val, decimals = 0) => {
   })}`;
 };
 
-export default function ElementsManager({ currentUser = null, onSelectElement = null }) {
+export default function ElementsManager({ 
+  currentUser = null, 
+  onSelectElement = null,
+  activeWalletId: propActiveWalletId = null,
+  onOpenCreateWallet = null
+}) {
   const [elements, setElements] = useState(() => {
     const list = elementsService.elements;
     return Array.isArray(list) && list.length > 0 ? list : DEFAULT_ELEMENTS;
@@ -41,6 +46,13 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
     const list = elementsService.transactions;
     return Array.isArray(list) ? list : [];
   });
+  const [wallets, setWallets] = useState(() => elementsService.getWallets());
+  const [currentWalletId, setCurrentWalletId] = useState(() => propActiveWalletId || elementsService.getActiveWalletId());
+
+  const currentWallet = useMemo(() => {
+    return (wallets || []).find(w => w.id === currentWalletId) || elementsService.getActiveWallet();
+  }, [wallets, currentWalletId]);
+
   const [mainBalance, setMainBalance] = useState(() => {
     const bal = elementsService.getMainBalance(currentUser?.id || 'ramiro');
     return typeof bal === 'number' && !isNaN(bal) ? bal : 450000;
@@ -66,6 +78,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
     description: '',
     members: ['ramiro', 'agustina', 'cristian'],
     partnerId: 'cristian',
+    walletId: currentWalletId,
     initialDeposit: ''
   });
 
@@ -89,9 +102,35 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
     }
   }, [currentUser]);
 
+  // Sincronizar billetera activa prop o eventos globales
+  useEffect(() => {
+    if (propActiveWalletId) {
+      setCurrentWalletId(propActiveWalletId);
+    }
+  }, [propActiveWalletId]);
+
+  useEffect(() => {
+    const handleWalletChanged = (e) => {
+      if (e?.detail?.walletId) {
+        setCurrentWalletId(e.detail.walletId);
+      }
+    };
+    const handleWalletsUpdated = () => {
+      setWallets(elementsService.getWallets());
+      refreshData();
+    };
+    window.addEventListener('banca_wallet_changed', handleWalletChanged);
+    window.addEventListener('banca_wallets_updated', handleWalletsUpdated);
+    return () => {
+      window.removeEventListener('banca_wallet_changed', handleWalletChanged);
+      window.removeEventListener('banca_wallets_updated', handleWalletsUpdated);
+    };
+  }, []);
+
   const refreshData = () => {
     setElements([...elementsService.elements]);
     setTransactions([...elementsService.transactions]);
+    setWallets(elementsService.getWallets());
     setMainBalance(elementsService.getMainBalance(currentUser?.id || 'ramiro'));
   };
 
@@ -104,9 +143,14 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
     }));
   }, []);
 
-  // Elementos filtrados
+  // Elementos filtrados pertenecientes a la billetera activa
   const filteredElements = useMemo(() => {
     return elements.filter(elem => {
+      // Filtrar por pertenencia a la billetera actual
+      const elemWallet = elem.walletId || 'wallet-elementales';
+      if (elemWallet !== currentWalletId && !(currentWalletId === 'wallet-elementales' && !elem.walletId)) {
+        return false;
+      }
       if (filterType === 'shared' && elem.type !== 'shared') return false;
       if (filterType === 'bilateral' && elem.type !== 'bilateral') return false;
       if (filterType === 'individual' && elem.type !== 'individual') return false;
@@ -118,15 +162,20 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
       }
       return true;
     });
-  }, [elements, filterType, searchTerm]);
+  }, [elements, currentWalletId, filterType, searchTerm]);
 
-  // Totales acumulados
+  // Totales acumulados para la billetera activa
   const metrics = useMemo(() => {
     let sharedFundsTotal = 0;
     let bilateralFundsTotal = 0;
     let individualFundsTotal = 0;
 
-    elements.forEach(elem => {
+    const walletElems = elements.filter(elem => {
+      const elemWallet = elem.walletId || 'wallet-elementales';
+      return elemWallet === currentWalletId || (currentWalletId === 'wallet-elementales' && !elem.walletId);
+    });
+
+    walletElems.forEach(elem => {
       const stats = elementsService.getElementStats(elem.id);
       if (elem.type === 'shared') {
         sharedFundsTotal += Math.max(0, stats.currentBalance);
@@ -141,9 +190,9 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
       sharedFundsTotal,
       bilateralFundsTotal,
       individualFundsTotal,
-      totalPockets: elements.length
+      totalPockets: walletElems.length
     };
-  }, [elements, transactions]);
+  }, [elements, currentWalletId, transactions]);
 
   // Manejador para abrir modal de creación
   const handleOpenCreate = () => {
@@ -153,8 +202,9 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
       icon: '🚗',
       category: 'Movilidad',
       description: '',
-      members: [currentUser?.id || 'ramiro', 'agustina', 'cristian'],
+      members: currentWallet?.members?.length > 0 ? currentWallet.members : [currentUser?.id || 'ramiro', 'agustina', 'cristian'],
       partnerId: 'cristian',
+      walletId: currentWalletId,
       initialDeposit: ''
     });
     setCreateStep(1);
@@ -186,6 +236,7 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
       category: newElemForm.category,
       description: newElemForm.description,
       members: membersList,
+      walletId: newElemForm.walletId || currentWalletId,
       initialDeposit: initialDep,
       currency: 'ARS'
     });
@@ -246,11 +297,12 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
     setActionForm({ amount: '', concept: '', memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '' });
   };
 
-  // Recargar cuenta principal
+  // Recargar saldo de la billetera activa y cuenta
   const handleTopUpMainAccount = async (e) => {
     e.preventDefault();
     const amt = parseFloat(topUpAmount) || 0;
     if (amt > 0) {
+      await elementsService.updateWalletBalance(currentWalletId, amt);
       await elementsService.updateMainBalance(currentUser?.id || 'ramiro', amt);
       refreshData();
       setShowTopUpModal(false);
@@ -292,18 +344,33 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
         />
 
         <div className="relative z-10 flex flex-col gap-4">
-          {/* Fila superior: Título de cuenta & Ojo para ocultar saldo */}
+          {/* Fila superior: Título de Billetera & Ojo para ocultar saldo */}
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span 
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                style={{ background: 'rgba(255, 255, 255, 0.18)' }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-base shadow-sm"
+                style={{ background: 'rgba(255, 255, 255, 0.2)' }}
               >
-                🐝
+                {currentWallet?.icon || '🐝'}
               </span>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e0e7ff', letterSpacing: '0.02em' }}>
-                Cuenta Principal • {currentUser?.name || 'Ramiro'}
+              <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#ffffff', letterSpacing: '0.01em' }}>
+                Billetera {currentWallet?.name || 'Elementales'}
               </span>
+              {currentWallet?.alias && (
+                <span 
+                  style={{ 
+                    fontSize: '0.72rem', 
+                    color: '#c7d2fe', 
+                    background: 'rgba(255,255,255,0.1)', 
+                    padding: '2px 8px', 
+                    borderRadius: '9999px',
+                    fontFamily: 'monospace',
+                    fontWeight: 600
+                  }}
+                >
+                  @{currentWallet.alias}
+                </span>
+              )}
               <span 
                 style={{ 
                   fontSize: '11px', 
@@ -319,20 +386,34 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
               </span>
             </div>
 
-            <button
-              onClick={() => setShowBalance(!showBalance)}
-              className="p-1.5 rounded-full transition-colors"
-              style={{ background: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', border: 'none', cursor: 'pointer' }}
-              title={showBalance ? "Ocultar saldo" : "Mostrar saldo"}
-            >
-              {showBalance ? <Eye size={17} color="#ffffff" /> : <EyeOff size={17} color="#ffffff" />}
-            </button>
+            <div className="flex items-center gap-2">
+              {onOpenCreateWallet && (
+                <button
+                  type="button"
+                  onClick={onOpenCreateWallet}
+                  className="px-2.5 py-1 rounded-full text-xs font-bold text-indigo-100 hover:text-white transition-all flex items-center gap-1"
+                  style={{ background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
+                  title="Crear una nueva billetera"
+                >
+                  <Plus size={13} />
+                  <span>+ Billetera</span>
+                </button>
+              )}
+              <button
+                onClick={() => setShowBalance(!showBalance)}
+                className="p-1.5 rounded-full transition-colors"
+                style={{ background: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', border: 'none', cursor: 'pointer' }}
+                title={showBalance ? "Ocultar saldo" : "Mostrar saldo"}
+              >
+                {showBalance ? <Eye size={17} color="#ffffff" /> : <EyeOff size={17} color="#ffffff" />}
+              </button>
+            </div>
           </div>
 
-          {/* Saldo Principal Destacado */}
+          {/* Saldo Principal de la Billetera Destacado */}
           <div>
             <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#c7d2fe', fontWeight: 700, marginBottom: '2px' }}>
-              Saldo Total Disponible
+              Saldo Disponible en {currentWallet?.name || 'Billetera'}
             </div>
             <div 
               style={{ 
@@ -347,13 +428,45 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
                 textShadow: '0 2px 8px rgba(0,0,0,0.2)' 
               }}
             >
-              <span style={{ color: '#ffffff' }}>{showBalance ? safeFormatCurrency(mainBalance, 2) : '••••••••'}</span>
+              <span style={{ color: '#ffffff' }}>
+                {showBalance ? safeFormatCurrency(currentWallet?.balance ?? mainBalance, 2) : '••••••••'}
+              </span>
               <span style={{ fontSize: '1rem', fontWeight: 700, color: '#c7d2fe' }}>ARS</span>
             </div>
             <p style={{ fontSize: '0.78rem', color: 'rgba(224, 231, 255, 0.85)', margin: 0, lineHeight: 1.35 }}>
-              Monto base desde el cual fondeás tus elementos individuales y comunitarios.
+              {currentWallet?.detail || 'Monto base desde el cual fondeás los elementos económicos de esta billetera.'}
             </p>
           </div>
+
+          {/* Integrantes de esta Billetera */}
+          {currentWallet?.members && currentWallet.members.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '2px' }}>
+              <span style={{ fontSize: '0.72rem', color: '#c7d2fe', fontWeight: 600 }}>
+                Integrantes de la billetera:
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                {currentWallet.members.map(mId => {
+                  const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
+                  return (
+                    <span 
+                      key={mId}
+                      style={{ 
+                        fontSize: '0.7rem', 
+                        padding: '2px 8px', 
+                        borderRadius: '9999px', 
+                        background: 'rgba(255, 255, 255, 0.14)', 
+                        color: '#ffffff', 
+                        fontWeight: 600,
+                        border: '1px solid rgba(255, 255, 255, 0.2)'
+                      }}
+                    >
+                      {mObj.name}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Botones de Acción Rápida (Pills modernas y redondeadas) */}
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', marginTop: '14px', marginBottom: '8px' }}>
@@ -730,17 +843,19 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
         </div>
 
         {filteredElements.length === 0 && (
-          <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-slate-300">
-            <span className="text-4xl mb-2 block">🔍</span>
-            <h4 className="font-bold text-slate-800">No hay elementos que coincidan</h4>
-            <p className="text-xs text-slate-500 mt-1 mb-4">
-              Podés crear uno nuevo para empezar a gestionar ingresos y egresos.
+          <div className="p-8 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+            <span className="text-4xl mb-2 block">{currentWallet?.icon || '📦'}</span>
+            <h4 className="font-bold text-slate-800 text-base">
+              No hay elementos en {currentWallet?.name || 'esta billetera'}
+            </h4>
+            <p className="text-xs text-slate-500 mt-1 mb-4 max-w-sm mx-auto">
+              Crea tu primer elemento económico (colectivo, mano a mano o individual) para empezar a gestionar fondos en {currentWallet?.name}.
             </p>
             <button
               onClick={handleOpenCreate}
-              className="btn px-4 py-2 rounded-full font-bold text-xs bg-indigo-600 text-white hover:bg-indigo-700"
+              className="btn px-4 py-2 rounded-full font-bold text-xs bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
             >
-              + Crear Elemento
+              + Crear Elemento en {currentWallet?.name}
             </button>
           </div>
         )}
@@ -919,6 +1034,34 @@ export default function ElementsManager({ currentUser = null, onSelectElement = 
             {/* PASO 2: FORMULARIO DE INFORMACIÓN DEL ELEMENTO */}
             {createStep === 2 && (
               <form onSubmit={handleSaveElement} className="flex flex-col gap-4">
+                {/* Billetera de asignación */}
+                <div className="flex items-center justify-between p-2.5 bg-indigo-50/70 rounded-xl border border-indigo-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{currentWallet?.icon || '🐝'}</span>
+                    <div>
+                      <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">
+                        Billetera Asignada
+                      </span>
+                      <span className="text-xs font-bold text-slate-800">
+                        {currentWallet?.name} (@{currentWallet?.alias || 'billetera'})
+                      </span>
+                    </div>
+                  </div>
+                  {wallets.length > 1 && (
+                    <select
+                      value={newElemForm.walletId || currentWalletId}
+                      onChange={e => setNewElemForm({ ...newElemForm, walletId: e.target.value })}
+                      className="text-xs bg-white border border-indigo-200 rounded-lg px-2 py-1 font-semibold text-slate-700 focus:outline-none"
+                    >
+                      {wallets.map(w => (
+                        <option key={w.id} value={w.id}>
+                          {w.icon} {w.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
                 {/* Nombre */}
                 <div>
                   <label className="text-xs font-bold text-slate-700 mb-1 block">

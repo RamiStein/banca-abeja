@@ -1,5 +1,6 @@
-// Servicio de Gestión de Elementos y Cuenta Principal (Banca Abeja)
-// Maneja la persistencia de Elementos (Individuales y Compartidos),
+// Servicio de Gestión de Elementos y Multi-Billeteras (Banca Abeja)
+// Maneja la persistencia de Billeteras (Elementales, VRDE, etc.),
+// Elementos (Individuales, Bilaterales y Compartidos),
 // sus flujos económicos (Ingresos, Egresos, Depósitos, Retiros) y la cuenta principal.
 
 import { db } from '../firebase';
@@ -11,13 +12,55 @@ import {
 const STORAGE_ELEMENTS_KEY = 'banca_abeja_elements_v2';
 const STORAGE_ACCOUNT_KEY = 'banca_abeja_main_accounts_v2';
 const STORAGE_ELEMENT_TXS_KEY = 'banca_abeja_element_transactions_v2';
+const STORAGE_WALLETS_KEY = 'banca_abeja_wallets_v2';
+const STORAGE_ACTIVE_WALLET_KEY = 'banca_abeja_active_wallet_id_v2';
 
-// Semillas iniciales demostrativas para la prueba del usuario (Clio, Comida, etc.)
+// Billeteras iniciales demostrativas del sistema Multi-Billeteras
+export const DEFAULT_WALLETS = [
+  {
+    id: 'wallet-elementales',
+    name: 'Elementales',
+    alias: 'elementales',
+    icon: '🐝',
+    detail: 'Billetera comunitaria principal para compras elementales, víveres, hábitat y fondo común.',
+    members: ['ramiro', 'agustina', 'cristian'],
+    elementIds: ['elem-clio', 'elem-comida', 'elem-habitat', 'elem-mano-mano-cris', 'elem-feria'],
+    balance: 450000,
+    currency: 'ARS',
+    createdAt: Date.now() - 86400000 * 5
+  },
+  {
+    id: 'wallet-vrde',
+    name: 'VRDE',
+    alias: 'vrde',
+    icon: '🌱',
+    detail: 'Proyectos de huerta agroecológica, producción de bioinsumos y economía circular.',
+    members: ['ramiro', 'agustina'],
+    elementIds: ['elem-huerta', 'elem-compost'],
+    balance: 180000,
+    currency: 'ARS',
+    createdAt: Date.now() - 86400000 * 3
+  },
+  {
+    id: 'wallet-personal-ramiro',
+    name: 'Personal Ramiro',
+    alias: 'ramiro.personal',
+    icon: '💼',
+    detail: 'Caja y gastos individuales de Ramiro.',
+    members: ['ramiro'],
+    elementIds: ['elem-personal-ramiro'],
+    balance: 95000,
+    currency: 'ARS',
+    createdAt: Date.now() - 86400000 * 2
+  }
+];
+
+// Semillas iniciales demostrativas de Elementos (Clio, Comida, Huerta, etc.)
 export const DEFAULT_ELEMENTS = [
   {
     id: 'elem-clio',
     name: 'Clio',
-    type: 'shared', // 'shared' | 'individual'
+    type: 'shared', // 'shared' | 'individual' | 'bilateral'
     creatorId: 'ramiro',
     creatorName: 'Ramiro',
     icon: '🚗',
@@ -26,6 +69,7 @@ export const DEFAULT_ELEMENTS = [
     members: ['ramiro', 'agustina', 'cristian'],
     initialBalance: 0,
     currency: 'ARS',
+    walletId: 'wallet-elementales',
     createdAt: Date.now() - 86400000 * 5
   },
   {
@@ -40,6 +84,7 @@ export const DEFAULT_ELEMENTS = [
     members: ['ramiro', 'agustina'],
     initialBalance: 0,
     currency: 'ARS',
+    walletId: 'wallet-elementales',
     createdAt: Date.now() - 86400000 * 4
   },
   {
@@ -54,6 +99,7 @@ export const DEFAULT_ELEMENTS = [
     members: ['ramiro', 'agustina', 'cristian'],
     initialBalance: 0,
     currency: 'ARS',
+    walletId: 'wallet-elementales',
     createdAt: Date.now() - 86400000 * 3
   },
   {
@@ -68,6 +114,7 @@ export const DEFAULT_ELEMENTS = [
     members: ['ramiro'],
     initialBalance: 0,
     currency: 'ARS',
+    walletId: 'wallet-personal-ramiro',
     createdAt: Date.now() - 86400000 * 2
   },
   {
@@ -82,6 +129,7 @@ export const DEFAULT_ELEMENTS = [
     members: ['ramiro', 'cristian'],
     initialBalance: 0,
     currency: 'ARS',
+    walletId: 'wallet-elementales',
     createdAt: Date.now() - 86400000 * 1
   },
   {
@@ -96,11 +144,42 @@ export const DEFAULT_ELEMENTS = [
     members: ['ramiro', 'cristian', 'agustina'],
     initialBalance: 0,
     currency: 'ARS',
+    walletId: 'wallet-elementales',
     createdAt: Date.now() - 86400000 * 2
+  },
+  {
+    id: 'elem-huerta',
+    name: 'Huerta Agroecológica',
+    type: 'shared',
+    creatorId: 'ramiro',
+    creatorName: 'Ramiro',
+    icon: '🌱',
+    category: 'Hábitat',
+    description: 'Insumos de siembra, semillas agroecológicas y riego.',
+    members: ['ramiro', 'agustina'],
+    initialBalance: 0,
+    currency: 'ARS',
+    walletId: 'wallet-vrde',
+    createdAt: Date.now() - 86400000 * 2
+  },
+  {
+    id: 'elem-compost',
+    name: 'Bioinsumos & Compost',
+    type: 'shared',
+    creatorId: 'agustina',
+    creatorName: 'Agustina',
+    icon: '🌿',
+    category: 'Herramientas',
+    description: 'Preparación de biopreparados, compostaje y lombricultura.',
+    members: ['ramiro', 'agustina'],
+    initialBalance: 0,
+    currency: 'ARS',
+    walletId: 'wallet-vrde',
+    createdAt: Date.now() - 86400000 * 1
   }
 ];
 
-// Movimientos iniciales de prueba para Clio, Comida, etc.
+// Movimientos iniciales de prueba para Clio, Comida, Huerta, etc.
 export const DEFAULT_ELEMENT_TXS = [
   {
     id: 'etx-1',
@@ -176,31 +255,140 @@ export const DEFAULT_ELEMENT_TXS = [
     currency: 'ARS',
     timestamp: Date.now() - 86400000 * 1,
     date: new Date(Date.now() - 86400000 * 1).toLocaleDateString('es-AR')
+  },
+  {
+    id: 'etx-vrde-1',
+    elementId: 'elem-huerta',
+    type: 'deposit',
+    amount: 35000,
+    concept: 'Fondo semilla para plantines y semillas agroecológicas',
+    memberId: 'ramiro',
+    memberName: 'Ramiro',
+    currency: 'ARS',
+    timestamp: Date.now() - 86400000 * 2,
+    date: new Date(Date.now() - 86400000 * 2).toLocaleDateString('es-AR')
+  },
+  {
+    id: 'etx-vrde-2',
+    elementId: 'elem-compost',
+    type: 'income',
+    amount: 22000,
+    concept: 'Venta de humus de lombriz y bokashi a miembros',
+    memberId: 'agustina',
+    memberName: 'Agustina',
+    currency: 'ARS',
+    timestamp: Date.now() - 86400000 * 1,
+    date: new Date(Date.now() - 86400000 * 1).toLocaleDateString('es-AR')
   }
 ];
 
 class ElementsService {
   constructor() {
+    this.wallets = this.loadStoredWallets();
+    this.activeWalletId = this.loadActiveWalletId();
     this.elements = this.loadStoredElements();
     this.transactions = this.loadStoredTransactions();
     this.accounts = this.loadStoredAccounts();
   }
 
   // --- PERSISTENCIA LOCAL ULTRA RESILIENTE ---
+  loadStoredWallets() {
+    try {
+      const saved = localStorage.getItem(STORAGE_WALLETS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const existingIds = new Set(parsed.map(w => w.id));
+          const missingDefaults = DEFAULT_WALLETS.filter(d => !existingIds.has(d.id));
+          if (missingDefaults.length > 0) {
+            const combined = [...parsed, ...missingDefaults];
+            localStorage.setItem(STORAGE_WALLETS_KEY, JSON.stringify(combined));
+            return combined;
+          }
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("Error leyendo billeteras locales:", e);
+    }
+    return DEFAULT_WALLETS;
+  }
+
+  saveStoredWallets(wallets) {
+    this.wallets = Array.isArray(wallets) ? wallets : DEFAULT_WALLETS;
+    try {
+      localStorage.setItem(STORAGE_WALLETS_KEY, JSON.stringify(this.wallets));
+    } catch (e) {}
+    try {
+      window.dispatchEvent(new CustomEvent('banca_wallets_updated', { detail: { wallets: this.wallets } }));
+    } catch (e) {}
+  }
+
+  loadActiveWalletId() {
+    try {
+      const saved = localStorage.getItem(STORAGE_ACTIVE_WALLET_KEY);
+      if (saved && (this.wallets || []).some(w => w.id === saved)) {
+        return saved;
+      }
+    } catch (e) {}
+    return this.wallets?.[0]?.id || 'wallet-elementales';
+  }
+
+  setActiveWalletId(walletId) {
+    if (!walletId) return;
+    this.activeWalletId = walletId;
+    try {
+      localStorage.setItem(STORAGE_ACTIVE_WALLET_KEY, walletId);
+    } catch (e) {}
+    try {
+      window.dispatchEvent(new CustomEvent('banca_wallet_changed', { detail: { walletId } }));
+    } catch (e) {}
+  }
+
+  getActiveWalletId() {
+    if (!this.activeWalletId || !(this.wallets || []).some(w => w.id === this.activeWalletId)) {
+      this.activeWalletId = this.wallets?.[0]?.id || 'wallet-elementales';
+    }
+    return this.activeWalletId;
+  }
+
+  getActiveWallet() {
+    const id = this.getActiveWalletId();
+    return (this.wallets || []).find(w => w.id === id) || this.wallets?.[0] || DEFAULT_WALLETS[0];
+  }
+
+  getWallets() {
+    return [...(this.wallets || DEFAULT_WALLETS)];
+  }
+
+  getWalletById(walletId) {
+    return (this.wallets || []).find(w => w.id === walletId) || null;
+  }
+
   loadStoredElements() {
     try {
       const saved = localStorage.getItem(STORAGE_ELEMENTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const existingIds = new Set(parsed.map(e => e.id));
+          // Asegurar que cada elemento tenga un walletId asignado
+          const validated = parsed.map(elem => {
+            if (!elem.walletId) {
+              if (elem.id === 'elem-personal-ramiro') return { ...elem, walletId: 'wallet-personal-ramiro' };
+              if (elem.id === 'elem-huerta' || elem.id === 'elem-compost') return { ...elem, walletId: 'wallet-vrde' };
+              return { ...elem, walletId: 'wallet-elementales' };
+            }
+            return elem;
+          });
+
+          const existingIds = new Set(validated.map(e => e.id));
           const missingDefaults = DEFAULT_ELEMENTS.filter(d => !existingIds.has(d.id));
           if (missingDefaults.length > 0) {
-            const combined = [...parsed, ...missingDefaults];
+            const combined = [...validated, ...missingDefaults];
             localStorage.setItem(STORAGE_ELEMENTS_KEY, JSON.stringify(combined));
             return combined;
           }
-          return parsed;
+          return validated;
         }
       }
     } catch (e) {
@@ -268,7 +456,7 @@ class ElementsService {
     } catch (e) {}
   }
 
-  // --- CUENTA PRINCIPAL DEL USUARIO ---
+  // --- CUENTA PRINCIPAL / SALDOS ---
   getMainBalance(userId = 'ramiro') {
     if (!this.accounts || typeof this.accounts !== 'object') {
       this.accounts = this.loadStoredAccounts();
@@ -301,19 +489,154 @@ class ElementsService {
     return newBal;
   }
 
+  // --- MÉTODOS DE BILLETERAS ---
+  getWalletBalance(walletId) {
+    const targetId = walletId || this.getActiveWalletId();
+    const wallet = this.getWalletById(targetId);
+    if (wallet && typeof wallet.balance === 'number' && !isNaN(wallet.balance)) {
+      return wallet.balance;
+    }
+    return this.getMainBalance('ramiro');
+  }
+
+  async updateWalletBalance(walletId, delta) {
+    const targetId = walletId || this.getActiveWalletId();
+    const wallet = this.getWalletById(targetId);
+    if (!wallet) return this.updateMainBalance('ramiro', delta);
+
+    const currentBal = Number(wallet.balance) || 0;
+    const newBal = currentBal + Number(delta);
+    await this.updateWallet(targetId, { balance: newBal });
+    return newBal;
+  }
+
+  async createWallet({
+    name,
+    alias = '',
+    icon = '🐝',
+    detail = '',
+    members = ['ramiro'],
+    elementIds = [],
+    initialBalance = 0,
+    currency = 'ARS'
+  }) {
+    const slug = (alias || name).toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 20);
+    const newId = `wallet-${slug}-${Date.now().toString(36)}`;
+    const numInitial = Math.max(0, parseFloat(initialBalance) || 0);
+
+    const newWallet = {
+      id: newId,
+      name: name.trim(),
+      alias: (alias || slug).trim().replace(/^@+/, ''),
+      icon: icon || '🐝',
+      detail: (detail || '').trim(),
+      members: Array.isArray(members) && members.length > 0 ? members : ['ramiro'],
+      elementIds: Array.isArray(elementIds) ? elementIds : [],
+      balance: numInitial,
+      currency,
+      createdAt: Date.now()
+    };
+
+    const updatedWallets = [...this.wallets, newWallet];
+    this.saveStoredWallets(updatedWallets);
+
+    // Asignar los elementos seleccionados a esta nueva billetera
+    if (Array.isArray(elementIds) && elementIds.length > 0) {
+      const updatedElements = this.elements.map(el => {
+        if (elementIds.includes(el.id)) {
+          return { ...el, walletId: newId };
+        }
+        return el;
+      });
+      this.saveStoredElements(updatedElements);
+    }
+
+    // Establecer automáticamente como activa
+    this.setActiveWalletId(newId);
+
+    if (db) {
+      try {
+        await setDoc(doc(db, 'banca_abeja_wallets', newId), newWallet);
+      } catch (e) {
+        console.warn("Firestore error al guardar billetera:", e);
+      }
+    }
+
+    return newWallet;
+  }
+
+  async updateWallet(walletId, updates) {
+    const updated = this.wallets.map(w => {
+      if (w.id === walletId) {
+        return { ...w, ...updates, updatedAt: Date.now() };
+      }
+      return w;
+    });
+    this.saveStoredWallets(updated);
+
+    if (db) {
+      try {
+        await setDoc(doc(db, 'banca_abeja_wallets', walletId), updates, { merge: true });
+      } catch (e) {
+        console.warn("Firestore error al actualizar billetera:", e);
+      }
+    }
+  }
+
+  async deleteWallet(walletId) {
+    // Si quedan elementos en esta billetera, reasignarlos a la billetera principal
+    const fallbackWalletId = this.wallets.find(w => w.id !== walletId)?.id || 'wallet-elementales';
+    const updatedElements = this.elements.map(el => {
+      if (el.walletId === walletId) {
+        return { ...el, walletId: fallbackWalletId };
+      }
+      return el;
+    });
+    this.saveStoredElements(updatedElements);
+
+    // Filtrar billetera
+    const updatedWallets = this.wallets.filter(w => w.id !== walletId);
+    this.saveStoredWallets(updatedWallets.length > 0 ? updatedWallets : DEFAULT_WALLETS);
+
+    // Si la billetera eliminada era la activa, cambiar a fallback
+    if (this.activeWalletId === walletId) {
+      this.setActiveWalletId(fallbackWalletId);
+    }
+
+    if (db) {
+      try {
+        await deleteDoc(doc(db, 'banca_abeja_wallets', walletId));
+      } catch (e) {
+        console.warn("Firestore error al eliminar billetera:", e);
+      }
+    }
+  }
+
+  getElementsByWallet(walletId) {
+    const targetId = walletId || this.getActiveWalletId();
+    return (this.elements || []).filter(elem => {
+      if (targetId === 'wallet-elementales') {
+        return !elem.walletId || elem.walletId === 'wallet-elementales';
+      }
+      return elem.walletId === targetId;
+    });
+  }
+
   // --- CREAR ELEMENTO ---
   async createElement({
     name,
-    type = 'individual', // 'individual' | 'shared'
+    type = 'individual', // 'individual' | 'shared' | 'bilateral'
     creatorId = 'ramiro',
     creatorName = 'Ramiro',
     icon = '📦',
     category = 'General',
     description = '',
     members = [],
+    walletId = null,
     initialDeposit = 0,
     currency = 'ARS'
   }) {
+    const targetWalletId = walletId || this.getActiveWalletId() || 'wallet-elementales';
     const newId = `elem-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now().toString(36)}`;
     
     // Asegurar que el creador esté siempre entre los miembros
@@ -330,6 +653,7 @@ class ElementsService {
       description: description.trim(),
       members: memberList,
       initialBalance: 0,
+      walletId: targetWalletId,
       currency,
       createdAt: Date.now()
     };
@@ -337,7 +661,15 @@ class ElementsService {
     const updatedElements = [newElement, ...this.elements];
     this.saveStoredElements(updatedElements);
 
-    // Si hubo un depósito inicial desde la cuenta principal
+    // Asociar a la billetera en su lista elementIds si aplica
+    const wallet = this.getWalletById(targetWalletId);
+    if (wallet && Array.isArray(wallet.elementIds) && !wallet.elementIds.includes(newId)) {
+      this.updateWallet(targetWalletId, {
+        elementIds: [...wallet.elementIds, newId]
+      });
+    }
+
+    // Si hubo un depósito inicial desde la cuenta principal / billetera
     if (initialDeposit > 0) {
       await this.depositToElement({
         elementId: newId,
@@ -362,7 +694,7 @@ class ElementsService {
   }
 
   // --- DEPOSITAR EN UN ELEMENTO ---
-  // Un integrante deposita saldo en el elemento (sale de su cuenta principal y entra al elemento)
+  // Un integrante deposita saldo en el elemento (sale de su cuenta/billetera y entra al elemento)
   async depositToElement({
     elementId,
     memberId,
@@ -373,6 +705,9 @@ class ElementsService {
   }) {
     const numAmount = Math.abs(parseFloat(amount) || 0);
     if (numAmount <= 0) return null;
+
+    const elem = this.elements.find(e => e.id === elementId);
+    const targetWalletId = elem?.walletId || this.getActiveWalletId();
 
     const tx = {
       id: `etx-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
@@ -390,7 +725,8 @@ class ElementsService {
     const updatedTxs = [tx, ...this.transactions];
     this.saveStoredTransactions(updatedTxs);
 
-    // Descontar de la cuenta principal del usuario
+    // Descontar de la billetera y de la cuenta personal del usuario
+    await this.updateWalletBalance(targetWalletId, -numAmount);
     await this.updateMainBalance(memberId, -numAmount);
 
     if (db) {
@@ -405,7 +741,7 @@ class ElementsService {
   }
 
   // --- RETIRAR / RECIBIR DE UN ELEMENTO ---
-  // Un integrante recibe o retira saldo del elemento hacia su cuenta principal
+  // Un integrante recibe o retira saldo del elemento hacia su cuenta/billetera
   async withdrawFromElement({
     elementId,
     memberId,
@@ -416,6 +752,9 @@ class ElementsService {
   }) {
     const numAmount = Math.abs(parseFloat(amount) || 0);
     if (numAmount <= 0) return null;
+
+    const elem = this.elements.find(e => e.id === elementId);
+    const targetWalletId = elem?.walletId || this.getActiveWalletId();
 
     const tx = {
       id: `etx-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
@@ -433,7 +772,8 @@ class ElementsService {
     const updatedTxs = [tx, ...this.transactions];
     this.saveStoredTransactions(updatedTxs);
 
-    // Sumar a la cuenta principal del usuario
+    // Sumar a la billetera y a la cuenta personal del usuario
+    await this.updateWalletBalance(targetWalletId, numAmount);
     await this.updateMainBalance(memberId, numAmount);
 
     if (db) {
@@ -448,7 +788,6 @@ class ElementsService {
   }
 
   // --- REGISTRAR INGRESO AL ELEMENTO ---
-  // El elemento genera un ingreso económico (ej: venta de viandas de Comida, o flete del Clio)
   async addIncomeToElement({
     elementId,
     memberId,
@@ -488,7 +827,6 @@ class ElementsService {
   }
 
   // --- REGISTRAR EGRESO / GASTO DEL ELEMENTO ---
-  // El elemento tiene una necesidad económica / gasto (ej: nafta del Clio, compras de verdulería de Comida)
   async addExpenseToElement({
     elementId,
     memberId,
@@ -533,7 +871,6 @@ class ElementsService {
     return tx;
   }
 
-  // Obtener movimientos vinculados desde otros elementos (ej: compras del mano a mano vinculadas a la Feria)
   getLinkedTransactions(elementId) {
     if (!this.transactions || !Array.isArray(this.transactions)) return [];
     return this.transactions.filter(t => t && t.linkedElementId === elementId);
@@ -550,7 +887,7 @@ class ElementsService {
     let totalExpense = 0;
     let totalDeposits = 0;
     let totalWithdrawals = 0;
-    const memberContributions = {}; // memberId -> total deposited
+    const memberContributions = {};
 
     elemTxs.forEach(t => {
       const amt = Number(t?.amount) || 0;
