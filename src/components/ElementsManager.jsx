@@ -334,7 +334,7 @@ export default function ElementsManager({
   };
 
   return (
-    <div className="flex flex-col gap-7 w-full max-w-5xl mx-auto pb-16 px-1 sm:px-3">
+    <div className="w-full flex flex-col gap-6 pb-16">
 
       {/* ======================================================== */}
       {/* 1. CUENTA PRINCIPAL DEL USUARIO (HERO CARD ESTILO FINTECH) */}
@@ -563,8 +563,15 @@ export default function ElementsManager({
       {/* 2. SECCIÓN: TUS ELEMENTOS A GESTIONAR                    */}
       {/* ======================================================== */}
       <div className="flex flex-col gap-4" style={{ marginTop: '14px' }}>
-        {/* Cabecera de Sección & Filtros Estilo Pill */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '14px'
+          }}
+        >
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               <span>Elementos & Bolsillos</span>

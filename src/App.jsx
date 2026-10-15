@@ -4,7 +4,7 @@ import {
   History, Trash2, Plus, X, Tag, User, Users, Car, Layers, FileText, 
   CheckCircle2, Clock, AlertTriangle, ShieldCheck, Eye, Paperclip, 
   ArrowDownRight, Sparkles, Upload, FileCheck, Coins, Image as ImageIcon,
-  Truck, Lock, Unlock, KeyRound, LogOut
+  Truck, Lock, Unlock, KeyRound, LogOut, ChevronDown
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { parseCSV } from './utils/parser';
@@ -136,7 +136,7 @@ function App() {
 
   const [isDragging, setIsDragging] = useState(false);
   const [activeTab, setActiveTab] = useState('elements');
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Sistema Multi-Billeteras
   const [wallets, setWallets] = useState(() => elementsService.getWallets());
@@ -585,171 +585,356 @@ function App() {
   return (
     <div className="container relative">
       {/* HEADER PRINCIPAL - ESTILO APP MÓVIL MODERNA */}
-      <header className="mb-6 flex flex-col gap-4">
-        {/* Barra Superior: Logo y Perfil */}
-        {/* Barra Superior: Logo, Navegación y Perfil */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-2xl shadow-sm shrink-0">
+      <header className="mb-6 flex flex-col gap-4" style={{ width: '100%' }}>
+        {/* Barra Superior: Logo a la Izquierda y Perfil a la Derecha */}
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            gap: '16px'
+          }}
+        >
+          {/* Logo y Nombre */}
+          <div 
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+            onClick={() => setActiveTab('elements')}
+            title="Banca Abeja - Ir a Billeteras"
+          >
+            <div 
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '16px',
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.6rem',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                flexShrink: 0
+              }}
+            >
               🐝
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight tracking-tight">
+              <h1 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1.2, letterSpacing: '-0.02em' }}>
                 Banca Abeja
               </h1>
-              <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
+              <p style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, margin: '2px 0 0 0' }}>
                 Gestión Comunitaria de Billeteras
               </p>
             </div>
           </div>
 
-          {/* Acciones y Perfil del Usuario de Alta Estética */}
-          <div className="flex items-center gap-2 flex-wrap sm:justify-end">
-            {/* Accesos a Colmena & Bot e Historial (Ubicados elegantemente en la cabecera) */}
-            <button 
-              className={`px-3.5 py-1.5 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
-                activeTab === 'community'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/90 hover:bg-slate-50'
-              }`}
-              onClick={() => setActiveTab('community')}
-              title="Colmena comunitaria y Bot de WhatsApp"
-            >
-              <Users size={14} />
-              <span>Colmena & Bot</span>
-            </button>
-
-            <button 
-              className={`px-3.5 py-1.5 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 ${
-                activeTab === 'history'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/90 hover:bg-slate-50'
-              }`}
-              onClick={() => setActiveTab('history')}
-              title="Historial de movimientos y comprobantes"
-            >
-              <History size={14} />
-              <span>Historial ({transactions.length})</span>
-            </button>
-
-            {/* Menú de Más Herramientas */}
-            <div className="relative">
-              <button 
-                onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className={`p-2 rounded-full text-xs transition-all ${
-                  showMoreMenu || (activeTab !== 'elements' && activeTab !== 'community' && activeTab !== 'history')
-                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                    : 'text-slate-500 hover:text-slate-800 bg-white border border-slate-200/90 hover:bg-slate-50'
-                }`}
-                title="Más herramientas del sistema"
-              >
-                <Layers size={14} />
-              </button>
-
-              {showMoreMenu && (
-                <div 
-                  className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-1.5 z-40 flex flex-col"
-                  onClick={() => setShowMoreMenu(false)}
-                >
-                  <button
-                    className="px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                    onClick={() => setActiveTab('dashboard')}
-                  >
-                    <LayoutDashboard size={14} className="text-indigo-600" />
-                    <span>Dashboard & Métricas</span>
-                  </button>
-                  <button
-                    className="px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                    onClick={() => setActiveTab('vehicle')}
-                  >
-                    <Car size={14} className="text-emerald-600" />
-                    <span>Gestor de Vehículos</span>
-                  </button>
-                  {isAdmin && (
-                    <button
-                      className="px-4 py-2 text-left text-xs font-semibold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
-                      onClick={() => setActiveTab('truck')}
-                    >
-                      <Truck size={14} className="text-amber-600" />
-                      <span>Control de Camión</span>
-                    </button>
-                  )}
-                  {transactions.length > 0 && (
-                    <button
-                      className="px-4 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100"
-                      onClick={clearData}
-                    >
-                      <Trash2 size={14} />
-                      <span>Restablecer Semillas</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Modo Admin sutil */}
-            {isAdmin ? (
-              <button 
-                className="px-2.5 py-1 text-amber-700 bg-amber-50 border border-amber-200 rounded-full text-xs font-bold flex items-center gap-1"
-                onClick={() => {
-                  if (window.confirm('¿Cerrar sesión de Administrador?')) {
-                    handleLockAdmin();
-                  }
+          {/* Lado Derecho: Botón volver si está fuera de billeteras + Chip de Usuario con Menú */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {activeTab !== 'elements' && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('elements')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 14px',
+                  borderRadius: '9999px',
+                  background: '#eef2ff',
+                  color: '#4338ca',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  border: '1px solid #c7d2fe',
+                  cursor: 'pointer',
+                  boxShadow: '0 1px 2px rgba(67, 56, 202, 0.08)'
                 }}
-                title="Modo Admin Activo"
+                title="Volver al gestor de billeteras y elementos"
               >
-                <Unlock size={13} />
-                <span className="hidden sm:inline">Admin</span>
-              </button>
-            ) : (
-              <button 
-                className="p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-                onClick={() => {
-                  setAdminPinInput('');
-                  setAdminPinError('');
-                  setShowAdminModal(true);
-                }}
-                title="Acceso Administrador"
-              >
-                <Lock size={15} />
+                <Wallet size={14} />
+                <span>Volver a Billeteras</span>
               </button>
             )}
 
-            {/* Chip de Usuario con Estética Mejorada */}
+            {/* Chip de Usuario Ramiro a la Derecha */}
             {currentUser && (
-              <div 
-                className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 bg-white border border-slate-200/90 rounded-full shadow-sm hover:border-slate-300 transition-all"
-                title={`Sesión activa: ${currentUser.email || currentUser.id}`}
-              >
-                <div className="relative">
-                  <div 
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold text-white shadow-sm"
-                    style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}
-                  >
-                    {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
-                  </div>
-                  <span 
-                    className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border border-white"
-                    title="En línea"
-                  />
-                </div>
-
-                <span className="text-xs font-bold text-slate-800">
-                  {currentUser.name}
-                </span>
-
-                <button 
+              <div style={{ position: 'relative' }}>
+                <button
                   type="button"
-                  className="p-1 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-0.5"
-                  onClick={() => {
-                    if (window.confirm(`¿Deseas cerrar la sesión de ${currentUser.name}?`)) {
-                      handleLogout();
-                    }
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '5px 14px 5px 6px',
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '9999px',
+                    boxShadow: '0 2px 6px rgba(15, 23, 42, 0.05)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
                   }}
-                  title="Cerrar Sesión"
+                  title={`Opciones de usuario: ${currentUser.name}`}
                 >
-                  <LogOut size={13} />
+                  {/* Avatar con R amplia, sin apretar */}
+                  <div style={{ position: 'relative', width: '36px', height: '36px', flexShrink: 0 }}>
+                    <div 
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                        color: '#ffffff',
+                        fontWeight: 800,
+                        fontSize: '0.95rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 5px rgba(79, 70, 229, 0.3)'
+                      }}
+                    >
+                      {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <span 
+                      style={{
+                        position: 'absolute',
+                        bottom: '0px',
+                        right: '0px',
+                        width: '10px',
+                        height: '10px',
+                        background: '#10b981',
+                        border: '2px solid #ffffff',
+                        borderRadius: '50%'
+                      }}
+                      title="En línea"
+                    />
+                  </div>
+
+                  {/* Nombre */}
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>
+                    {currentUser.name}
+                  </span>
+
+                  <ChevronDown size={14} color="#64748b" />
                 </button>
+
+                {/* Dropdown del Menú de Usuario */}
+                {showUserMenu && (
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 8px)',
+                      right: '0',
+                      width: '230px',
+                      background: '#ffffff',
+                      borderRadius: '20px',
+                      boxShadow: '0 14px 35px rgba(15, 23, 42, 0.15), 0 2px 8px rgba(15, 23, 42, 0.06)',
+                      border: '1px solid #e2e8f0',
+                      padding: '8px',
+                      zIndex: 100,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px'
+                    }}
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <div style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Sesión Activa
+                      </span>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', display: 'block' }}>
+                        {currentUser.name}
+                      </span>
+                      <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        {currentUser.email || currentUser.id}
+                      </span>
+                    </div>
+
+                    <button
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '9px 12px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: activeTab === 'elements' ? '#eef2ff' : 'transparent',
+                        color: activeTab === 'elements' ? '#4338ca' : '#334155',
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onClick={() => setActiveTab('elements')}
+                    >
+                      <Wallet size={16} color={activeTab === 'elements' ? '#4338ca' : '#64748b'} />
+                      <span>Billeteras & Elementos</span>
+                    </button>
+
+                    <button
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '9px 12px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: activeTab === 'community' ? '#eef2ff' : 'transparent',
+                        color: activeTab === 'community' ? '#4338ca' : '#334155',
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onClick={() => setActiveTab('community')}
+                    >
+                      <Users size={16} color={activeTab === 'community' ? '#4338ca' : '#64748b'} />
+                      <span>Colmena & Bot</span>
+                    </button>
+
+                    <button
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '9px 12px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: activeTab === 'history' ? '#eef2ff' : 'transparent',
+                        color: activeTab === 'history' ? '#4338ca' : '#334155',
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onClick={() => setActiveTab('history')}
+                    >
+                      <History size={16} color={activeTab === 'history' ? '#4338ca' : '#64748b'} />
+                      <span>Historial ({transactions.length})</span>
+                    </button>
+
+                    <button
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '9px 12px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: activeTab === 'dashboard' ? '#eef2ff' : 'transparent',
+                        color: activeTab === 'dashboard' ? '#4338ca' : '#334155',
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onClick={() => setActiveTab('dashboard')}
+                    >
+                      <LayoutDashboard size={16} color={activeTab === 'dashboard' ? '#4338ca' : '#64748b'} />
+                      <span>Dashboard & Métricas</span>
+                    </button>
+
+                    <button
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '9px 12px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: activeTab === 'vehicle' ? '#eef2ff' : 'transparent',
+                        color: activeTab === 'vehicle' ? '#4338ca' : '#334155',
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onClick={() => setActiveTab('vehicle')}
+                    >
+                      <Car size={16} color={activeTab === 'vehicle' ? '#4338ca' : '#64748b'} />
+                      <span>Gestor de Vehículos</span>
+                    </button>
+
+                    {isAdmin && (
+                      <button
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '9px 12px',
+                          borderRadius: '12px',
+                          border: 'none',
+                          background: activeTab === 'truck' ? '#fef3c7' : 'transparent',
+                          color: activeTab === 'truck' ? '#b45309' : '#334155',
+                          fontWeight: 600,
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                        onClick={() => setActiveTab('truck')}
+                      >
+                        <Truck size={16} color="#d97706" />
+                        <span>Control de Camión</span>
+                      </button>
+                    )}
+
+                    <div style={{ height: '1px', background: '#f1f5f9', margin: '4px 0' }} />
+
+                    <button
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 12px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: 'transparent',
+                        color: '#64748b',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onClick={() => {
+                        if (isAdmin) {
+                          handleLockAdmin();
+                        } else {
+                          setAdminPinInput('');
+                          setAdminPinError('');
+                          setShowAdminModal(true);
+                        }
+                      }}
+                    >
+                      {isAdmin ? <Unlock size={14} color="#f59e0b" /> : <Lock size={14} />}
+                      <span>{isAdmin ? 'Cerrar Modo Admin' : 'Acceso Administrador'}</span>
+                    </button>
+
+                    <button
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 12px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: 'transparent',
+                        color: '#e11d48',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onClick={() => {
+                        if (window.confirm(`¿Deseas cerrar la sesión de ${currentUser.name}?`)) {
+                          handleLogout();
+                        }
+                      }}
+                    >
+                      <LogOut size={14} color="#e11d48" />
+                      <span>Cerrar Sesión</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

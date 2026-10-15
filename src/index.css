@@ -308,6 +308,8 @@ h1, h2, h3, h4, h5, h6 {
 .items-center { align-items: center; }
 .justify-between { justify-content: space-between; }
 .justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+.items-start { align-items: flex-start; }
 .whitespace-nowrap { white-space: nowrap; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gap-1 { gap: 0.25rem; }
