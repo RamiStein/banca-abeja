@@ -174,13 +174,14 @@ export default function CreateWalletModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto py-6 sm:py-8"
+      style={{ overflowY: 'auto' }}
       onClick={onClose}
     >
       <div 
-        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-xl max-h-[92vh] overflow-y-auto relative p-6 sm:p-8"
+        className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-xl relative p-6 sm:p-8 my-auto"
         onClick={e => e.stopPropagation()}
-        style={{ scrollbarWidth: 'thin' }}
+        style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
       >
         {/* Botón Cerrar (X) con posicionamiento seguro */}
         <button
@@ -360,7 +361,7 @@ export default function CreateWalletModal({
 
             {/* Elementos existentes seleccionables */}
             {existingElements.length > 0 && (
-              <div className="max-h-36 overflow-y-auto space-y-1.5 p-2 bg-slate-50 rounded-2xl border border-slate-200/80">
+              <div className="overflow-y-auto space-y-1.5 p-2 bg-slate-50 rounded-2xl border border-slate-200/80 pr-1" style={{ maxHeight: '160px', overflowY: 'auto' }}>
                 {existingElements.map(elem => {
                   const isChecked = selectedElementIds.includes(elem.id);
                   return (

@@ -886,9 +886,14 @@ export default function ElementsManager({
       {/* MODAL 1: CREAR ELEMENTO (2 PASOS CLAROS Y FLUIDOS)        */}
       {/* ======================================================== */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div 
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          style={{ overflowY: 'auto' }}
+          onClick={() => setShowCreateModal(false)}
+        >
           <div 
-            className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative my-auto"
+            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Cerrar modal */}
@@ -1280,9 +1285,14 @@ export default function ElementsManager({
       {/* MODAL 2: OPERAR EN ELEMENTO (DEPÓSITO / EGRESO / INGRESO) */}
       {/* ======================================================== */}
       {actionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div 
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          style={{ overflowY: 'auto' }}
+          onClick={() => setActionModal(null)}
+        >
           <div 
-            className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative"
+            className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative my-auto"
+            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             <button 
@@ -1457,9 +1467,14 @@ export default function ElementsManager({
       {/* MODAL 3: DETALLE COMPLETO DEL ELEMENTO                   */}
       {/* ======================================================== */}
       {selectedElement && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div 
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          style={{ overflowY: 'auto' }}
+          onClick={() => setSelectedElement(null)}
+        >
           <div 
-            className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative my-auto"
+            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             <button 
@@ -1648,7 +1663,7 @@ export default function ElementsManager({
                             {safeFormatCurrency(totalLinked)}
                           </span>
                         </div>
-                        <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                        <div className="space-y-1.5 overflow-y-auto pr-1" style={{ maxHeight: '150px', overflowY: 'auto' }}>
                           {linkedTxs.map(ltx => (
                             <div key={ltx.id} className="p-2 rounded-xl bg-white border border-amber-100 flex items-center justify-between text-xs">
                               <div>
@@ -1671,7 +1686,7 @@ export default function ElementsManager({
                       Movimientos de {selectedElement.name} ({stats.recentTxs.length})
                     </h4>
                     {stats.recentTxs.length > 0 ? (
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                      <div className="space-y-2 overflow-y-auto pr-1" style={{ maxHeight: '270px', overflowY: 'auto' }}>
                         {stats.recentTxs.map(tx => {
                           const targetId = tx.targetMemberId || (selectedElement.members?.find(m => m !== tx.memberId) || 'cristian');
                           const targetMember = availableMembers.find(m => m.id === targetId) || { name: 'Compañero', cleanPhone: '5491149748673' };
@@ -1747,9 +1762,14 @@ export default function ElementsManager({
       {/* MODAL 4: INGRESAR DINERO A LA CUENTA PRINCIPAL           */}
       {/* ======================================================== */}
       {showTopUpModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div 
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          style={{ overflowY: 'auto' }}
+          onClick={() => setShowTopUpModal(false)}
+        >
           <div 
-            className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative"
+            className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative my-auto"
+            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             <button 
@@ -1837,9 +1857,14 @@ export default function ElementsManager({
       {/* MODAL 5: INFORMACIÓN Y GESTIÓN DE LA BILLETERA           */}
       {/* ======================================================== */}
       {showWalletInfoModal && currentWallet && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div 
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          style={{ overflowY: 'auto' }}
+          onClick={() => setShowWalletInfoModal(false)}
+        >
           <div 
-            className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative my-auto"
+            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Cerrar modal */}
@@ -1951,7 +1976,7 @@ export default function ElementsManager({
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Elementos en esta Billetera
               </h4>
-              <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+              <div className="space-y-1.5 overflow-y-auto pr-1" style={{ maxHeight: '180px', overflowY: 'auto' }}>
                 {(() => {
                   const walletElements = (elements || []).filter(e => (e.walletId || 'wallet-elementales') === currentWallet.id);
                   if (walletElements.length === 0) {
