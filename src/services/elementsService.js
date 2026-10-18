@@ -6,7 +6,7 @@
 import { db } from '../firebase';
 import { 
   collection, doc, getDoc, setDoc, addDoc, updateDoc, 
-  deleteDoc, onSnapshot, query, orderBy, where 
+  deleteDoc, onSnapshot, query, orderBy, where, getDocs 
 } from 'firebase/firestore';
 
 const STORAGE_ELEMENTS_KEY = 'banca_abeja_elements_v2';
@@ -984,7 +984,135 @@ class ElementsService {
     return tx;
   }
 
-  // --- HITOS / EVENTOS TEMPORALES (MICRO-CONTABILIDAD) ---
+  // --- REGISTRAR GASTO CENTRALIZADO CON DIRECCIONAMIENTO A BILLETERA Y/O ELEMENTO ---
+  async recordDirectedExpense({
+    walletId,
+    elementId = null,
+    memberId = 'ramiro',
+    memberName = 'Ramiro',
+    amount,
+    concept,
+    date = null,
+    milestoneId = null,
+    category = null
+  }) {
+    const numAmount = Math.abs(parseFloat(amount) || 0);
+    if (numAmount <= 0) return null;
+
+    const wallet = this.wallets.find(w => w.id === walletId) || this.wallets[0];
+    const elem = elementId ? this.elements.find(e => e.id === elementId) : null;
+
+    const txDate = date ? new Date(date + 'T12:00:00').toLocaleDateString('es-AR') : new Date().toLocaleDateString('es-AR');
+
+    const tx = {
+      id: `etx-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      walletId: wallet ? wallet.id : (elem?.walletId || 'wallet-elementales'),
+      walletName: wallet ? wallet.name : 'Elementales',
+      elementId: elem ? elem.id : null,
+      elementName: elem ? elem.name : null,
+      type: 'expense',
+      amount: numAmount,
+      concept: concept?.trim() || (elem ? `Gasto en ${elem.name}` : `Gasto en ${wallet?.name || 'Billetera'}`),
+      memberId: memberId || 'ramiro',
+      memberName: memberName || 'Ramiro',
+      milestoneId: milestoneId || null,
+      category: category || (elem ? elem.category : 'General'),
+      currency: wallet?.currency || 'ARS',
+      timestamp: Date.now(),
+      date: txDate
+    };
+
+    // Si es un gasto directo a la billetera (sin elemento), descontar de la caja libre de la billetera
+    if (!elem && wallet) {
+      await this.updateWalletBalance(wallet.id, -numAmount);
+    }
+
+    const updatedTxs = [tx, ...this.transactions];
+    this.saveStoredTransactions(updatedTxs);
+
+    if (db) {
+      try {
+        await addDoc(collection(db, 'banca_abeja_element_transactions'), tx);
+      } catch (e) {
+        console.warn("Firestore error al guardar gasto direccionado:", e);
+      }
+    }
+
+    return tx;
+  }
+
+  // --- OBTENER GASTOS CARGADOS POR UN USUARIO ---
+  getUserExpenses(memberId) {
+    if (!this.transactions || !Array.isArray(this.transactions)) {
+      this.transactions = this.loadStoredTransactions();
+    }
+    const cleanId = String(memberId || '').toLowerCase();
+    return (this.transactions || [])
+      .filter(t => t && t.type === 'expense' && (
+        String(t.memberId || '').toLowerCase() === cleanId ||
+        String(t.memberName || '').toLowerCase() === cleanId
+      ))
+      .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  }
+
+  // --- ELIMINAR TRANSACCIÓN / GASTO ---
+  async deleteElementTransaction(txId) {
+    const tx = (this.transactions || []).find(t => t.id === txId);
+    if (!tx) return false;
+
+    // Si fue un gasto directo de billetera, restaurar el saldo
+    if (!tx.elementId && tx.walletId && tx.type === 'expense') {
+      await this.updateWalletBalance(tx.walletId, tx.amount);
+    }
+
+    this.transactions = (this.transactions || []).filter(t => t.id !== txId);
+    this.saveStoredTransactions(this.transactions);
+
+    if (db) {
+      try {
+        const q = query(collection(db, 'banca_abeja_element_transactions'), where('id', '==', txId));
+        const snap = await getDocs(q);
+        snap.forEach(async docSnap => {
+          await deleteDoc(docSnap.ref);
+        });
+      } catch (e) {
+        console.warn("Firestore error al eliminar transacción:", e);
+      }
+    }
+    return true;
+  }
+
+  // --- RE-DIRECCIONAR GASTO A OTRA BILLETERA O ELEMENTO ---
+  async redirectTransaction(txId, newWalletId, newElementId = null) {
+    if (!this.transactions) this.transactions = this.loadStoredTransactions();
+    const txIndex = this.transactions.findIndex(t => t.id === txId);
+    if (txIndex === -1) return null;
+
+    const oldTx = this.transactions[txIndex];
+    const newWallet = this.wallets.find(w => w.id === newWalletId) || this.wallets[0];
+    const newElem = newElementId ? this.elements.find(e => e.id === newElementId) : null;
+
+    // Manejar balances de billetera si aplica
+    if (!oldTx.elementId && oldTx.walletId && oldTx.type === 'expense') {
+      await this.updateWalletBalance(oldTx.walletId, oldTx.amount); // Revertir en la anterior
+    }
+    if (!newElem && newWallet && oldTx.type === 'expense') {
+      await this.updateWalletBalance(newWallet.id, -oldTx.amount); // Descontar en la nueva
+    }
+
+    const updatedTx = {
+      ...oldTx,
+      walletId: newWallet.id,
+      walletName: newWallet.name,
+      elementId: newElem ? newElem.id : null,
+      elementName: newElem ? newElem.name : null
+    };
+
+    this.transactions[txIndex] = updatedTx;
+    this.saveStoredTransactions(this.transactions);
+
+    return updatedTx;
+  }
   getMilestonesByElement(elementId) {
     if (!this.milestones || !Array.isArray(this.milestones)) {
       this.milestones = this.loadStoredMilestones();

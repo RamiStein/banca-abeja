@@ -15,6 +15,7 @@ import CommunityMatrix from './CommunityMatrix';
 import TruckManager from './TruckManager';
 import ElementsManager from './components/ElementsManager';
 import CreateWalletModal from './components/CreateWalletModal';
+import UserSpace from './components/UserSpace';
 import { elementsService } from './services/elementsService';
 import { authService } from './services/authService';
 import AuthScreen from './components/AuthScreen';
@@ -135,7 +136,7 @@ function App() {
 
 
   const [isDragging, setIsDragging] = useState(false);
-  const [activeTab, setActiveTab] = useState('elements');
+  const [activeTab, setActiveTab] = useState('user-space');
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Sistema Multi-Billeteras
@@ -629,9 +630,44 @@ function App() {
             </div>
           </div>
 
-          {/* Lado Derecho: Botón volver si está fuera de billeteras + Chip de Usuario con Menú */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {activeTab !== 'elements' && (
+          {/* Lado Derecho: Switcher Mi Espacio / Billeteras + Chip de Usuario con Menú */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            {/* Switcher Principal de Modo */}
+            <div 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                background: '#f1f5f9', 
+                padding: '3px', 
+                borderRadius: '9999px', 
+                border: '1px solid #e2e8f0', 
+                gap: '3px' 
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setActiveTab('user-space')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 15px',
+                  borderRadius: '9999px',
+                  fontSize: '0.78rem',
+                  fontWeight: activeTab === 'user-space' ? 800 : 600,
+                  backgroundColor: activeTab === 'user-space' ? '#ffffff' : 'transparent',
+                  color: activeTab === 'user-space' ? '#4f46e5' : '#64748b',
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: activeTab === 'user-space' ? '0 1px 4px rgba(79, 70, 229, 0.15)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Espacio personal para cargar y direccionar gastos"
+              >
+                <User size={13} color={activeTab === 'user-space' ? '#4f46e5' : '#64748b'} />
+                <span>Mi Espacio</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setActiveTab('elements')}
@@ -639,22 +675,23 @@ function App() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '7px 14px',
+                  padding: '7px 15px',
                   borderRadius: '9999px',
-                  background: '#eef2ff',
-                  color: '#4338ca',
                   fontSize: '0.78rem',
-                  fontWeight: 700,
-                  border: '1px solid #c7d2fe',
+                  fontWeight: activeTab === 'elements' ? 800 : 600,
+                  backgroundColor: activeTab === 'elements' ? '#ffffff' : 'transparent',
+                  color: activeTab === 'elements' ? '#4f46e5' : '#64748b',
+                  border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 1px 2px rgba(67, 56, 202, 0.08)'
+                  boxShadow: activeTab === 'elements' ? '0 1px 4px rgba(79, 70, 229, 0.15)' : 'none',
+                  transition: 'all 0.15s ease'
                 }}
-                title="Volver al gestor de billeteras y elementos"
+                title="Gestión de billeteras colectivas y elementos"
               >
-                <Wallet size={14} />
-                <span>Volver a Billeteras</span>
+                <Wallet size={13} color={activeTab === 'elements' ? '#4f46e5' : '#64748b'} />
+                <span>Billeteras</span>
               </button>
-            )}
+            </div>
 
             {/* Chip de Usuario Ramiro a la Derecha */}
             {currentUser && (
@@ -749,6 +786,27 @@ function App() {
                         {currentUser.email || currentUser.id}
                       </span>
                     </div>
+
+                    <button
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '9px 12px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: activeTab === 'user-space' ? '#eef2ff' : 'transparent',
+                        color: activeTab === 'user-space' ? '#4338ca' : '#334155',
+                        fontWeight: activeTab === 'user-space' ? 800 : 600,
+                        fontSize: '0.82rem',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onClick={() => setActiveTab('user-space')}
+                    >
+                      <User size={16} color={activeTab === 'user-space' ? '#4f46e5' : '#64748b'} />
+                      <span>Mi Espacio (Cargar Gastos)</span>
+                    </button>
 
                     <button
                       style={{
@@ -1746,7 +1804,19 @@ function App() {
           </div>
         )}
 
-        {/* Módulo Principal: Billetera & Elementos a Gestionar */}
+        {/* Espacio Principal del Usuario para Cargar y Direccionar Gastos */}
+        {activeTab === 'user-space' && (
+          <UserSpace 
+            currentUser={currentUser}
+            wallets={wallets}
+            onNavigateToWallet={(wId) => {
+              handleSelectWallet(wId);
+            }}
+            onNavigateToTab={(tab) => setActiveTab(tab)}
+          />
+        )}
+
+        {/* Módulo de Billeteras & Elementos a Gestionar */}
         {activeTab === 'elements' && (
           <ElementsManager 
             currentUser={currentUser}
