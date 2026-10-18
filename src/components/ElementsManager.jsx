@@ -1697,8 +1697,16 @@ export default function ElementsManager({
           onClick={() => setSelectedElement(null)}
         >
           <div 
-            className="bg-white rounded-[32px] w-full max-w-2xl p-6 sm:p-8 shadow-2xl relative my-auto border border-slate-100"
-            style={{ maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+            className="bg-white rounded-3xl w-full shadow-2xl relative my-auto border border-slate-100"
+            style={{ 
+              maxWidth: '720px', 
+              maxHeight: '90vh', 
+              overflowY: 'auto', 
+              display: 'flex', 
+              flexDirection: 'column',
+              padding: '28px 30px',
+              borderRadius: '28px'
+            }}
             onClick={e => e.stopPropagation()}
           >
             {/* Botón flotante para cerrar */}
@@ -1729,7 +1737,21 @@ export default function ElementsManager({
 
             {/* Cabecera del Elemento Espaciosa */}
             <div className="flex items-start gap-4 mb-6 pr-12">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-3xl shadow-sm shrink-0">
+              <div 
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '18px',
+                  backgroundColor: '#eef2ff',
+                  border: '1px solid #c7d2fe',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.8rem',
+                  boxShadow: '0 2px 6px rgba(79, 70, 229, 0.12)',
+                  flexShrink: 0
+                }}
+              >
                 {selectedElement.icon || '📦'}
               </div>
               <div className="flex-1 min-w-0">
@@ -1755,7 +1777,7 @@ export default function ElementsManager({
                     {selectedElement.walletIds.map(wId => {
                       const wObj = wallets.find(wall => wall.id === wId) || { name: wId, icon: '🐝' };
                       return (
-                        <span key={wId} className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 shadow-2xs">
+                        <span key={wId} className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
                           {wObj.icon} {wObj.name}
                         </span>
                       );
@@ -1778,27 +1800,74 @@ export default function ElementsManager({
               const costBaseItems = Array.isArray(selectedElement.costBase) ? selectedElement.costBase : [];
 
               return (
-                <div className="flex flex-col gap-6">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {/* Hero Card de Saldo */}
-                  <div className="p-5 sm:p-6 rounded-3xl bg-slate-900 text-white shadow-xl shadow-slate-900/10 relative overflow-hidden">
-                    <div className="relative z-10">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  <div 
+                    style={{
+                      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                      borderRadius: '24px',
+                      padding: '24px 28px',
+                      color: '#ffffff',
+                      boxShadow: '0 12px 28px -6px rgba(15, 23, 42, 0.25)',
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <div style={{ position: 'relative', zIndex: 2 }}>
+                      <span style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        color: '#94a3b8',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        display: 'block',
+                        marginBottom: '6px'
+                      }}>
                         Saldo Total en {selectedElement.name}
                       </span>
-                      <div className="text-3xl sm:text-4xl font-black text-white tracking-tight my-2">
+                      <div style={{
+                        fontSize: '2.5rem',
+                        fontWeight: 900,
+                        color: '#ffffff',
+                        letterSpacing: '-0.03em',
+                        lineHeight: 1.1,
+                        margin: '8px 0 16px 0'
+                      }}>
                         {safeFormatCurrency(stats.currentBalance, 2)}
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-800 text-xs">
-                        <div className="flex items-center justify-between sm:justify-start sm:gap-2 p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50">
-                          <span className="text-slate-400 font-medium">Ingresos / Depósitos:</span>
-                          <span className="text-emerald-400 font-extrabold text-sm">
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '12px',
+                        paddingTop: '16px',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.12)'
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          borderRadius: '14px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.07)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <span style={{ color: '#cbd5e1', fontSize: '0.78rem', fontWeight: 600 }}>Ingresos / Depósitos:</span>
+                          <span style={{ color: '#34d399', fontWeight: 800, fontSize: '0.92rem' }}>
                             +{safeFormatCurrency((stats.totalIncome || 0) + (stats.totalDeposits || 0))}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between sm:justify-start sm:gap-2 p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50">
-                          <span className="text-slate-400 font-medium">Egresos / Gastos:</span>
-                          <span className="text-rose-400 font-extrabold text-sm">
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          borderRadius: '14px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.07)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <span style={{ color: '#cbd5e1', fontSize: '0.78rem', fontWeight: 600 }}>Egresos / Gastos:</span>
+                          <span style={{ color: '#fb7185', fontWeight: 800, fontSize: '0.92rem' }}>
                             -{safeFormatCurrency(stats.totalExpense)}
                           </span>
                         </div>
@@ -1807,43 +1876,108 @@ export default function ElementsManager({
                   </div>
 
                   {/* Botones de acción rápida estilo Fintech */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                    gap: '10px'
+                  }}>
                     <button
+                      type="button"
                       onClick={() => {
                         setActionModal({ type: 'deposit', element: selectedElement });
                         setActionForm({ amount: '', concept: `Depósito en ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '', milestoneId: '' });
                       }}
-                      className="btn py-3 px-3 rounded-2xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition-all"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '12px 14px',
+                        borderRadius: '14px',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        backgroundColor: '#4f46e5',
+                        color: '#ffffff',
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 10px rgba(79, 70, 229, 0.25)',
+                        transition: 'all 0.15s ease'
+                      }}
                     >
                       <ArrowDownLeft size={16} />
                       <span>+ Depositar</span>
                     </button>
                     <button
+                      type="button"
                       onClick={() => {
                         setActionModal({ type: 'income', element: selectedElement });
                         setActionForm({ amount: '', concept: `Ingreso de ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '', milestoneId: '' });
                       }}
-                      className="btn py-3 px-3 rounded-2xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 shadow-2xs flex items-center justify-center gap-1.5 transition-all"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '12px 14px',
+                        borderRadius: '14px',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        backgroundColor: '#ecfdf5',
+                        color: '#047857',
+                        border: '1px solid #a7f3d0',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
                     >
                       <TrendingUp size={16} />
                       <span>+ Ingreso</span>
                     </button>
                     <button
+                      type="button"
                       onClick={() => {
                         setActionModal({ type: 'expense', element: selectedElement });
                         setActionForm({ amount: '', concept: `Gasto de ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '', milestoneId: '' });
                       }}
-                      className="btn py-3 px-3 rounded-2xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 shadow-2xs flex items-center justify-center gap-1.5 transition-all"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '12px 14px',
+                        borderRadius: '14px',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        backgroundColor: '#fff1f2',
+                        color: '#be123c',
+                        border: '1px solid #fecdd3',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
                     >
                       <TrendingDown size={16} />
                       <span>- Egreso</span>
                     </button>
                     <button
+                      type="button"
                       onClick={() => {
                         setActionModal({ type: 'withdraw', element: selectedElement });
                         setActionForm({ amount: '', concept: `Retiro de ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '', milestoneId: '' });
                       }}
-                      className="btn py-3 px-3 rounded-2xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shadow-2xs flex items-center justify-center gap-1.5 transition-all"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '12px 14px',
+                        borderRadius: '14px',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        backgroundColor: '#f1f5f9',
+                        color: '#334155',
+                        border: '1px solid #e2e8f0',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
                     >
                       <ArrowUpRight size={16} />
                       <span>Retirar</span>
@@ -1851,102 +1985,114 @@ export default function ElementsManager({
                   </div>
 
                   {/* Barra de Pestañas / Segmented Control Tabs */}
-                  <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl overflow-x-auto text-xs font-bold text-slate-600">
-                    <button
-                      type="button"
-                      onClick={() => setElementDetailTab('overview')}
-                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
-                        elementDetailTab === 'overview'
-                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
-                          : 'hover:text-slate-900'
-                      }`}
-                    >
-                      <Users size={14} />
-                      <span>Resumen</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setElementDetailTab('milestones')}
-                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
-                        elementDetailTab === 'milestones'
-                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
-                          : 'hover:text-slate-900'
-                      }`}
-                    >
-                      <Calendar size={14} />
-                      <span>Hitos ({elemMilestones.length})</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setElementDetailTab('costs')}
-                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
-                        elementDetailTab === 'costs'
-                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
-                          : 'hover:text-slate-900'
-                      }`}
-                    >
-                      <Tag size={14} />
-                      <span>Insumos ({costBaseItems.length})</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setElementDetailTab('history')}
-                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
-                        elementDetailTab === 'history'
-                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
-                          : 'hover:text-slate-900'
-                      }`}
-                    >
-                      <Clock size={14} />
-                      <span>Movimientos ({stats.recentTxs.length})</span>
-                    </button>
+                  <div 
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      backgroundColor: '#f1f5f9',
+                      borderRadius: '16px',
+                      padding: '5px',
+                      gap: '4px',
+                      overflowX: 'auto',
+                      border: '1px solid #e2e8f0'
+                    }}
+                  >
+                    {[
+                      { id: 'overview', label: 'Resumen', icon: Users },
+                      { id: 'milestones', label: `Hitos (${elemMilestones.length})`, icon: Calendar },
+                      { id: 'costs', label: `Insumos (${costBaseItems.length})`, icon: Tag },
+                      { id: 'history', label: `Movimientos (${stats.recentTxs.length})`, icon: Clock },
+                    ].map(tab => {
+                      const isActive = elementDetailTab === tab.id;
+                      const Icon = tab.icon;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setElementDetailTab(tab.id)}
+                          style={{
+                            flex: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            padding: '10px 14px',
+                            borderRadius: '12px',
+                            fontSize: '0.8rem',
+                            fontWeight: isActive ? 800 : 600,
+                            backgroundColor: isActive ? '#ffffff' : 'transparent',
+                            color: isActive ? '#0f172a' : '#64748b',
+                            border: 'none',
+                            cursor: 'pointer',
+                            boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                            whiteSpace: 'nowrap',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <Icon size={15} color={isActive ? '#4f46e5' : '#64748b'} />
+                          <span>{tab.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* CONTENIDO DE PESTAÑAS */}
 
                   {/* 1. PESTAÑA: RESUMEN */}
                   {elementDetailTab === 'overview' && (
-                    <div className="space-y-5">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                       {/* Intercambio Bilateral Mano a Mano */}
                       {selectedElement.type === 'bilateral' && selectedElement.members && (
-                        <div className="p-5 rounded-2xl bg-purple-50/70 border border-purple-200 text-xs">
-                          <div className="flex items-center justify-between font-bold text-purple-900 mb-2">
-                            <span className="flex items-center gap-1.5 text-xs">
+                        <div 
+                          style={{
+                            padding: '18px 20px',
+                            borderRadius: '20px',
+                            backgroundColor: '#faf5ff',
+                            border: '1px solid #ddd6fe',
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700, color: '#581c87', marginBottom: '8px' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span>🤝 Intercambio Bilateral</span>
-                              <span className="text-[10px] bg-purple-200/80 text-purple-800 px-2.5 py-0.5 rounded-full font-bold">1 a 1</span>
+                              <span style={{ fontSize: '0.65rem', backgroundColor: '#e9d5ff', color: '#6b21a8', padding: '2px 8px', borderRadius: '9999px', fontWeight: 800 }}>1 a 1</span>
                             </span>
-                            <span className="text-purple-700 text-[11px] font-semibold">Balanza Directa</span>
+                            <span style={{ color: '#7e22ce', fontSize: '0.72rem', fontWeight: 600 }}>Balanza Directa</span>
                           </div>
-                          <div className="flex items-center gap-2.5 text-slate-700 my-2.5">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#334155', margin: '10px 0' }}>
                             {selectedElement.members.map((mId, idx) => {
                               const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
                               return (
                                 <React.Fragment key={mId}>
-                                  {idx > 0 && <span className="text-purple-500 font-black text-sm">⇄</span>}
-                                  <span className="font-bold px-3 py-1.5 bg-white rounded-xl border border-purple-100 shadow-2xs">
+                                  {idx > 0 && <span style={{ color: '#a855f7', fontWeight: 900, fontSize: '0.9rem' }}>⇄</span>}
+                                  <span style={{ fontWeight: 700, padding: '6px 12px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #ede9fe', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
                                     {mObj.name}
                                   </span>
                                 </React.Fragment>
                               );
                             })}
                           </div>
-                          <p className="text-[11px] text-purple-900/80 mt-2 mb-0 leading-relaxed">
-                            Intercambios, compras por encargo y deudas mutuas. Cualquier gasto puede tallarse a un proyecto colectivo (como la Feria o la Huerta) para computarse como inversión.
+                          <p style={{ fontSize: '0.72rem', color: '#6b21a8', margin: '8px 0 0 0', lineHeight: 1.4 }}>
+                            Intercambios, compras por encargo y deudas mutuas. Cualquier gasto puede tallarse a un proyecto colectivo para computarse como inversión.
                           </p>
                         </div>
                       )}
 
                       {/* Aportes por Integrante con Avatar y Porcentaje */}
                       {selectedElement.type === 'shared' && (
-                        <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                          <h4 className="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-1.5">
-                            <Users size={14} className="text-indigo-600" />
+                        <div 
+                          style={{
+                            padding: '20px 22px',
+                            borderRadius: '20px',
+                            backgroundColor: '#f8fafc',
+                            border: '1px solid #e2e8f0'
+                          }}
+                        >
+                          <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Users size={15} color="#4f46e5" />
                             <span>Aportes por Integrante</span>
                           </h4>
-                          <div className="space-y-2.5">
+                          <div>
                             {selectedElement.members?.map(mId => {
                               const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
                               const contributed = stats.memberContributions[mId] || 0;
@@ -1954,23 +2100,59 @@ export default function ElementsManager({
                               const pct = stats.totalDeposits > 0 ? Math.min(100, Math.round((contributed / totalDep) * 100)) : 0;
 
                               return (
-                                <div key={mId} className="p-3.5 rounded-xl bg-white border border-slate-200/70 shadow-2xs">
-                                  <div className="flex items-center justify-between mb-1.5 text-xs">
-                                    <div className="flex items-center gap-2.5">
-                                      <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shadow-2xs">
+                                <div 
+                                  key={mId} 
+                                  style={{
+                                    padding: '14px 16px',
+                                    borderRadius: '16px',
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #e2e8f0',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                                    marginBottom: '10px'
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                      <div 
+                                        style={{
+                                          width: '34px',
+                                          height: '34px',
+                                          borderRadius: '50%',
+                                          backgroundColor: '#e0e7ff',
+                                          color: '#4338ca',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          fontWeight: 800,
+                                          fontSize: '0.85rem',
+                                          flexShrink: 0,
+                                          border: '1.5px solid #c7d2fe'
+                                        }}
+                                      >
                                         {mObj.name.charAt(0).toUpperCase()}
+                                      </div>
+                                      <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.9rem' }}>
+                                        {mObj.name}
                                       </span>
-                                      <span className="font-bold text-slate-800">{mObj.name}</span>
                                     </div>
-                                    <span className="font-extrabold text-slate-900 text-sm">
-                                      {safeFormatCurrency(contributed)}
-                                      <span className="text-[11px] text-slate-400 font-normal ml-1.5">({pct}%)</span>
-                                    </span>
+                                    <div style={{ textAlign: 'right' }}>
+                                      <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>
+                                        {safeFormatCurrency(contributed)}
+                                      </span>
+                                      <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, marginLeft: '6px' }}>
+                                        ({pct}%)
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden mt-2">
+                                  <div style={{ width: '100%', height: '6px', backgroundColor: '#f1f5f9', borderRadius: '9999px', overflow: 'hidden' }}>
                                     <div
-                                      className="bg-indigo-600 h-1.5 rounded-full transition-all duration-300"
-                                      style={{ width: `${pct}%` }}
+                                      style={{
+                                        width: `${pct}%`,
+                                        height: '100%',
+                                        backgroundColor: '#4f46e5',
+                                        borderRadius: '9999px',
+                                        transition: 'width 0.3s ease'
+                                      }}
                                     />
                                   </div>
                                 </div>
@@ -1986,26 +2168,47 @@ export default function ElementsManager({
                         if (linkedTxs.length === 0) return null;
                         const totalLinked = linkedTxs.reduce((sum, t) => sum + (t.amount || 0), 0);
                         return (
-                          <div className="p-5 rounded-2xl bg-amber-50/80 border border-amber-200/90">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                                <Sparkles size={14} className="text-amber-700" />
+                          <div 
+                            style={{
+                              padding: '18px 20px',
+                              borderRadius: '20px',
+                              backgroundColor: '#fffbeb',
+                              border: '1px solid #fde68a'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#78350f', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Sparkles size={15} color="#b45309" />
                                 <span>Inversiones desde Mano a Mano ({linkedTxs.length})</span>
                               </span>
-                              <span className="text-sm font-black text-amber-950">
+                              <span style={{ fontSize: '0.92rem', fontWeight: 900, color: '#78350f' }}>
                                 {safeFormatCurrency(totalLinked)}
                               </span>
                             </div>
-                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
                               {linkedTxs.map(ltx => (
-                                <div key={ltx.id} className="p-3 rounded-xl bg-white border border-amber-100 shadow-2xs flex items-center justify-between text-xs gap-3">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-bold text-slate-800 truncate">{ltx.concept}</div>
-                                    <div className="text-[10px] text-slate-500 mt-0.5">
+                                <div 
+                                  key={ltx.id} 
+                                  style={{
+                                    padding: '12px 14px',
+                                    borderRadius: '14px',
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #fef3c7',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    fontSize: '0.75rem',
+                                    gap: '12px'
+                                  }}
+                                >
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontWeight: 700, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ltx.concept}</div>
+                                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>
                                       {ltx.date} • Aportado por <strong>{ltx.memberName}</strong> {ltx.targetMemberId ? `(pedido por ${ltx.targetMemberId})` : ''}
                                     </div>
                                   </div>
-                                  <span className="font-black text-amber-900 shrink-0 text-sm">
+                                  <span style={{ fontWeight: 900, color: '#92400e', flexShrink: 0, fontSize: '0.88rem' }}>
                                     {safeFormatCurrency(ltx.amount)}
                                   </span>
                                 </div>
@@ -2624,45 +2827,54 @@ export default function ElementsManager({
                   </div>
 
                   {/* Tabs de Billetera */}
-                  <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl overflow-x-auto text-xs font-bold text-slate-600">
-                    <button
-                      type="button"
-                      onClick={() => setWalletInfoTab('rules')}
-                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
-                        walletInfoTab === 'rules'
-                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
-                          : 'hover:text-slate-900'
-                      }`}
-                    >
-                      <Shield size={14} />
-                      <span>Reglas & Acuerdos</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setWalletInfoTab('report')}
-                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
-                        walletInfoTab === 'report'
-                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
-                          : 'hover:text-slate-900'
-                      }`}
-                    >
-                      <FileText size={14} />
-                      <span>Informe Ejecutivo</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setWalletInfoTab('elements')}
-                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
-                        walletInfoTab === 'elements'
-                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
-                          : 'hover:text-slate-900'
-                      }`}
-                    >
-                      <Users size={14} />
-                      <span>Elementos & Integrantes</span>
-                    </button>
+                  <div 
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      backgroundColor: '#f1f5f9',
+                      borderRadius: '16px',
+                      padding: '5px',
+                      gap: '4px',
+                      overflowX: 'auto',
+                      border: '1px solid #e2e8f0'
+                    }}
+                  >
+                    {[
+                      { id: 'rules', label: 'Reglas & Acuerdos', icon: Shield },
+                      { id: 'report', label: 'Informe Ejecutivo', icon: FileText },
+                      { id: 'elements', label: 'Elementos & Integrantes', icon: Users },
+                    ].map(tab => {
+                      const isActive = walletInfoTab === tab.id;
+                      const Icon = tab.icon;
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setWalletInfoTab(tab.id)}
+                          style={{
+                            flex: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            padding: '10px 14px',
+                            borderRadius: '12px',
+                            fontSize: '0.8rem',
+                            fontWeight: isActive ? 800 : 600,
+                            backgroundColor: isActive ? '#ffffff' : 'transparent',
+                            color: isActive ? '#0f172a' : '#64748b',
+                            border: 'none',
+                            cursor: 'pointer',
+                            boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                            whiteSpace: 'nowrap',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <Icon size={15} color={isActive ? '#4f46e5' : '#64748b'} />
+                          <span>{tab.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* PESTAÑA 1: REGLAS & ACUERDOS */}
@@ -2802,19 +3014,46 @@ export default function ElementsManager({
                         <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
                           Integrantes con Acceso
                         </h4>
-                        <div className="flex flex-wrap gap-2">
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                           {(currentWallet.members && currentWallet.members.length > 0 ? currentWallet.members : ['ramiro', 'agustina', 'cristian']).map((mId) => {
                             const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
                             return (
-                              <span 
+                              <div 
                                 key={mId} 
-                                className="px-3.5 py-2 rounded-2xl text-xs font-bold bg-slate-50 text-slate-800 border border-slate-200 flex items-center gap-2 shadow-2xs"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '6px 14px 6px 8px',
+                                  borderRadius: '9999px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 700,
+                                  backgroundColor: '#ffffff',
+                                  color: '#0f172a',
+                                  border: '1px solid #e2e8f0',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                                }}
                               >
-                                <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-black">
+                                <div 
+                                  style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    backgroundColor: '#e0e7ff',
+                                    color: '#4338ca',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 900,
+                                    flexShrink: 0,
+                                    border: '1px solid #c7d2fe'
+                                  }}
+                                >
                                   {mObj.name.charAt(0).toUpperCase()}
-                                </span>
+                                </div>
                                 <span>{mObj.name}</span>
-                              </span>
+                              </div>
                             );
                           })}
                         </div>
