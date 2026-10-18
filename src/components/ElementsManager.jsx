@@ -2235,10 +2235,24 @@ export default function ElementsManager({
                         <button
                           type="button"
                           onClick={() => setShowCreateMilestoneModal(true)}
-                          className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm flex items-center gap-1.5 transition-all"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '8px 16px',
+                            borderRadius: '12px',
+                            fontSize: '0.82rem',
+                            fontWeight: 800,
+                            backgroundColor: '#d97706',
+                            color: '#ffffff',
+                            border: 'none',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 12px rgba(217, 119, 6, 0.28)',
+                            transition: 'all 0.15s ease'
+                          }}
                         >
-                          <Plus size={14} />
-                          <span>Nuevo Hito</span>
+                          <Plus size={15} strokeWidth={2.5} />
+                          <span>+ Nuevo Hito</span>
                         </button>
                       </div>
 
@@ -2252,10 +2266,24 @@ export default function ElementsManager({
                           <button
                             type="button"
                             onClick={() => setShowCreateMilestoneModal(true)}
-                            className="px-4 py-2 rounded-full text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm inline-flex items-center gap-1.5"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '10px 20px',
+                              borderRadius: '14px',
+                              fontSize: '0.85rem',
+                              fontWeight: 800,
+                              backgroundColor: '#d97706',
+                              color: '#ffffff',
+                              border: 'none',
+                              cursor: 'pointer',
+                              boxShadow: '0 4px 14px rgba(217, 119, 6, 0.35)',
+                              transition: 'all 0.15s ease'
+                            }}
                           >
-                            <Plus size={14} />
-                            <span>Crear Primer Hito</span>
+                            <Plus size={16} strokeWidth={2.5} />
+                            <span>+ Crear Primer Hito</span>
                           </button>
                         </div>
                       ) : (
@@ -2335,10 +2363,24 @@ export default function ElementsManager({
                         <button
                           type="button"
                           onClick={() => setShowAddCostItem(!showAddCostItem)}
-                          className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1.5 transition-all"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '8px 16px',
+                            borderRadius: '12px',
+                            fontSize: '0.82rem',
+                            fontWeight: 800,
+                            backgroundColor: showAddCostItem ? '#f1f5f9' : '#4f46e5',
+                            color: showAddCostItem ? '#475569' : '#ffffff',
+                            border: showAddCostItem ? '1px solid #cbd5e1' : 'none',
+                            cursor: 'pointer',
+                            boxShadow: showAddCostItem ? 'none' : '0 4px 12px rgba(79, 70, 229, 0.28)',
+                            transition: 'all 0.15s ease'
+                          }}
                         >
-                          <Plus size={14} />
-                          <span>{showAddCostItem ? 'Cancelar' : 'Sumar Insumo'}</span>
+                          <Plus size={15} strokeWidth={2.5} />
+                          <span>{showAddCostItem ? 'Cancelar' : '+ Sumar Insumo'}</span>
                         </button>
                       </div>
 
@@ -3228,9 +3270,26 @@ export default function ElementsManager({
 
               <button
                 type="submit"
-                className="btn mt-2 py-3 rounded-full font-bold text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 flex items-center justify-center gap-2 transition-all"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  width: '100%',
+                  padding: '13px',
+                  borderRadius: '14px',
+                  fontSize: '0.88rem',
+                  fontWeight: 800,
+                  backgroundColor: '#d97706',
+                  color: '#ffffff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(217, 119, 6, 0.35)',
+                  marginTop: '10px',
+                  transition: 'all 0.15s ease'
+                }}
               >
-                <Check size={15} />
+                <Check size={16} strokeWidth={2.5} />
                 <span>Crear Hito Temporal</span>
               </button>
             </form>
