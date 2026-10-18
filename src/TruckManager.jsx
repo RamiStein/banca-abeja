@@ -1088,7 +1088,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               style={{ backgroundColor: '#4f46e5', color: '#fff', fontWeight: 600 }}
               onClick={() => handleStartBooking(new Date().toISOString().split('T')[0])}
             >
-              <Plus size={15} /> + Nuevo Invoice
+              <Plus size={15} /> Nuevo Invoice
             </button>
           </div>
 
@@ -1199,7 +1199,7 @@ ${financialSummary.totalRentalsDebt <= 0 ? '✅ ¡Cuentas al día! Gracias.' : '
               style={{ backgroundColor: '#f59e0b', color: '#ffffff', fontWeight: 700 }}
               onClick={() => setShowTripModal(true)}
             >
-              <Plus size={15} /> + Cargar Flete
+              <Plus size={15} /> Cargar Flete
             </button>
           </div>
 

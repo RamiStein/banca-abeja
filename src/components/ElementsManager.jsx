@@ -4,10 +4,12 @@ import {
   TrendingUp, TrendingDown, Eye, EyeOff, 
   ChevronRight, X, Check, ArrowRight, Trash2, Info,
   Calendar, FileText, Sparkles, Share2, DollarSign,
-  CheckCircle2, Tag, Sliders, Shield, BookOpen, Clock
+  CheckCircle2, Tag, Sliders, Shield, BookOpen, Clock,
+  ArrowRightLeft
 } from 'lucide-react';
 import { elementsService, DEFAULT_ELEMENTS } from '../services/elementsService';
 import { FOUNDING_MEMBERS } from '../services/authService';
+import TransferMoneyModal from './TransferMoneyModal';
 
 const AVAILABLE_ICONS = [
   { icon: '🤝', label: 'Intercambio / Mano a Mano', category: 'Intercambios' },
@@ -38,7 +40,8 @@ export default function ElementsManager({
   currentUser = null, 
   onSelectElement = null,
   activeWalletId: propActiveWalletId = null,
-  onOpenCreateWallet = null
+  onOpenCreateWallet = null,
+  onOpenTransferModal = null
 }) {
   const [elements, setElements] = useState(() => {
     const list = elementsService.elements;
@@ -51,6 +54,15 @@ export default function ElementsManager({
   const [wallets, setWallets] = useState(() => elementsService.getWallets());
   const [milestones, setMilestones] = useState(() => elementsService.milestones || []);
   const [currentWalletId, setCurrentWalletId] = useState(() => propActiveWalletId || elementsService.getActiveWalletId());
+  const [localTransferModalOpen, setLocalTransferModalOpen] = useState(false);
+
+  const handleOpenTransfer = (walletId) => {
+    if (onOpenTransferModal) {
+      onOpenTransferModal(walletId || currentWalletId);
+    } else {
+      setLocalTransferModalOpen(true);
+    }
+  };
 
   const currentWallet = useMemo(() => {
     return (wallets || []).find(w => w.id === currentWalletId) || elementsService.getActiveWallet();
@@ -164,10 +176,12 @@ export default function ElementsManager({
     window.addEventListener('banca_wallet_changed', handleWalletChanged);
     window.addEventListener('banca_wallets_updated', handleWalletsUpdated);
     window.addEventListener('banca_milestones_updated', handleMilestonesUpdated);
+    window.addEventListener('banca_transfer_completed', handleWalletsUpdated);
     return () => {
       window.removeEventListener('banca_wallet_changed', handleWalletChanged);
       window.removeEventListener('banca_wallets_updated', handleWalletsUpdated);
       window.removeEventListener('banca_milestones_updated', handleMilestonesUpdated);
+      window.removeEventListener('banca_transfer_completed', handleWalletsUpdated);
     };
   }, []);
 
@@ -689,6 +703,30 @@ export default function ElementsManager({
             >
               <ArrowDownLeft size={16} color="#34d399" />
               <span>Ingresar Dinero</span>
+            </button>
+
+            <button
+              onClick={() => handleOpenTransfer(currentWallet?.id)}
+              className="btn"
+              style={{
+                background: 'rgba(255, 255, 255, 0.18)',
+                color: '#ffffff',
+                fontWeight: 800,
+                fontSize: '0.82rem',
+                padding: '0.65rem 1.25rem',
+                borderRadius: '9999px',
+                border: '1px solid rgba(255, 255, 255, 0.32)',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.12)'
+              }}
+              title="Transferir dinero a otra billetera con estilo Mercado Pago"
+            >
+              <ArrowRightLeft size={15} color="#38bdf8" />
+              <span>Transferir Dinero</span>
             </button>
           </div>
 
@@ -1905,7 +1943,7 @@ export default function ElementsManager({
                       }}
                     >
                       <ArrowDownLeft size={16} />
-                      <span>+ Depositar</span>
+                      <span>Depositar</span>
                     </button>
                     <button
                       type="button"
@@ -1930,7 +1968,7 @@ export default function ElementsManager({
                       }}
                     >
                       <TrendingUp size={16} />
-                      <span>+ Ingreso</span>
+                      <span>Ingreso</span>
                     </button>
                     <button
                       type="button"
@@ -1955,7 +1993,7 @@ export default function ElementsManager({
                       }}
                     >
                       <TrendingDown size={16} />
-                      <span>- Egreso</span>
+                      <span>Egreso</span>
                     </button>
                     <button
                       type="button"
@@ -2252,7 +2290,7 @@ export default function ElementsManager({
                           }}
                         >
                           <Plus size={15} strokeWidth={2.5} />
-                          <span>+ Nuevo Hito</span>
+                          <span>Nuevo Hito</span>
                         </button>
                       </div>
 
@@ -2283,7 +2321,7 @@ export default function ElementsManager({
                             }}
                           >
                             <Plus size={16} strokeWidth={2.5} />
-                            <span>+ Crear Primer Hito</span>
+                            <span>Crear Primer Hito</span>
                           </button>
                         </div>
                       ) : (
@@ -2380,7 +2418,7 @@ export default function ElementsManager({
                           }}
                         >
                           <Plus size={15} strokeWidth={2.5} />
-                          <span>{showAddCostItem ? 'Cancelar' : '+ Sumar Insumo'}</span>
+                          <span>{showAddCostItem ? 'Cancelar' : 'Sumar Insumo'}</span>
                         </button>
                       </div>
 
@@ -2808,11 +2846,25 @@ export default function ElementsManager({
                     Billetera Activa
                   </span>
                 </div>
-                {currentWallet.alias && (
-                  <span className="text-xs text-indigo-600 font-mono font-bold block mt-1">
-                    @{currentWallet.alias}
-                  </span>
-                )}
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  {currentWallet.alias && (
+                    <span className="text-xs px-2.5 py-1 rounded-full text-indigo-700 bg-indigo-50 border border-indigo-200 font-mono font-bold inline-flex items-center gap-1.5">
+                      <span>@{currentWallet.alias}</span>
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowWalletInfoModal(false);
+                      handleOpenTransfer(currentWallet.id);
+                    }}
+                    className="text-xs px-3 py-1 rounded-full font-bold text-white bg-sky-500 hover:bg-sky-600 transition-all flex items-center gap-1.5 shadow-sm"
+                    title="Transferir dinero desde esta billetera"
+                  >
+                    <ArrowRightLeft size={12} />
+                    <span>Transferir Dinero</span>
+                  </button>
+                </div>
                 {currentWallet.detail && (
                   <p className="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed">
                     {currentWallet.detail}
@@ -3400,6 +3452,15 @@ export default function ElementsManager({
           </div>
         </div>
       )}
+
+      {/* Modal Local de Transferencias entre Billeteras */}
+      <TransferMoneyModal
+        isOpen={localTransferModalOpen}
+        onClose={() => setLocalTransferModalOpen(false)}
+        initialSourceWalletId={currentWalletId}
+        currentUser={currentUser}
+        onTransferComplete={() => refreshData()}
+      />
 
     </div>
   );

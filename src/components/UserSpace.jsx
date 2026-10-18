@@ -3,7 +3,8 @@ import {
   Wallet, Plus, TrendingDown, ArrowRight, CheckCircle2, 
   Share2, RefreshCw, Trash2, Tag, Calendar, Sparkles, 
   Layers, Users, Shield, Clock, ExternalLink, HelpCircle,
-  FileText, Check, AlertCircle, ArrowUpRight, Search, Filter
+  FileText, Check, AlertCircle, ArrowUpRight, Search, Filter,
+  ArrowRightLeft
 } from 'lucide-react';
 import { elementsService } from '../services/elementsService';
 
@@ -11,7 +12,8 @@ export default function UserSpace({
   currentUser,
   wallets = [],
   onNavigateToWallet = null,
-  onNavigateToTab = null
+  onNavigateToTab = null,
+  onOpenTransferModal = null
 }) {
   const [selectedWalletId, setSelectedWalletId] = useState(() => {
     return wallets[0]?.id || 'wallet-elementales';
@@ -47,6 +49,12 @@ export default function UserSpace({
   useEffect(() => {
     loadUserExpenses();
   }, [currentUser]);
+
+  useEffect(() => {
+    const handleTransfer = () => loadUserExpenses();
+    window.addEventListener('banca_transfer_completed', handleTransfer);
+    return () => window.removeEventListener('banca_transfer_completed', handleTransfer);
+  }, []);
 
   // Si la billetera cambia, reiniciar el elemento seleccionado si no pertenece a ella
   const availableElementsForWallet = useMemo(() => {
@@ -235,8 +243,34 @@ export default function UserSpace({
           </div>
         </div>
 
-        {/* Acceso Rápido a Billeteras */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Acceso Rápido a Billeteras y Transferencias */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {onOpenTransferModal && (
+            <button
+              type="button"
+              onClick={() => onOpenTransferModal(selectedWalletId)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 18px',
+                borderRadius: '14px',
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                backgroundColor: '#009ee3',
+                color: '#ffffff',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(0, 158, 227, 0.28)',
+                transition: 'all 0.15s ease'
+              }}
+              title="Transferir dinero entre billeteras (estilo Mercado Pago)"
+            >
+              <ArrowRightLeft size={15} />
+              <span>Transferir Dinero</span>
+            </button>
+          )}
+
           {onNavigateToTab && (
             <button
               type="button"
@@ -460,7 +494,26 @@ export default function UserSpace({
                     <span style={{ fontSize: '0.9rem', fontWeight: 800, color: isSelected ? '#1e1b4b' : '#0f172a' }}>
                       {w.name}
                     </span>
-                    <span style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '4px', gap: '4px' }}>
+                      {w.alias && (
+                        <span style={{ fontSize: '0.68rem', color: '#0369a1', background: '#e0f2fe', padding: '1px 6px', borderRadius: '9999px', fontFamily: 'monospace', fontWeight: 700 }}>
+                          @{w.alias}
+                        </span>
+                      )}
+                      {onOpenTransferModal && (
+                        <span 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenTransferModal(w.id);
+                          }}
+                          style={{ fontSize: '0.68rem', color: '#4f46e5', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}
+                          title={`Transferir desde o hacia ${w.name}`}
+                        >
+                          Transferir
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '3px' }}>
                       {wElems.length} bolsillos/elementos
                     </span>
                   </button>

@@ -67,8 +67,8 @@ export default function CreateWalletModal({
         .replace(/[^a-z0-9]/g, '.')
         .replace(/\.+/g, '.')
         .replace(/^\.|\.$/g, '')
-        .slice(0, 20);
-      setAlias(generated);
+        .slice(0, 18);
+      setAlias(generated ? (generated.startsWith('abeja.') ? generated : `abeja.${generated}`) : '');
     }
   };
 

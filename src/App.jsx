@@ -4,7 +4,7 @@ import {
   History, Trash2, Plus, X, Tag, User, Users, Car, Layers, FileText, 
   CheckCircle2, Clock, AlertTriangle, ShieldCheck, Eye, Paperclip, 
   ArrowDownRight, Sparkles, Upload, FileCheck, Coins, Image as ImageIcon,
-  Truck, Lock, Unlock, KeyRound, LogOut, ChevronDown
+  Truck, Lock, Unlock, KeyRound, LogOut, ChevronDown, ArrowRightLeft
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { parseCSV } from './utils/parser';
@@ -16,6 +16,7 @@ import TruckManager from './TruckManager';
 import ElementsManager from './components/ElementsManager';
 import CreateWalletModal from './components/CreateWalletModal';
 import UserSpace from './components/UserSpace';
+import TransferMoneyModal from './components/TransferMoneyModal';
 import { elementsService } from './services/elementsService';
 import { authService } from './services/authService';
 import AuthScreen from './components/AuthScreen';
@@ -143,6 +144,7 @@ function App() {
   const [wallets, setWallets] = useState(() => elementsService.getWallets());
   const [activeWalletId, setActiveWalletId] = useState(() => elementsService.getActiveWalletId());
   const [showCreateWalletModal, setShowCreateWalletModal] = useState(false);
+  const [transferModal, setTransferModal] = useState({ isOpen: false, sourceWalletId: null });
 
   useEffect(() => {
     const handleWalletsUpdated = () => {
@@ -154,11 +156,16 @@ function App() {
         setActiveWalletId(e.detail.walletId);
       }
     };
+    const handleTransferCompleted = () => {
+      setWallets(elementsService.getWallets());
+    };
     window.addEventListener('banca_wallets_updated', handleWalletsUpdated);
     window.addEventListener('banca_wallet_changed', handleWalletChanged);
+    window.addEventListener('banca_transfer_completed', handleTransferCompleted);
     return () => {
       window.removeEventListener('banca_wallets_updated', handleWalletsUpdated);
       window.removeEventListener('banca_wallet_changed', handleWalletChanged);
+      window.removeEventListener('banca_transfer_completed', handleTransferCompleted);
     };
   }, []);
 
@@ -1048,7 +1055,7 @@ function App() {
               );
             })}
 
-            {/* Botón + Billetera para crear nueva billetera */}
+            {/* Botón Nueva Billetera para crear nueva billetera */}
             <button
               type="button"
               className="btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 border border-dashed border-indigo-400 text-indigo-700 bg-indigo-50/90 hover:bg-indigo-100 shadow-sm"
@@ -1056,7 +1063,18 @@ function App() {
               title="Crear y sumar una nueva billetera al sistema"
             >
               <Plus size={14} className="text-indigo-600" />
-              <span>+ Billetera</span>
+              <span>Nueva Billetera</span>
+            </button>
+
+            {/* Botón Transferir Dinero entre Billeteras (Estilo Mercado Pago) */}
+            <button
+              type="button"
+              className="btn btn-sm px-4 py-2 font-bold text-xs flex items-center gap-1.5 rounded-full transition-all shrink-0 bg-sky-500 hover:bg-sky-600 text-white shadow-sm border border-sky-400"
+              onClick={() => setTransferModal({ isOpen: true, sourceWalletId: activeWalletId })}
+              title="Transferir dinero entre cuentas y billeteras (Estilo Mercado Pago)"
+            >
+              <ArrowRightLeft size={13} />
+              <span>Transferir Dinero</span>
             </button>
           </div>
         </div>
@@ -1813,6 +1831,7 @@ function App() {
               handleSelectWallet(wId);
             }}
             onNavigateToTab={(tab) => setActiveTab(tab)}
+            onOpenTransferModal={(wId) => setTransferModal({ isOpen: true, sourceWalletId: wId || activeWalletId })}
           />
         )}
 
@@ -1822,6 +1841,7 @@ function App() {
             currentUser={currentUser}
             activeWalletId={activeWalletId}
             onOpenCreateWallet={() => setShowCreateWalletModal(true)}
+            onOpenTransferModal={(wId) => setTransferModal({ isOpen: true, sourceWalletId: wId || activeWalletId })}
           />
         )}
 
@@ -1939,6 +1959,17 @@ function App() {
         onCreated={handleWalletCreated}
         existingElements={elementsService.elements}
         currentUser={currentUser}
+      />
+
+      {/* Modal de Transferencias entre Billeteras (Estilo Mercado Pago) */}
+      <TransferMoneyModal
+        isOpen={transferModal.isOpen}
+        onClose={() => setTransferModal({ isOpen: false, sourceWalletId: null })}
+        initialSourceWalletId={transferModal.sourceWalletId || activeWalletId}
+        currentUser={currentUser}
+        onTransferComplete={() => {
+          setWallets(elementsService.getWallets());
+        }}
       />
     </div>
   );

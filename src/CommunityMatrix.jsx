@@ -773,10 +773,10 @@ export default function CommunityMatrix({ currentUser = null, onLogout = null })
         {/* Acciones Rápidas */}
         <div className="currency-actions">
           <button className="btn btn-outline" onClick={() => setShowNewGoalModal(true)}>
-            <Target size={16} color="var(--warning)" /> + Inversión
+            <Target size={16} color="var(--warning)" /> Inversión
           </button>
           <button className="btn btn-primary" onClick={() => setShowNewTxModal(true)}>
-            <Plus size={16} /> + Gasto Manual
+            <Plus size={16} /> Gasto Manual
           </button>
         </div>
       </div>

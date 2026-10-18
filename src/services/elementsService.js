@@ -21,7 +21,7 @@ export const DEFAULT_WALLETS = [
   {
     id: 'wallet-elementales',
     name: 'Elementales',
-    alias: 'elementales',
+    alias: 'abeja.elementales',
     icon: '🐝',
     detail: 'Billetera comunitaria principal para compras elementales, víveres, hábitat y fondo común.',
     members: ['ramiro', 'agustina', 'cristian'],
@@ -40,7 +40,7 @@ export const DEFAULT_WALLETS = [
   {
     id: 'wallet-vrde',
     name: 'VRDE',
-    alias: 'vrde',
+    alias: 'abeja.vrde',
     icon: '🌱',
     detail: 'Proyectos de huerta agroecológica, producción de bioinsumos y economía circular.',
     members: ['ramiro', 'agustina'],
@@ -58,7 +58,7 @@ export const DEFAULT_WALLETS = [
   {
     id: 'wallet-feria',
     name: 'Equipo Feria',
-    alias: 'feria',
+    alias: 'abeja.feria',
     icon: '🎪',
     detail: 'Coordinación económica exclusiva del equipo de feria, inscripciones y logística de puestos.',
     members: ['ramiro', 'cristian'],
@@ -366,12 +366,36 @@ class ElementsService {
         if (Array.isArray(parsed) && parsed.length > 0) {
           const existingIds = new Set(parsed.map(w => w.id));
           const missingDefaults = DEFAULT_WALLETS.filter(d => !existingIds.has(d.id));
-          if (missingDefaults.length > 0) {
-            const combined = [...parsed, ...missingDefaults];
+          let combined = missingDefaults.length > 0 ? [...parsed, ...missingDefaults] : parsed;
+
+          // Normalizar y asegurar alias únicos para cada billetera
+          let changed = missingDefaults.length > 0;
+          combined = combined.map(w => {
+            let alias = w.alias;
+            if (!alias) {
+              if (w.id === 'wallet-elementales') alias = 'abeja.elementales';
+              else if (w.id === 'wallet-vrde') alias = 'abeja.vrde';
+              else if (w.id === 'wallet-feria') alias = 'abeja.feria';
+              else if (w.id === 'wallet-personal-ramiro') alias = 'ramiro.personal';
+              else alias = `abeja.${w.name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+              changed = true;
+            } else if (alias === 'elementales') {
+              alias = 'abeja.elementales';
+              changed = true;
+            } else if (alias === 'vrde') {
+              alias = 'abeja.vrde';
+              changed = true;
+            } else if (alias === 'feria') {
+              alias = 'abeja.feria';
+              changed = true;
+            }
+            return { ...w, alias };
+          });
+
+          if (changed) {
             localStorage.setItem(STORAGE_WALLETS_KEY, JSON.stringify(combined));
-            return combined;
           }
-          return parsed;
+          return combined;
         }
       }
     } catch (e) {
@@ -429,6 +453,22 @@ class ElementsService {
 
   getWalletById(walletId) {
     return (this.wallets || []).find(w => w.id === walletId) || null;
+  }
+
+  getWalletByAlias(aliasQuery) {
+    if (!aliasQuery || typeof aliasQuery !== 'string') return null;
+    const clean = aliasQuery.trim().toLowerCase().replace(/^@+/, '');
+    if (!clean) return null;
+    return (this.wallets || []).find(w => {
+      const wAlias = String(w.alias || '').trim().toLowerCase().replace(/^@+/, '');
+      const wId = String(w.id || '').trim().toLowerCase();
+      const wName = String(w.name || '').trim().toLowerCase();
+      return wAlias === clean || 
+             wAlias === `abeja.${clean}` || 
+             clean === `abeja.${wAlias}` || 
+             wId === clean || 
+             wName === clean;
+    }) || null;
   }
 
   loadStoredElements() {
@@ -716,6 +756,143 @@ class ElementsService {
     const mergedRules = { ...(target.rules || {}), ...rules };
     await this.updateWallet(walletId, { rules: mergedRules });
     return mergedRules;
+  }
+
+  // --- TRANSFERENCIAS ENTRE BILLETERAS (FLUJO ESTILO MERCADO PAGO) ---
+  async transferBetweenWallets({
+    sourceWalletId,
+    destinationWalletId,
+    amount,
+    concept = '',
+    memberId = 'ramiro',
+    memberName = 'Ramiro'
+  }) {
+    const numAmount = Math.max(0, parseFloat(amount) || 0);
+    if (numAmount <= 0) {
+      throw new Error('El monto de la transferencia debe ser mayor a cero.');
+    }
+
+    if (!sourceWalletId || !destinationWalletId) {
+      throw new Error('Debes seleccionar tanto la billetera de origen como la de destino.');
+    }
+
+    if (sourceWalletId === destinationWalletId) {
+      throw new Error('La billetera de origen y la de destino no pueden ser la misma.');
+    }
+
+    const sourceWallet = this.getWalletById(sourceWalletId);
+    const destWallet = this.getWalletById(destinationWalletId);
+
+    if (!sourceWallet) throw new Error('Billetera de origen no encontrada.');
+    if (!destWallet) throw new Error('Billetera de destino no encontrada.');
+
+    const sourceBalance = Number(sourceWallet.balance) || 0;
+    if (sourceBalance < numAmount) {
+      throw new Error(`Saldo insuficiente en ${sourceWallet.name}. Disponible: $${sourceBalance.toLocaleString('es-AR')}`);
+    }
+
+    // Código de operación estilo Mercado Pago (#1048291048)
+    const operationNumber = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+    const referenceCode = `MP-${operationNumber}`;
+    const transferConcept = (concept || `Transferencia a ${destWallet.name}`).trim();
+    const timestamp = Date.now();
+    const dateStr = new Date().toLocaleDateString('es-AR');
+
+    // 1. Debitar en billetera origen
+    const newSourceBal = await this.updateWalletBalance(sourceWalletId, -numAmount);
+
+    // 2. Acreditar en billetera destino
+    const newDestBal = await this.updateWalletBalance(destinationWalletId, numAmount);
+
+    // 3. Registrar egreso por transferencia en origen
+    const txOut = {
+      id: `tx-tf-out-${timestamp}-${Math.random().toString(36).substr(2, 4)}`,
+      elementId: null,
+      walletId: sourceWallet.id,
+      walletName: sourceWallet.name,
+      amount: numAmount,
+      type: 'transfer_out',
+      concept: `Envío a @${destWallet.alias || destWallet.name}: ${transferConcept}`,
+      memberId: memberId || 'ramiro',
+      memberName: memberName || 'Ramiro',
+      date: dateStr,
+      timestamp: timestamp,
+      transferDetails: {
+        operationNumber,
+        referenceCode,
+        sourceWalletId: sourceWallet.id,
+        sourceWalletName: sourceWallet.name,
+        sourceWalletAlias: sourceWallet.alias,
+        destWalletId: destWallet.id,
+        destWalletName: destWallet.name,
+        destWalletAlias: destWallet.alias,
+        direction: 'out'
+      }
+    };
+
+    // 4. Registrar ingreso por transferencia en destino
+    const txIn = {
+      id: `tx-tf-in-${timestamp + 1}-${Math.random().toString(36).substr(2, 4)}`,
+      elementId: null,
+      walletId: destWallet.id,
+      walletName: destWallet.name,
+      amount: numAmount,
+      type: 'transfer_in',
+      concept: `Transferencia recibida de @${sourceWallet.alias || sourceWallet.name}: ${transferConcept}`,
+      memberId: memberId || 'ramiro',
+      memberName: memberName || 'Ramiro',
+      date: dateStr,
+      timestamp: timestamp + 1,
+      transferDetails: {
+        operationNumber,
+        referenceCode,
+        sourceWalletId: sourceWallet.id,
+        sourceWalletName: sourceWallet.name,
+        sourceWalletAlias: sourceWallet.alias,
+        destWalletId: destWallet.id,
+        destWalletName: destWallet.name,
+        destWalletAlias: destWallet.alias,
+        direction: 'in'
+      }
+    };
+
+    const currentTxs = Array.isArray(this.transactions) ? this.transactions : this.loadStoredTransactions();
+    const updatedTxs = [txIn, txOut, ...currentTxs];
+    this.saveStoredTransactions(updatedTxs);
+
+    // Persistencia en Firebase si está habilitado
+    if (db) {
+      try {
+        await addDoc(collection(db, 'banca_abeja_element_transactions'), txOut);
+        await addDoc(collection(db, 'banca_abeja_element_transactions'), txIn);
+      } catch (e) {
+        console.warn("Firestore error al guardar transferencias:", e);
+      }
+    }
+
+    try {
+      window.dispatchEvent(new CustomEvent('banca_transfer_completed', {
+        detail: {
+          operationNumber,
+          referenceCode,
+          sourceWalletId,
+          destinationWalletId,
+          amount: numAmount
+        }
+      }));
+    } catch (e) {}
+
+    return {
+      success: true,
+      operationNumber,
+      referenceCode,
+      amount: numAmount,
+      sourceWallet: { ...sourceWallet, balance: newSourceBal },
+      destWallet: { ...destWallet, balance: newDestBal },
+      concept: transferConcept,
+      date: dateStr,
+      timestamp
+    };
   }
 
   getElementsByWallet(walletId) {
