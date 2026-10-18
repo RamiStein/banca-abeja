@@ -71,6 +71,8 @@ export default function ElementsManager({
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [showWalletInfoModal, setShowWalletInfoModal] = useState(false);
   const [selectedElement, setSelectedElement] = useState(null);
+  const [elementDetailTab, setElementDetailTab] = useState('overview'); // 'overview' | 'milestones' | 'costs' | 'history'
+  const [walletInfoTab, setWalletInfoTab] = useState('rules'); // 'rules' | 'report' | 'elements'
   const [actionModal, setActionModal] = useState(null); // { type: 'deposit' | 'withdraw' | 'income' | 'expense', element: obj }
 
   // Estados de Hitos (Micro-contabilidad por eventos)
@@ -999,30 +1001,30 @@ export default function ElementsManager({
           onClick={() => setShowCreateModal(false)}
         >
           <div 
-            className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative my-auto"
-            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+            className="bg-white rounded-[32px] w-full max-w-xl p-6 sm:p-8 shadow-2xl relative my-auto border border-slate-100"
+            style={{ maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Cerrar modal */}
             <button 
               type="button"
               onClick={() => setShowCreateModal(false)}
-              className="top-5 right-5"
               style={{
                 position: 'absolute',
-                top: '18px',
-                right: '18px',
-                width: '34px',
-                height: '34px',
+                top: '20px',
+                right: '20px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '50%',
-                background: '#f1f5f9',
+                background: '#f8fafc',
                 border: '1px solid #e2e8f0',
                 color: '#64748b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                zIndex: 25
+                zIndex: 25,
+                transition: 'all 0.15s ease'
               }}
               title="Cerrar ventana"
             >
@@ -1030,14 +1032,14 @@ export default function ElementsManager({
             </button>
 
             {/* Encabezado del modal */}
-            <div className="mb-5 pr-10">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
+            <div className="mb-6 pr-12">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
                 Paso {createStep} de 2
               </span>
-              <h3 className="text-xl font-extrabold text-slate-900 mt-2">
+              <h3 className="text-2xl font-black text-slate-900 mt-2.5 tracking-tight">
                 {createStep === 1 ? '¿Cómo vas a gestionar este elemento?' : 'Información del Elemento'}
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
                 {createStep === 1 
                   ? 'Elegí si será de uso exclusivamente personal o compartido con otros integrantes.' 
                   : 'Completá los detalles para que el elemento empiece a registrar ingresos y egresos.'}
@@ -1393,52 +1395,52 @@ export default function ElementsManager({
       {/* ======================================================== */}
       {actionModal && (
         <div 
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
           style={{ overflowY: 'auto' }}
           onClick={() => setActionModal(null)}
         >
           <div 
-            className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl relative my-auto"
-            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+            className="bg-white rounded-[32px] w-full max-w-xl p-6 sm:p-8 shadow-2xl relative my-auto border border-slate-100"
+            style={{ maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             <button 
               type="button"
               onClick={() => setActionModal(null)}
-              className="top-4 right-4"
               style={{
                 position: 'absolute',
-                top: '16px',
-                right: '16px',
-                width: '34px',
-                height: '34px',
+                top: '20px',
+                right: '20px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '50%',
-                background: '#f1f5f9',
+                background: '#f8fafc',
                 border: '1px solid #e2e8f0',
                 color: '#64748b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                zIndex: 25
+                zIndex: 25,
+                transition: 'all 0.15s ease'
               }}
               title="Cerrar ventana"
             >
               <X size={18} />
             </button>
 
-            <div className="flex items-center gap-3 mb-4 pr-10">
-              <span className="text-3xl p-2 bg-indigo-50 rounded-2xl border border-indigo-100">
+            <div className="flex items-center gap-3.5 mb-6 pr-12">
+              <span className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-3xl shadow-sm shrink-0">
                 {actionModal.element.icon || '📦'}
               </span>
-              <div>
-                <span className="text-xs uppercase tracking-wider font-bold text-indigo-600">
+              <div className="flex-1 min-w-0">
+                <span className="text-xs uppercase tracking-wider font-bold text-indigo-600 block">
                   {actionModal.type === 'deposit' && '📥 Depositar Dinero en el Elemento'}
                   {actionModal.type === 'withdraw' && '📤 Retirar / Reintegrar Saldo'}
                   {actionModal.type === 'income' && '➕ Registrar Ingreso Generado'}
                   {actionModal.type === 'expense' && '➖ Registrar Egreso / Necesidad'}
                 </span>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                <h3 className="text-xl font-black text-slate-900 leading-tight truncate mt-0.5">
                   {actionModal.element.name}
                 </h3>
               </div>
@@ -1630,304 +1632,415 @@ export default function ElementsManager({
       {/* ======================================================== */}
       {/* MODAL 3: DETALLE COMPLETO DEL ELEMENTO                   */}
       {/* ======================================================== */}
+      {/* ======================================================== */}
+      {/* MODAL 3: DETALLE COMPLETO DEL ELEMENTO (FINTECH MODERNO) */}
+      {/* ======================================================== */}
       {selectedElement && (
         <div 
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
           style={{ overflowY: 'auto' }}
           onClick={() => setSelectedElement(null)}
         >
           <div 
-            className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative my-auto"
-            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+            className="bg-white rounded-[32px] w-full max-w-2xl p-6 sm:p-8 shadow-2xl relative my-auto border border-slate-100"
+            style={{ maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
+            {/* Botón flotante para cerrar */}
             <button 
               type="button"
               onClick={() => setSelectedElement(null)}
-              className="top-5 right-5"
               style={{
                 position: 'absolute',
-                top: '18px',
-                right: '18px',
-                width: '34px',
-                height: '34px',
+                top: '20px',
+                right: '20px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '50%',
-                background: '#f1f5f9',
+                background: '#f8fafc',
                 border: '1px solid #e2e8f0',
                 color: '#64748b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                zIndex: 25
+                zIndex: 25,
+                transition: 'all 0.15s ease'
               }}
               title="Cerrar ventana"
             >
               <X size={18} />
             </button>
 
-            {/* Cabecera del Elemento */}
-            <div className="flex items-center gap-3.5 mb-5 pr-10">
-              <span className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-3xl shadow-sm">
+            {/* Cabecera del Elemento Espaciosa */}
+            <div className="flex items-start gap-4 mb-6 pr-12">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-3xl shadow-sm shrink-0">
                 {selectedElement.icon || '📦'}
-              </span>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-xl font-bold text-slate-900">
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
                     {selectedElement.name}
                   </h3>
-                  <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
+                  <span className={`text-xs px-3 py-1 rounded-full font-bold ${
                     selectedElement.type === 'bilateral'
                       ? 'bg-purple-100 text-purple-800 border border-purple-200'
                       : selectedElement.type === 'shared' 
-                      ? 'bg-amber-100 text-amber-800' 
-                      : 'bg-emerald-100 text-emerald-800'
+                      ? 'bg-amber-100 text-amber-800 border border-amber-200' 
+                      : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                   }`}>
                     {selectedElement.type === 'bilateral' ? '🤝 Mano a Mano' : selectedElement.type === 'shared' ? 'Compartido' : 'Individual'}
                   </span>
                 </div>
+
+                {/* Badges de Co-creación Multi-billetera */}
                 {Array.isArray(selectedElement.walletIds) && selectedElement.walletIds.length > 1 && (
-                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                    <span className="text-[11px] font-bold text-slate-500">🤝 Co-creado con:</span>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className="text-xs font-semibold text-slate-500">🤝 Co-creado con:</span>
                     {selectedElement.walletIds.map(wId => {
                       const wObj = wallets.find(wall => wall.id === wId) || { name: wId, icon: '🐝' };
                       return (
-                        <span key={wId} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        <span key={wId} className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 shadow-2xs">
                           {wObj.icon} {wObj.name}
                         </span>
                       );
                     })}
                   </div>
                 )}
-                <p className="text-xs text-slate-500 mt-1">
-                  {selectedElement.description || 'Gestión económica de este elemento'}
-                </p>
+
+                {selectedElement.description && (
+                  <p className="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
+                    {selectedElement.description}
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Saldo y Estadísticas */}
             {(() => {
               const stats = elementsService.getElementStats(selectedElement.id);
+              const elemMilestones = elementsService.getMilestonesByElement(selectedElement.id);
+              const costBaseItems = Array.isArray(selectedElement.costBase) ? selectedElement.costBase : [];
+
               return (
-                <div className="flex flex-col gap-4">
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
-                      Saldo Total Acumulado en {selectedElement.name}
-                    </span>
-                    <div className="text-3xl font-extrabold text-slate-900 mt-1">
-                      {safeFormatCurrency(stats.currentBalance, 2)}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200 text-xs">
-                      <div>
-                        <span className="text-slate-500 block">Total Ingresos / Depósitos:</span>
-                        <strong className="text-emerald-700 text-sm">
-                          +{safeFormatCurrency((stats.totalIncome || 0) + (stats.totalDeposits || 0))}
-                        </strong>
+                <div className="flex flex-col gap-6">
+                  {/* Hero Card de Saldo */}
+                  <div className="p-5 sm:p-6 rounded-3xl bg-slate-900 text-white shadow-xl shadow-slate-900/10 relative overflow-hidden">
+                    <div className="relative z-10">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Saldo Total en {selectedElement.name}
+                      </span>
+                      <div className="text-3xl sm:text-4xl font-black text-white tracking-tight my-2">
+                        {safeFormatCurrency(stats.currentBalance, 2)}
                       </div>
-                      <div>
-                        <span className="text-slate-500 block">Total Egresos / Gastos:</span>
-                        <strong className="text-rose-700 text-sm">
-                          -{safeFormatCurrency(stats.totalExpense)}
-                        </strong>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-800 text-xs">
+                        <div className="flex items-center justify-between sm:justify-start sm:gap-2 p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50">
+                          <span className="text-slate-400 font-medium">Ingresos / Depósitos:</span>
+                          <span className="text-emerald-400 font-extrabold text-sm">
+                            +{safeFormatCurrency((stats.totalIncome || 0) + (stats.totalDeposits || 0))}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between sm:justify-start sm:gap-2 p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50">
+                          <span className="text-slate-400 font-medium">Egresos / Gastos:</span>
+                          <span className="text-rose-400 font-extrabold text-sm">
+                            -{safeFormatCurrency(stats.totalExpense)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Botones de acción rápida para este elemento */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {/* Botones de acción rápida estilo Fintech */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     <button
                       onClick={() => {
                         setActionModal({ type: 'deposit', element: selectedElement });
-                        setActionForm({ amount: '', concept: `Depósito en ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro' });
+                        setActionForm({ amount: '', concept: `Depósito en ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '', milestoneId: '' });
                       }}
-                      className="btn py-2 px-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700"
+                      className="btn py-3 px-3 rounded-2xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition-all"
                     >
-                      + Depositar
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActionModal({ type: 'expense', element: selectedElement });
-                        setActionForm({ amount: '', concept: `Gasto de ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro' });
-                      }}
-                      className="btn py-2 px-2 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
-                    >
-                      - Egreso
+                      <ArrowDownLeft size={16} />
+                      <span>+ Depositar</span>
                     </button>
                     <button
                       onClick={() => {
                         setActionModal({ type: 'income', element: selectedElement });
-                        setActionForm({ amount: '', concept: `Ingreso de ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro' });
+                        setActionForm({ amount: '', concept: `Ingreso de ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '', milestoneId: '' });
                       }}
-                      className="btn py-2 px-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                      className="btn py-3 px-3 rounded-2xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 shadow-2xs flex items-center justify-center gap-1.5 transition-all"
                     >
-                      + Ingreso
+                      <TrendingUp size={16} />
+                      <span>+ Ingreso</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActionModal({ type: 'expense', element: selectedElement });
+                        setActionForm({ amount: '', concept: `Gasto de ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '', milestoneId: '' });
+                      }}
+                      className="btn py-3 px-3 rounded-2xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 shadow-2xs flex items-center justify-center gap-1.5 transition-all"
+                    >
+                      <TrendingDown size={16} />
+                      <span>- Egreso</span>
                     </button>
                     <button
                       onClick={() => {
                         setActionModal({ type: 'withdraw', element: selectedElement });
-                        setActionForm({ amount: '', concept: `Retiro de ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro' });
+                        setActionForm({ amount: '', concept: `Retiro de ${selectedElement.name}`, memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '', milestoneId: '' });
                       }}
-                      className="btn py-2 px-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      className="btn py-3 px-3 rounded-2xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 shadow-2xs flex items-center justify-center gap-1.5 transition-all"
                     >
-                      Retirar
+                      <ArrowUpRight size={16} />
+                      <span>Retirar</span>
                     </button>
                   </div>
 
-                  {/* Si es Mano a Mano Bilateral: Balanza y Acuerdo entre integrantes */}
-                  {selectedElement.type === 'bilateral' && selectedElement.members && (
-                    <div className="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-200 text-xs">
-                      <div className="flex items-center justify-between font-bold text-purple-900 mb-1.5">
-                        <span className="flex items-center gap-1.5">
-                          <span>🤝 Intercambio Bilateral</span>
-                          <span className="text-[10px] bg-purple-200/80 text-purple-800 px-2 py-0.5 rounded-full">1 a 1</span>
-                        </span>
-                        <span className="text-purple-700 text-[11px]">Balanza Directa</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-700">
-                        {selectedElement.members.map((mId, idx) => {
-                          const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
-                          return (
-                            <React.Fragment key={mId}>
-                              {idx > 0 && <span className="text-purple-500 font-bold text-sm">⇄</span>}
-                              <span className="font-semibold px-2.5 py-1 bg-white rounded-lg border border-purple-100 shadow-2xs">
-                                {mObj.name}
-                              </span>
-                            </React.Fragment>
-                          );
-                        })}
-                      </div>
-                      <p className="text-[11px] text-purple-900/80 mt-2 mb-0 leading-snug">
-                        Intercambios, compras por encargo y deudas mutuas. Cualquier gasto puede tallarse a un proyecto colectivo (como la Feria o la Huerta) para computarse como inversión.
-                      </p>
-                    </div>
-                  )}
+                  {/* Barra de Pestañas / Segmented Control Tabs */}
+                  <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl overflow-x-auto text-xs font-bold text-slate-600">
+                    <button
+                      type="button"
+                      onClick={() => setElementDetailTab('overview')}
+                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+                        elementDetailTab === 'overview'
+                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
+                          : 'hover:text-slate-900'
+                      }`}
+                    >
+                      <Users size={14} />
+                      <span>Resumen</span>
+                    </button>
 
-                  {/* Aportes por Integrante (en proyectos compartidos) */}
-                  {selectedElement.type === 'shared' && (
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                        Aportes por Integrante
-                      </h4>
-                      <div className="space-y-1.5">
-                        {selectedElement.members?.map(mId => {
-                          const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
-                          const contributed = stats.memberContributions[mId] || 0;
-                          return (
-                            <div key={mId} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-                              <span className="font-semibold text-slate-800">{mObj.name}</span>
-                              <span className="font-bold text-indigo-700">
-                                {safeFormatCurrency(contributed)}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+                    <button
+                      type="button"
+                      onClick={() => setElementDetailTab('milestones')}
+                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+                        elementDetailTab === 'milestones'
+                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
+                          : 'hover:text-slate-900'
+                      }`}
+                    >
+                      <Calendar size={14} />
+                      <span>Hitos ({elemMilestones.length})</span>
+                    </button>
 
-                  {/* Inversiones vinculadas desde Mano a Mano a este Proyecto */}
-                  {(() => {
-                    const linkedTxs = elementsService.getLinkedTransactions(selectedElement.id);
-                    if (linkedTxs.length === 0) return null;
-                    const totalLinked = linkedTxs.reduce((sum, t) => sum + (t.amount || 0), 0);
-                    return (
-                      <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                            <span>✨ Inversiones desde Mano a Mano ({linkedTxs.length})</span>
-                          </span>
-                          <span className="text-xs font-extrabold text-amber-900">
-                            {safeFormatCurrency(totalLinked)}
-                          </span>
-                        </div>
-                        <div className="space-y-1.5 overflow-y-auto pr-1" style={{ maxHeight: '150px', overflowY: 'auto' }}>
-                          {linkedTxs.map(ltx => (
-                            <div key={ltx.id} className="p-2 rounded-xl bg-white border border-amber-100 flex items-center justify-between text-xs">
-                              <div>
-                                <div className="font-bold text-slate-800">{ltx.concept}</div>
-                                <div className="text-[10px] text-slate-500">
-                                  {ltx.date} • Aportado por {ltx.memberName} {ltx.targetMemberId ? `(pedido por ${ltx.targetMemberId})` : ''}
-                                </div>
-                              </div>
-                              <span className="font-extrabold text-amber-800">{safeFormatCurrency(ltx.amount)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
+                    <button
+                      type="button"
+                      onClick={() => setElementDetailTab('costs')}
+                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+                        elementDetailTab === 'costs'
+                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
+                          : 'hover:text-slate-900'
+                      }`}
+                    >
+                      <Tag size={14} />
+                      <span>Insumos ({costBaseItems.length})</span>
+                    </button>
 
-                  {/* Hitos Temporales & Eventos (Micro-contabilidad) */}
-                  <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200">
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar size={15} className="text-amber-800" />
-                        <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
-                          Hitos Temporales & Eventos
-                        </h4>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowCreateMilestoneModal(true)}
-                        className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white text-amber-900 border border-amber-300 hover:bg-amber-100 shadow-2xs flex items-center gap-1"
-                      >
-                        <Plus size={12} />
-                        <span>Nuevo Hito</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setElementDetailTab('history')}
+                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+                        elementDetailTab === 'history'
+                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
+                          : 'hover:text-slate-900'
+                      }`}
+                    >
+                      <Clock size={14} />
+                      <span>Movimientos ({stats.recentTxs.length})</span>
+                    </button>
+                  </div>
 
-                    {/* Lista de hitos para este elemento */}
-                    {(() => {
-                      const elemMilestones = elementsService.getMilestonesByElement(selectedElement.id);
-                      if (elemMilestones.length === 0) {
-                        return (
-                          <p className="text-[11px] text-amber-800/80 italic mb-0">
-                            No hay hitos cargados aún para este elemento. Creá uno para ferias, viajes o compras de insumos por ciclo.
+                  {/* CONTENIDO DE PESTAÑAS */}
+
+                  {/* 1. PESTAÑA: RESUMEN */}
+                  {elementDetailTab === 'overview' && (
+                    <div className="space-y-5">
+                      {/* Intercambio Bilateral Mano a Mano */}
+                      {selectedElement.type === 'bilateral' && selectedElement.members && (
+                        <div className="p-5 rounded-2xl bg-purple-50/70 border border-purple-200 text-xs">
+                          <div className="flex items-center justify-between font-bold text-purple-900 mb-2">
+                            <span className="flex items-center gap-1.5 text-xs">
+                              <span>🤝 Intercambio Bilateral</span>
+                              <span className="text-[10px] bg-purple-200/80 text-purple-800 px-2.5 py-0.5 rounded-full font-bold">1 a 1</span>
+                            </span>
+                            <span className="text-purple-700 text-[11px] font-semibold">Balanza Directa</span>
+                          </div>
+                          <div className="flex items-center gap-2.5 text-slate-700 my-2.5">
+                            {selectedElement.members.map((mId, idx) => {
+                              const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
+                              return (
+                                <React.Fragment key={mId}>
+                                  {idx > 0 && <span className="text-purple-500 font-black text-sm">⇄</span>}
+                                  <span className="font-bold px-3 py-1.5 bg-white rounded-xl border border-purple-100 shadow-2xs">
+                                    {mObj.name}
+                                  </span>
+                                </React.Fragment>
+                              );
+                            })}
+                          </div>
+                          <p className="text-[11px] text-purple-900/80 mt-2 mb-0 leading-relaxed">
+                            Intercambios, compras por encargo y deudas mutuas. Cualquier gasto puede tallarse a un proyecto colectivo (como la Feria o la Huerta) para computarse como inversión.
                           </p>
+                        </div>
+                      )}
+
+                      {/* Aportes por Integrante con Avatar y Porcentaje */}
+                      {selectedElement.type === 'shared' && (
+                        <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                          <h4 className="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-1.5">
+                            <Users size={14} className="text-indigo-600" />
+                            <span>Aportes por Integrante</span>
+                          </h4>
+                          <div className="space-y-2.5">
+                            {selectedElement.members?.map(mId => {
+                              const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
+                              const contributed = stats.memberContributions[mId] || 0;
+                              const totalDep = stats.totalDeposits > 0 ? stats.totalDeposits : 1;
+                              const pct = stats.totalDeposits > 0 ? Math.min(100, Math.round((contributed / totalDep) * 100)) : 0;
+
+                              return (
+                                <div key={mId} className="p-3.5 rounded-xl bg-white border border-slate-200/70 shadow-2xs">
+                                  <div className="flex items-center justify-between mb-1.5 text-xs">
+                                    <div className="flex items-center gap-2.5">
+                                      <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shadow-2xs">
+                                        {mObj.name.charAt(0).toUpperCase()}
+                                      </span>
+                                      <span className="font-bold text-slate-800">{mObj.name}</span>
+                                    </div>
+                                    <span className="font-extrabold text-slate-900 text-sm">
+                                      {safeFormatCurrency(contributed)}
+                                      <span className="text-[11px] text-slate-400 font-normal ml-1.5">({pct}%)</span>
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden mt-2">
+                                    <div
+                                      className="bg-indigo-600 h-1.5 rounded-full transition-all duration-300"
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Inversiones vinculadas desde Mano a Mano a este Proyecto */}
+                      {(() => {
+                        const linkedTxs = elementsService.getLinkedTransactions(selectedElement.id);
+                        if (linkedTxs.length === 0) return null;
+                        const totalLinked = linkedTxs.reduce((sum, t) => sum + (t.amount || 0), 0);
+                        return (
+                          <div className="p-5 rounded-2xl bg-amber-50/80 border border-amber-200/90">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                                <Sparkles size={14} className="text-amber-700" />
+                                <span>Inversiones desde Mano a Mano ({linkedTxs.length})</span>
+                              </span>
+                              <span className="text-sm font-black text-amber-950">
+                                {safeFormatCurrency(totalLinked)}
+                              </span>
+                            </div>
+                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                              {linkedTxs.map(ltx => (
+                                <div key={ltx.id} className="p-3 rounded-xl bg-white border border-amber-100 shadow-2xs flex items-center justify-between text-xs gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-bold text-slate-800 truncate">{ltx.concept}</div>
+                                    <div className="text-[10px] text-slate-500 mt-0.5">
+                                      {ltx.date} • Aportado por <strong>{ltx.memberName}</strong> {ltx.targetMemberId ? `(pedido por ${ltx.targetMemberId})` : ''}
+                                    </div>
+                                  </div>
+                                  <span className="font-black text-amber-900 shrink-0 text-sm">
+                                    {safeFormatCurrency(ltx.amount)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         );
-                      }
-                      return (
-                        <div className="space-y-2">
+                      })()}
+                    </div>
+                  )}
+
+                  {/* 2. PESTAÑA: HITOS TEMPORALES */}
+                  {elementDetailTab === 'milestones' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                            Hitos & Ediciones Temporales
+                          </h4>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Micro-contabilidad con fondo semilla, ingresos/egresos y liquidación neta.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowCreateMilestoneModal(true)}
+                          className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm flex items-center gap-1.5 transition-all"
+                        >
+                          <Plus size={14} />
+                          <span>Nuevo Hito</span>
+                        </button>
+                      </div>
+
+                      {elemMilestones.length === 0 ? (
+                        <div className="p-6 rounded-2xl bg-amber-50/60 border border-amber-200/80 text-center">
+                          <span className="text-2xl block mb-1">🎪</span>
+                          <span className="text-xs font-bold text-amber-950 block">No hay hitos activos en este elemento</span>
+                          <p className="text-[11px] text-amber-800/80 mt-1 mb-3">
+                            Puedes crear hitos para ferias puntuales, cosechas o ciclos de producción independientes.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setShowCreateMilestoneModal(true)}
+                            className="px-4 py-2 rounded-full text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm inline-flex items-center gap-1.5"
+                          >
+                            <Plus size={14} />
+                            <span>Crear Primer Hito</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
                           {elemMilestones.map(m => {
                             const mStats = elementsService.getMilestoneStats(m.id);
                             const isOpen = m.status === 'open';
                             const net = isOpen ? mStats.netResult : (m.netResult ?? mStats.netResult);
 
                             return (
-                              <div key={m.id} className="p-2.5 rounded-xl bg-white border border-amber-200/90 text-xs shadow-2xs">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div>
+                              <div key={m.id} className="p-4 sm:p-5 rounded-2xl bg-white border border-amber-200/90 shadow-sm text-xs">
+                                <div className="flex items-start justify-between gap-3 flex-wrap">
+                                  <div className="flex-1 min-w-[200px]">
                                     <div className="flex items-center gap-2">
-                                      <span className="font-bold text-slate-900">{m.name}</span>
-                                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                      <span className="font-extrabold text-slate-900 text-sm">{m.name}</span>
+                                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                                         isOpen ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-600'
                                       }`}>
                                         {isOpen ? 'En curso' : 'Liquidado / Cerrado'}
                                       </span>
                                     </div>
-                                    <div className="text-[10px] text-slate-500 mt-0.5">
-                                      Inicio: {m.startDate} {m.endDate ? `• Cierre: ${m.endDate}` : ''} • Semilla: {safeFormatCurrency(m.initialSeedFund)}
+                                    <div className="text-[11px] text-slate-500 mt-1">
+                                      Inicio: <strong>{m.startDate}</strong> {m.endDate ? `• Cierre: ${m.endDate}` : ''} • Semilla: <strong>{safeFormatCurrency(m.initialSeedFund)}</strong>
                                     </div>
                                     {m.goalDescription && (
-                                      <p className="text-[11px] text-slate-600 mt-1 mb-0 italic">
+                                      <p className="text-xs text-slate-600 mt-2 italic bg-slate-50 p-2 rounded-xl border border-slate-100">
                                         🎯 {m.goalDescription}
                                       </p>
                                     )}
                                   </div>
 
-                                  <div className="text-right shrink-0">
-                                    <span className="text-[10px] text-slate-400 block">Balance Neto:</span>
-                                    <span className={`text-xs font-black ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                  <div className="text-right sm:text-right">
+                                    <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Balance Neto</span>
+                                    <span className={`text-base font-black ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                                       {net >= 0 ? '+' : ''}{safeFormatCurrency(net)}
                                     </span>
                                   </div>
                                 </div>
 
-                                {/* Acciones del Hito */}
                                 {isOpen && (
-                                  <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
-                                    <span className="text-[10px] text-slate-500">
-                                      {mStats.txCount} movimientos asignados
+                                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
+                                    <span className="text-[11px] text-slate-500">
+                                      {mStats.txCount} movimiento{mStats.txCount !== 1 ? 's' : ''} asignado{mStats.txCount !== 1 ? 's' : ''}
                                     </span>
                                     <button
                                       type="button"
@@ -1935,7 +2048,7 @@ export default function ElementsManager({
                                         setClosingMilestone(m);
                                         setCloseMilestoneSummary(`Cierre con balance neto de ${safeFormatCurrency(net)}.`);
                                       }}
-                                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300"
+                                      className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 shadow-2xs transition-all"
                                     >
                                       Cerrar y Liquidar Hito
                                     </button>
@@ -1945,197 +2058,222 @@ export default function ElementsManager({
                             );
                           })}
                         </div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Base de Costos e Insumos (Planilla Viva) */}
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <Tag size={14} className="text-slate-600" />
-                        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                          Base de Costos e Insumos (Planilla Viva)
-                        </h4>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowAddCostItem(!showAddCostItem)}
-                        className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 shadow-2xs flex items-center gap-1"
-                      >
-                        <Plus size={12} />
-                        <span>{showAddCostItem ? 'Cancelar' : 'Sumar Insumo'}</span>
-                      </button>
+                      )}
                     </div>
+                  )}
 
-                    {/* Formulario para agregar insumo */}
-                    {showAddCostItem && (
-                      <form onSubmit={handleAddCostItem} className="p-3 bg-white rounded-xl border border-indigo-200 mb-3 space-y-2 text-xs">
-                        <div className="font-bold text-slate-800 text-[11px]">
-                          Nuevo Insumo en el Catálogo de Costos
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            required
-                            placeholder="Nombre (ej: Maíz partido)"
-                            value={newCostItemForm.name}
-                            onChange={e => setNewCostItemForm({ ...newCostItemForm, name: e.target.value })}
-                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
-                          />
-                          <div className="relative">
-                            <span className="absolute left-2 top-1.5 text-slate-400 font-bold">$</span>
-                            <input
-                              type="number"
-                              required
-                              min="1"
-                              placeholder="Costo"
-                              value={newCostItemForm.unitCost}
-                              onChange={e => setNewCostItemForm({ ...newCostItemForm, unitCost: e.target.value })}
-                              className="w-full pl-5 pr-2 py-1.5 rounded-lg border border-slate-300 text-xs font-bold"
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            placeholder="Unidad (kg, litro, u)"
-                            value={newCostItemForm.unit}
-                            onChange={e => setNewCostItemForm({ ...newCostItemForm, unit: e.target.value })}
-                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Categoría"
-                            value={newCostItemForm.category}
-                            onChange={e => setNewCostItemForm({ ...newCostItemForm, category: e.target.value })}
-                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
-                          />
+                  {/* 3. PESTAÑA: BASE DE COSTOS (PLANILLA VIVA) */}
+                  {elementDetailTab === 'costs' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                            Planilla Viva de Costos e Insumos
+                          </h4>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Catálogo de insumos y costos unitarios para cargar compras en 1 clic.
+                          </p>
                         </div>
                         <button
-                          type="submit"
-                          className="btn w-full py-1.5 rounded-lg font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                          type="button"
+                          onClick={() => setShowAddCostItem(!showAddCostItem)}
+                          className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1.5 transition-all"
                         >
-                          Guardar Insumo
+                          <Plus size={14} />
+                          <span>{showAddCostItem ? 'Cancelar' : 'Sumar Insumo'}</span>
                         </button>
-                      </form>
-                    )}
+                      </div>
 
-                    {/* Lista de insumos */}
-                    {selectedElement.costBase && selectedElement.costBase.length > 0 ? (
-                      <div className="space-y-1.5">
-                        {selectedElement.costBase.map(item => (
-                          <div key={item.id} className="p-2 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between text-xs">
-                            <div>
-                              <span className="font-bold text-slate-800">{item.name}</span>
-                              <div className="text-[10px] text-slate-400">
-                                {safeFormatCurrency(item.unitCost)} / {item.unit} • {item.category || 'Insumos'}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActionModal({ type: 'expense', element: selectedElement });
-                                  setActionForm({
-                                    amount: item.unitCost.toString(),
-                                    concept: `${item.name} (${safeFormatCurrency(item.unitCost)}/${item.unit})`,
-                                    memberId: currentUser?.id || 'ramiro',
-                                    linkedElementId: '',
-                                    targetMemberId: '',
-                                    milestoneId: ''
-                                  });
-                                }}
-                                className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 shadow-2xs"
-                                title="Registrar gasto usando este insumo"
-                              >
-                                Cargar Gasto
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteCostItem(item.id)}
-                                className="p-1 rounded text-slate-400 hover:text-rose-600"
-                                title="Eliminar de catálogo"
-                              >
-                                <Trash2 size={12} />
-                              </button>
+                      {/* Formulario para agregar insumo */}
+                      {showAddCostItem && (
+                        <form onSubmit={handleAddCostItem} className="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-200 space-y-3 text-xs">
+                          <div className="font-bold text-indigo-950 text-xs flex items-center gap-1.5">
+                            <Tag size={13} className="text-indigo-600" />
+                            <span>Nuevo Insumo en el Catálogo de Costos</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <input
+                              type="text"
+                              required
+                              placeholder="Nombre (ej: Maíz partido)"
+                              value={newCostItemForm.name}
+                              onChange={e => setNewCostItemForm({ ...newCostItemForm, name: e.target.value })}
+                              className="px-3 py-2 rounded-xl border border-indigo-200 text-xs bg-white font-medium"
+                            />
+                            <div className="relative">
+                              <span className="absolute left-3 top-2 text-slate-400 font-bold">$</span>
+                              <input
+                                type="number"
+                                required
+                                min="1"
+                                placeholder="Costo unitario"
+                                value={newCostItemForm.unitCost}
+                                onChange={e => setNewCostItemForm({ ...newCostItemForm, unitCost: e.target.value })}
+                                className="w-full pl-7 pr-3 py-2 rounded-xl border border-indigo-200 text-xs font-bold bg-white"
+                              />
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-[11px] text-slate-400 italic mb-0">
-                        No hay insumos cargados en la base de costos de este elemento.
-                      </p>
-                    )}
-                  </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <input
+                              type="text"
+                              placeholder="Unidad de medida (kg, litro, 100gr, unidad)"
+                              value={newCostItemForm.unit}
+                              onChange={e => setNewCostItemForm({ ...newCostItemForm, unit: e.target.value })}
+                              className="px-3 py-2 rounded-xl border border-indigo-200 text-xs bg-white"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Categoría (ej: Insumos Arepas, Despensa)"
+                              value={newCostItemForm.category}
+                              onChange={e => setNewCostItemForm({ ...newCostItemForm, category: e.target.value })}
+                              className="px-3 py-2 rounded-xl border border-indigo-200 text-xs bg-white"
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            className="btn w-full py-2.5 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                          >
+                            Guardar en Planilla Viva
+                          </button>
+                        </form>
+                      )}
 
-                  {/* Historial de Movimientos de este Elemento */}
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                      Movimientos de {selectedElement.name} ({stats.recentTxs.length})
-                    </h4>
-                    {stats.recentTxs.length > 0 ? (
-                      <div className="space-y-2 overflow-y-auto pr-1" style={{ maxHeight: '270px', overflowY: 'auto' }}>
-                        {stats.recentTxs.map(tx => {
-                          const targetId = tx.targetMemberId || (selectedElement.members?.find(m => m !== tx.memberId) || 'cristian');
-                          const targetMember = availableMembers.find(m => m.id === targetId) || { name: 'Compañero', cleanPhone: '5491149748673' };
-                          const refCode = tx.id.replace('etx-', '').slice(-6).toUpperCase();
-
-                          return (
-                            <div key={tx.id} className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs flex flex-col gap-1.5">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1">
-                                  <div className="font-bold text-slate-900 text-xs">{tx.concept}</div>
-                                  <div className="text-[10px] text-slate-500 mt-0.5">
-                                    {tx.date} • Por <strong>{tx.memberName}</strong> {tx.targetMemberId ? `(Para: ${tx.targetMemberId})` : ''} • {tx.type === 'deposit' ? 'Depósito' : tx.type === 'expense' ? 'Gasto/Adelanto' : 'Ingreso'}
-                                  </div>
-                                  {tx.linkedElementName && (
-                                    <div className="mt-1">
-                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-full">
-                                        ✨ Inversión vinculada a: {tx.linkedElementName}
-                                      </span>
-                                    </div>
-                                  )}
+                      {/* Lista de insumos */}
+                      {costBaseItems.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {costBaseItems.map(item => (
+                            <div key={item.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs hover:border-slate-300 transition-all">
+                              <div>
+                                <span className="font-extrabold text-slate-800 block text-xs">{item.name}</span>
+                                <div className="text-[11px] text-slate-500 mt-0.5">
+                                  <strong className="text-indigo-700">{safeFormatCurrency(item.unitCost)}</strong> / {item.unit}
                                 </div>
-                                <span className={`font-extrabold text-sm shrink-0 ${tx.type === 'expense' ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                  {tx.type === 'expense' ? '-' : '+'}{safeFormatCurrency(tx.amount)}
+                                <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+                                  {item.category || 'Insumos'}
                                 </span>
                               </div>
-
-                              {/* Barra de Notificación y Código de Referencia Unívoco */}
-                              <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/70 mt-0.5">
-                                <span className="text-[10px] font-mono font-bold text-slate-400">
-                                  Ref: #{refCode}
-                                </span>
+                              <div className="flex items-center gap-1.5">
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const msg = `👋 Hola ${targetMember.name}! Registré en Banca Abeja:\n\n📝 Detalle: ${tx.concept}\n💰 Monto: ${safeFormatCurrency(tx.amount)}\n📅 Fecha: ${tx.date}\n🏷️ Ref: #${refCode}\n${tx.linkedElementName ? `🎪 Vinculado a: ${tx.linkedElementName}\n` : ''}\nPodés revisarlo en https://www.bancaabeja.org/`;
-                                    const phone = targetMember.cleanPhone || '5491149748673';
-                                    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-                                    window.open(url, '_blank');
+                                    setActionModal({ type: 'expense', element: selectedElement });
+                                    setActionForm({
+                                      amount: item.unitCost.toString(),
+                                      concept: `${item.name} (${safeFormatCurrency(item.unitCost)}/${item.unit})`,
+                                      memberId: currentUser?.id || 'ramiro',
+                                      linkedElementId: '',
+                                      targetMemberId: '',
+                                      milestoneId: ''
+                                    });
                                   }}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-2xs"
-                                  title="Enviar comprobante con referencia unívoca a WhatsApp"
+                                  className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-white text-indigo-700 hover:bg-indigo-50 border border-indigo-200 shadow-2xs"
+                                  title="Registrar gasto usando este insumo"
                                 >
-                                  <span>📲 Avisar a {targetMember.name}</span>
+                                  Cargar Gasto
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCostItem(item.id)}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                  title="Eliminar de catálogo"
+                                >
+                                  <Trash2 size={13} />
                                 </button>
                               </div>
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 text-center">
+                          <span className="text-2xl block mb-1">📋</span>
+                          <span className="text-xs font-bold text-slate-800 block">No hay insumos cargados aún</span>
+                          <p className="text-[11px] text-slate-500 mt-1 mb-3">
+                            Agregá insumos recurrentes (como maíz, harina o combustible) para registrar gastos con 1 solo toque.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setShowAddCostItem(true)}
+                            className="px-4 py-2 rounded-full text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm inline-flex items-center gap-1.5"
+                          >
+                            <Plus size={14} />
+                            <span>Sumar Primer Insumo</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 4. PESTAÑA: HISTORIAL DE MOVIMIENTOS */}
+                  {elementDetailTab === 'history' && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                          Historial de Movimientos ({stats.recentTxs.length})
+                        </h4>
                       </div>
-                    ) : (
-                      <p className="text-xs text-slate-400 italic">No hay movimientos registrados aún en este elemento.</p>
-                    )}
-                  </div>
+
+                      {stats.recentTxs.length > 0 ? (
+                        <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                          {stats.recentTxs.map(tx => {
+                            const targetId = tx.targetMemberId || (selectedElement.members?.find(m => m !== tx.memberId) || 'cristian');
+                            const targetMember = availableMembers.find(m => m.id === targetId) || { name: 'Compañero', cleanPhone: '5491149748673' };
+                            const refCode = tx.id.replace('etx-', '').slice(-6).toUpperCase();
+
+                            return (
+                              <div key={tx.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs flex flex-col gap-2 hover:border-slate-300 transition-all">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-extrabold text-slate-900 text-xs">{tx.concept}</div>
+                                    <div className="text-[10px] text-slate-500 mt-0.5">
+                                      {tx.date} • Por <strong>{tx.memberName}</strong> {tx.targetMemberId ? `(Para: ${tx.targetMemberId})` : ''} • {tx.type === 'deposit' ? 'Depósito' : tx.type === 'expense' ? 'Gasto' : 'Ingreso'}
+                                    </div>
+                                    {tx.linkedElementName && (
+                                      <div className="mt-1">
+                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 px-2 py-0.5 rounded-full">
+                                          ✨ Vinculado a: {tx.linkedElementName}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span className={`font-black text-sm shrink-0 ${tx.type === 'expense' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                    {tx.type === 'expense' ? '-' : '+'}{safeFormatCurrency(tx.amount)}
+                                  </span>
+                                </div>
+
+                                {/* Barra de Notificación y Código de Referencia Unívoco */}
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-200/70">
+                                  <span className="text-[10px] font-mono font-bold text-slate-400">
+                                    Ref: #{refCode}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const msg = `👋 Hola ${targetMember.name}! Registré en Banca Abeja:\n\n📝 Detalle: ${tx.concept}\n💰 Monto: ${safeFormatCurrency(tx.amount)}\n📅 Fecha: ${tx.date}\n🏷️ Ref: #${refCode}\n${tx.linkedElementName ? `🎪 Vinculado a: ${tx.linkedElementName}\n` : ''}\nPodés revisarlo en https://www.bancaabeja.org/`;
+                                      const phone = targetMember.cleanPhone || '5491149748673';
+                                      const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+                                      window.open(url, '_blank');
+                                    }}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors shadow-2xs"
+                                    title="Enviar comprobante con referencia unívoca a WhatsApp"
+                                  >
+                                    <span>📲 Avisar a {targetMember.name}</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic py-4 text-center">No hay movimientos registrados aún en este elemento.</p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Botón Peligroso Eliminar */}
-                  <div className="pt-2 border-t border-slate-100 flex justify-end">
+                  <div className="pt-3 border-t border-slate-100 flex justify-end">
                     <button
                       onClick={() => handleDeleteElement(selectedElement.id, selectedElement.name)}
-                      className="text-xs text-rose-500 hover:text-rose-700 flex items-center gap-1 font-medium"
+                      className="text-xs text-rose-500 hover:text-rose-700 flex items-center gap-1 font-medium transition-colors"
                     >
                       <Trash2 size={13} />
                       <span>Eliminar este elemento</span>
@@ -2153,59 +2291,59 @@ export default function ElementsManager({
       {/* ======================================================== */}
       {showTopUpModal && (
         <div 
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
           style={{ overflowY: 'auto' }}
           onClick={() => setShowTopUpModal(false)}
         >
           <div 
-            className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative my-auto"
-            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+            className="bg-white rounded-[32px] w-full max-w-md p-6 sm:p-8 shadow-2xl relative my-auto border border-slate-100"
+            style={{ maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             <button 
               type="button"
               onClick={() => setShowTopUpModal(false)}
-              className="top-4 right-4"
               style={{
                 position: 'absolute',
-                top: '16px',
-                right: '16px',
-                width: '34px',
-                height: '34px',
+                top: '20px',
+                right: '20px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '50%',
-                background: '#f1f5f9',
+                background: '#f8fafc',
                 border: '1px solid #e2e8f0',
                 color: '#64748b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                zIndex: 25
+                zIndex: 25,
+                transition: 'all 0.15s ease'
               }}
               title="Cerrar ventana"
             >
               <X size={18} />
             </button>
 
-            <div className="text-center mb-4 px-6">
-              <span className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl mx-auto mb-2 border border-emerald-100">
+            <div className="text-center mb-6 px-4">
+              <span className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl mx-auto mb-3 border border-emerald-100 shadow-sm">
                 💵
               </span>
-              <h3 className="text-lg font-bold text-slate-900">
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">
                 Ingresar Dinero a Cuenta Principal
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Similar a cargar saldo en Mercado Pago para distribuir en tus elementos.
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+                Carga saldo disponible en tu billetera para fondear y distribuir en tus elementos.
               </p>
             </div>
 
-            <form onSubmit={handleTopUpMainAccount} className="flex flex-col gap-3">
+            <form onSubmit={handleTopUpMainAccount} className="flex flex-col gap-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 mb-1 block">
+                <label className="text-xs font-bold text-slate-700 mb-1.5 block">
                   Monto a Ingresar (ARS)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-slate-400 font-bold">$</span>
+                  <span className="absolute left-4 top-3 text-slate-400 font-bold text-lg">$</span>
                   <input
                     type="number"
                     required
@@ -2213,19 +2351,19 @@ export default function ElementsManager({
                     step="100"
                     value={topUpAmount}
                     onChange={e => setTopUpAmount(e.target.value)}
-                    className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg font-bold text-center"
+                    className="w-full pl-9 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xl font-black text-slate-900 text-center bg-slate-50 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               {/* Botones de montos rápidos */}
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-3 gap-2">
                 {['50000', '100000', '250000'].map(m => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setTopUpAmount(m)}
-                    className="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700"
+                    className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-all border border-slate-200/80 hover:border-slate-300"
                   >
                     +${(parseInt(m) / 1000)}k
                   </button>
@@ -2234,7 +2372,7 @@ export default function ElementsManager({
 
               <button
                 type="submit"
-                className="btn mt-2 py-3 rounded-full font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+                className="btn mt-2 py-3.5 rounded-full font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition-all"
               >
                 Cargar Saldo
               </button>
@@ -2246,15 +2384,18 @@ export default function ElementsManager({
       {/* ======================================================== */}
       {/* MODAL 5: INFORMACIÓN Y GESTIÓN DE LA BILLETERA           */}
       {/* ======================================================== */}
+      {/* ======================================================== */}
+      {/* MODAL 5: INFORMACIÓN Y GESTIÓN DE LA BILLETERA (FINTECH) */}
+      {/* ======================================================== */}
       {showWalletInfoModal && currentWallet && (
         <div 
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
           style={{ overflowY: 'auto' }}
           onClick={() => setShowWalletInfoModal(false)}
         >
           <div 
-            className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative my-auto"
-            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+            className="bg-white rounded-[32px] w-full max-w-2xl p-6 sm:p-8 shadow-2xl relative my-auto border border-slate-100"
+            style={{ maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Cerrar modal */}
@@ -2263,19 +2404,20 @@ export default function ElementsManager({
               onClick={() => setShowWalletInfoModal(false)}
               style={{
                 position: 'absolute',
-                top: '18px',
-                right: '18px',
-                width: '34px',
-                height: '34px',
+                top: '20px',
+                right: '20px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '50%',
-                background: '#f1f5f9',
+                background: '#f8fafc',
                 border: '1px solid #e2e8f0',
                 color: '#64748b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                zIndex: 25
+                zIndex: 25,
+                transition: 'all 0.15s ease'
               }}
               title="Cerrar ventana"
             >
@@ -2283,286 +2425,327 @@ export default function ElementsManager({
             </button>
 
             {/* Cabecera de la Billetera */}
-            <div className="flex items-center gap-4 mb-6 pr-10">
+            <div className="flex items-start gap-4 mb-6 pr-12">
               <span className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-3xl shadow-sm shrink-0">
                 {currentWallet.icon || '🐝'}
               </span>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-xl font-black text-slate-900 leading-tight">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
                     {currentWallet.name}
                   </h3>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Activa
+                  <span className="text-xs px-3 py-1 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Billetera Activa
                   </span>
                 </div>
                 {currentWallet.alias && (
-                  <span className="text-xs text-indigo-600 font-mono font-semibold block mt-0.5">
+                  <span className="text-xs text-indigo-600 font-mono font-bold block mt-1">
                     @{currentWallet.alias}
                   </span>
                 )}
-                {currentWallet.description && (
-                  <p className="text-xs text-slate-500 mt-1">
-                    {currentWallet.description}
+                {currentWallet.detail && (
+                  <p className="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed">
+                    {currentWallet.detail}
                   </p>
                 )}
               </div>
             </div>
 
             {/* Resumen de Saldo y Elementos en esta Billetera */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {(() => {
-                const walletElements = (elements || []).filter(e => (e.walletId || 'wallet-elementales') === currentWallet.id);
-                const totalBalance = walletElements.reduce((sum, e) => {
-                  const st = elementsService.getElementStats(e.id);
-                  return sum + (st.currentBalance || 0);
-                }, 0);
-                return (
-                  <>
-                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+            {(() => {
+              const walletElements = (elements || []).filter(e => {
+                const isDirect = e.walletId === currentWallet.id || (currentWallet.id === 'wallet-elementales' && !e.walletId);
+                const isCoOwned = Array.isArray(e.walletIds) && e.walletIds.includes(currentWallet.id);
+                return isDirect || isCoOwned;
+              });
+              const totalBalance = walletElements.reduce((sum, e) => {
+                const st = elementsService.getElementStats(e.id);
+                return sum + (st.currentBalance || 0);
+              }, 0);
+
+              return (
+                <div className="flex flex-col gap-6">
+                  {/* Hero Balances */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/80">
                       <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider block">
                         Saldo en Elementos
                       </span>
-                      <span className="text-lg font-black text-slate-900 block mt-1">
+                      <span className="text-2xl font-black text-slate-900 block mt-1.5">
                         {safeFormatCurrency(totalBalance)}
                       </span>
                     </div>
-                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                      <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider block">
+                    <div className="p-4 sm:p-5 rounded-2xl bg-indigo-50/60 border border-indigo-100">
+                      <span className="text-[11px] font-bold uppercase text-indigo-800 tracking-wider block">
                         Elementos Asociados
                       </span>
-                      <span className="text-lg font-black text-indigo-700 block mt-1">
+                      <span className="text-2xl font-black text-indigo-900 block mt-1.5">
                         {walletElements.length} elemento{walletElements.length !== 1 ? 's' : ''}
                       </span>
                     </div>
-                  </>
-                );
-              })()}
-            </div>
+                  </div>
 
-            {/* Integrantes con Acceso a la Billetera */}
-            <div className="mb-6">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Integrantes de la Billetera
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {(currentWallet.members && currentWallet.members.length > 0 ? currentWallet.members : ['ramiro', 'agustina', 'cristian']).map((mId) => {
-                  const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
-                  return (
-                    <span 
-                      key={mId} 
-                      className="px-3 py-1.5 rounded-full text-xs font-bold bg-indigo-50/80 text-indigo-800 border border-indigo-100 flex items-center gap-1.5 shadow-sm"
+                  {/* Tabs de Billetera */}
+                  <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl overflow-x-auto text-xs font-bold text-slate-600">
+                    <button
+                      type="button"
+                      onClick={() => setWalletInfoTab('rules')}
+                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+                        walletInfoTab === 'rules'
+                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
+                          : 'hover:text-slate-900'
+                      }`}
                     >
-                      <span>👤</span>
-                      <span>{mObj.name}</span>
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Reglas y Acuerdos de la Grupalidad */}
-            <div className="mb-6 p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-bold text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
-                  <Shield size={14} className="text-indigo-600" />
-                  <span>Reglas y Acuerdos de la Grupalidad</span>
-                </h4>
-                {rulesSavedNotice && (
-                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Guardado
-                  </span>
-                )}
-              </div>
-
-              <form onSubmit={handleSaveWalletRules} className="space-y-3 text-xs">
-                {/* Modelo de Contribución */}
-                <div>
-                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                    Modelo de Contribución / Aportes:
-                  </label>
-                  <select
-                    value={walletRulesForm.contributionModel}
-                    onChange={e => setWalletRulesForm({ ...walletRulesForm, contributionModel: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                  >
-                    <option value="equal">⚖️ Partes Iguales (División equitativa entre todos)</option>
-                    <option value="proportional">📊 Proporcional a ingresos / ventas</option>
-                    <option value="voluntary">🤝 Voluntario / Libre según necesidad y capacidad</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  {/* Umbral de aprobación */}
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                      Límite sin consulta:
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-2.5 top-2 text-slate-400 font-bold">$</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1000"
-                        value={walletRulesForm.expenseApprovalThreshold}
-                        onChange={e => setWalletRulesForm({ ...walletRulesForm, expenseApprovalThreshold: parseFloat(e.target.value) || 0 })}
-                        className="w-full pl-6 pr-2.5 py-1.5 rounded-xl border border-indigo-200 text-xs font-bold bg-white"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Porcentaje de Fondo de Reserva */}
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                      Fondo Resguardo:
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={walletRulesForm.reservePercentage}
-                        onChange={e => setWalletRulesForm({ ...walletRulesForm, reservePercentage: parseFloat(e.target.value) || 0 })}
-                        className="w-full pl-3 pr-6 py-1.5 rounded-xl border border-indigo-200 text-xs font-bold bg-white"
-                      />
-                      <span className="absolute right-2.5 top-2 text-slate-400 font-bold">%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Resumen del acuerdo */}
-                <div>
-                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                    Memoria del Acuerdo Colectivo:
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={walletRulesForm.agreementSummary}
-                    onChange={e => setWalletRulesForm({ ...walletRulesForm, agreementSummary: e.target.value })}
-                    placeholder="Ej: Gastos cotidianos hasta $30.000 son libres. Compras mayores se acuerdan por WhatsApp grupal."
-                    className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="btn w-full py-2 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-1.5"
-                >
-                  <Check size={14} />
-                  <span>Guardar Acuerdos de la Billetera</span>
-                </button>
-              </form>
-            </div>
-
-            {/* Informe Ejecutivo de Billetera y WhatsApp */}
-            <div className="mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <FileText size={14} className="text-slate-600" />
-                    <span>Informe Ejecutivo de Billetera</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Estado procesado de saldos, elementos y reglas, listo para comunicar.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowExecutiveReport(!showExecutiveReport)}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
-                >
-                  {showExecutiveReport ? 'Ocultar' : 'Ver Informe'}
-                </button>
-              </div>
-
-              {showExecutiveReport && (() => {
-                const report = elementsService.generateWalletReport(currentWallet.id);
-                if (!report) return null;
-                return (
-                  <div className="mt-3 pt-3 border-t border-slate-200 space-y-3">
-                    <div className="p-3 bg-white rounded-xl border border-slate-200 font-mono text-[11px] text-slate-700 whitespace-pre-wrap max-h-48 overflow-y-auto">
-                      {report.whatsAppText}
-                    </div>
+                      <Shield size={14} />
+                      <span>Reglas & Acuerdos</span>
+                    </button>
 
                     <button
                       type="button"
-                      onClick={() => {
-                        const url = `https://wa.me/?text=${encodeURIComponent(report.whatsAppText)}`;
-                        window.open(url, '_blank');
-                      }}
-                      className="btn w-full py-2.5 rounded-full font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center justify-center gap-2"
+                      onClick={() => setWalletInfoTab('report')}
+                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+                        walletInfoTab === 'report'
+                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
+                          : 'hover:text-slate-900'
+                      }`}
                     >
-                      <Share2 size={14} />
-                      <span>📲 Compartir Informe por WhatsApp</span>
+                      <FileText size={14} />
+                      <span>Informe Ejecutivo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setWalletInfoTab('elements')}
+                      className={`flex-1 py-2 px-3 rounded-xl transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+                        walletInfoTab === 'elements'
+                          ? 'bg-white text-slate-900 shadow-sm font-extrabold'
+                          : 'hover:text-slate-900'
+                      }`}
+                    >
+                      <Users size={14} />
+                      <span>Elementos & Integrantes</span>
                     </button>
                   </div>
-                );
-              })()}
-            </div>
 
-            {/* Listado de Elementos que contiene */}
-            <div className="mb-6">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Elementos en esta Billetera
-              </h4>
-              <div className="space-y-1.5 overflow-y-auto pr-1" style={{ maxHeight: '180px', overflowY: 'auto' }}>
-                {(() => {
-                  const walletElements = (elements || []).filter(e => (e.walletId || 'wallet-elementales') === currentWallet.id);
-                  if (walletElements.length === 0) {
-                    return (
-                      <div className="p-3 rounded-xl bg-slate-50 text-center text-xs text-slate-500 border border-slate-100">
-                        No hay elementos en esta billetera todavía.
-                      </div>
-                    );
-                  }
-                  return walletElements.map(e => {
-                    const st = elementsService.getElementStats(e.id);
-                    return (
-                      <div key={e.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
+                  {/* PESTAÑA 1: REGLAS & ACUERDOS */}
+                  {walletInfoTab === 'rules' && (
+                    <div className="p-5 sm:p-6 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-4">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-base">{e.icon || '📦'}</span>
+                          <Shield size={16} className="text-indigo-600" />
+                          <h4 className="text-xs font-bold text-indigo-950 uppercase tracking-wider">
+                            Memoria y Acuerdos de la Grupalidad
+                          </h4>
+                        </div>
+                        {rulesSavedNotice && (
+                          <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            <CheckCircle2 size={13} /> Guardado con éxito
+                          </span>
+                        )}
+                      </div>
+
+                      <form onSubmit={handleSaveWalletRules} className="space-y-4 text-xs">
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                            Modelo de Contribución / Aportes:
+                          </label>
+                          <select
+                            value={walletRulesForm.contributionModel}
+                            onChange={e => setWalletRulesForm({ ...walletRulesForm, contributionModel: e.target.value })}
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-indigo-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                          >
+                            <option value="equal">⚖️ Partes Iguales (División equitativa entre todos)</option>
+                            <option value="proportional">📊 Proporcional a ingresos / ventas</option>
+                            <option value="voluntary">🤝 Voluntario / Libre según necesidad y capacidad</option>
+                          </select>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                           <div>
-                            <span className="font-bold text-slate-800 block">{e.name}</span>
-                            <span className="text-[10px] text-slate-500">{e.type === 'bilateral' ? '🤝 Mano a Mano' : e.type === 'shared' ? 'Colectivo' : 'Individual'}</span>
+                            <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                              Límite de gasto sin consulta:
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-3 top-2.5 text-slate-400 font-bold">$</span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="1000"
+                                value={walletRulesForm.expenseApprovalThreshold}
+                                onChange={e => setWalletRulesForm({ ...walletRulesForm, expenseApprovalThreshold: parseFloat(e.target.value) || 0 })}
+                                className="w-full pl-7 pr-3 py-2.5 rounded-xl border border-indigo-200 text-xs font-bold bg-white"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                              Fondo de Resguardo (%):
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={walletRulesForm.reservePercentage}
+                                onChange={e => setWalletRulesForm({ ...walletRulesForm, reservePercentage: parseFloat(e.target.value) || 0 })}
+                                className="w-full pl-3.5 pr-7 py-2.5 rounded-xl border border-indigo-200 text-xs font-bold bg-white"
+                              />
+                              <span className="absolute right-3 top-2.5 text-slate-400 font-bold">%</span>
+                            </div>
                           </div>
                         </div>
-                        <span className="font-extrabold text-slate-900">
-                          {safeFormatCurrency(st.currentBalance)}
-                        </span>
+
+                        <div>
+                          <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                            Memoria del Acuerdo Colectivo:
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={walletRulesForm.agreementSummary}
+                            onChange={e => setWalletRulesForm({ ...walletRulesForm, agreementSummary: e.target.value })}
+                            placeholder="Ej: Gastos cotidianos hasta $30.000 son libres. Compras mayores se acuerdan por WhatsApp grupal."
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-indigo-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed"
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="btn w-full py-3 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-2"
+                        >
+                          <Check size={16} />
+                          <span>Guardar Acuerdos de la Billetera</span>
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* PESTAÑA 2: INFORME EJECUTIVO */}
+                  {walletInfoTab === 'report' && (() => {
+                    const report = elementsService.generateWalletReport(currentWallet.id);
+                    if (!report) return null;
+                    return (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                              Informe Ejecutivo Listo para Enviar
+                            </h4>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              Procesamiento automático de saldos, elementos y reglas grupales.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="p-4 sm:p-5 bg-slate-50 rounded-2xl border border-slate-200 font-mono text-xs text-slate-800 whitespace-pre-wrap max-h-72 overflow-y-auto leading-relaxed">
+                          {report.whatsAppText}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = `https://wa.me/?text=${encodeURIComponent(report.whatsAppText)}`;
+                            window.open(url, '_blank');
+                          }}
+                          className="btn w-full py-3.5 rounded-2xl font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-2 transition-all"
+                        >
+                          <Share2 size={16} />
+                          <span>📲 Compartir Informe por WhatsApp</span>
+                        </button>
                       </div>
                     );
-                  });
-                })()}
-              </div>
-            </div>
+                  })()}
 
-            {/* Zona de Peligro: Eliminar Billetera */}
-            <div className="pt-4 border-t border-slate-200 flex flex-col gap-2">
-              <div className="p-3 rounded-2xl bg-rose-50/80 border border-rose-200 flex items-start gap-2.5">
-                <Trash2 size={16} className="text-rose-600 mt-0.5 shrink-0" />
-                <div className="text-xs text-rose-900">
-                  <span className="font-bold block">Zona de Gestión de Billetera</span>
-                  <span className="text-rose-700 text-[11px] leading-tight block mt-0.5">
-                    Si eliminas esta billetera, sus elementos económicos se reasignarán automáticamente a la billetera principal para que no pierdas ningún dato.
-                  </span>
+                  {/* PESTAÑA 3: ELEMENTOS & INTEGRANTES */}
+                  {walletInfoTab === 'elements' && (
+                    <div className="space-y-6">
+                      {/* Integrantes con Avatar */}
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
+                          Integrantes con Acceso
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {(currentWallet.members && currentWallet.members.length > 0 ? currentWallet.members : ['ramiro', 'agustina', 'cristian']).map((mId) => {
+                            const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
+                            return (
+                              <span 
+                                key={mId} 
+                                className="px-3.5 py-2 rounded-2xl text-xs font-bold bg-slate-50 text-slate-800 border border-slate-200 flex items-center gap-2 shadow-2xs"
+                              >
+                                <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-black">
+                                  {mObj.name.charAt(0).toUpperCase()}
+                                </span>
+                                <span>{mObj.name}</span>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Listado de Elementos que contiene */}
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
+                          Elementos en esta Billetera ({walletElements.length})
+                        </h4>
+                        {walletElements.length === 0 ? (
+                          <div className="p-4 rounded-2xl bg-slate-50 text-center text-xs text-slate-500 border border-slate-200">
+                            No hay elementos asociados todavía a esta billetera.
+                          </div>
+                        ) : (
+                          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                            {walletElements.map(e => {
+                              const st = elementsService.getElementStats(e.id);
+                              return (
+                                <div key={e.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs hover:border-slate-300 transition-all">
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xl p-1 bg-white rounded-xl border border-slate-100 shadow-2xs">{e.icon || '📦'}</span>
+                                    <div>
+                                      <span className="font-bold text-slate-900 block text-xs">{e.name}</span>
+                                      <span className="text-[10px] text-slate-500">{e.type === 'bilateral' ? '🤝 Mano a Mano' : e.type === 'shared' ? 'Colectivo' : 'Individual'}</span>
+                                    </div>
+                                  </div>
+                                  <span className="font-black text-slate-900 text-sm">
+                                    {safeFormatCurrency(st.currentBalance)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Zona de Gestión / Peligro */}
+                      <div className="pt-4 border-t border-slate-200 flex flex-col gap-3">
+                        <div className="p-3.5 rounded-2xl bg-rose-50/80 border border-rose-200 flex items-start gap-2.5">
+                          <Trash2 size={16} className="text-rose-600 mt-0.5 shrink-0" />
+                          <div className="text-xs text-rose-900">
+                            <span className="font-bold block">Gestión de la Billetera</span>
+                            <span className="text-rose-700 text-[11px] leading-tight block mt-0.5">
+                              Si eliminas esta billetera, sus elementos se reasignarán automáticamente a la billetera principal para preservar los datos.
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleDeleteCurrentWallet}
+                          disabled={wallets.length <= 1}
+                          className={`btn py-3 px-4 rounded-full font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                            wallets.length <= 1
+                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                              : 'bg-white hover:bg-rose-50 text-rose-600 border border-rose-300 shadow-sm'
+                          }`}
+                          title={wallets.length <= 1 ? "No se puede eliminar la única billetera activa" : "Eliminar esta billetera"}
+                        >
+                          <Trash2 size={14} />
+                          <span>{wallets.length <= 1 ? "Billetera principal requerida (no se puede borrar)" : `Eliminar Billetera "${currentWallet.name}"`}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleDeleteCurrentWallet}
-                disabled={wallets.length <= 1}
-                className={`btn py-2.5 px-4 rounded-full font-bold text-xs flex items-center justify-center gap-2 transition-all ${
-                  wallets.length <= 1
-                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                    : 'bg-white hover:bg-rose-50 text-rose-600 border border-rose-300 shadow-sm'
-                }`}
-                title={wallets.length <= 1 ? "No se puede eliminar la única billetera activa" : "Eliminar esta billetera"}
-              >
-                <Trash2 size={14} />
-                <span>{wallets.length <= 1 ? "Billetera principal requerida (no se puede borrar)" : `Eliminar Billetera "${currentWallet.name}"`}</span>
-              </button>
-            </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -2572,57 +2755,57 @@ export default function ElementsManager({
       {/* ======================================================== */}
       {showCreateMilestoneModal && selectedElement && (
         <div 
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
           style={{ overflowY: 'auto' }}
           onClick={() => setShowCreateMilestoneModal(false)}
         >
           <div 
-            className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative my-auto"
-            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+            className="bg-white rounded-[32px] w-full max-w-md p-6 sm:p-8 shadow-2xl relative my-auto border border-slate-100"
+            style={{ maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             <button 
               type="button"
               onClick={() => setShowCreateMilestoneModal(false)}
-              className="top-4 right-4"
               style={{
                 position: 'absolute',
-                top: '16px',
-                right: '16px',
-                width: '32px',
-                height: '32px',
+                top: '20px',
+                right: '20px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '50%',
-                background: '#f1f5f9',
+                background: '#f8fafc',
                 border: '1px solid #e2e8f0',
                 color: '#64748b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                zIndex: 25
+                zIndex: 25,
+                transition: 'all 0.15s ease'
               }}
               title="Cerrar ventana"
             >
-              <X size={16} />
+              <X size={18} />
             </button>
 
-            <div className="flex items-center gap-2.5 mb-4 pr-8">
-              <span className="p-2.5 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 text-xl">
+            <div className="flex items-center gap-3.5 mb-6 pr-12">
+              <span className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center text-3xl shadow-sm shrink-0">
                 🎪
               </span>
               <div>
-                <span className="text-[10px] uppercase font-bold text-amber-800 tracking-wider">
+                <span className="text-[11px] uppercase font-bold text-amber-800 tracking-wider block">
                   Micro-contabilidad de Evento
                 </span>
-                <h3 className="text-base font-bold text-slate-900 leading-tight">
+                <h3 className="text-xl font-black text-slate-900 leading-tight">
                   Nuevo Hito en {selectedElement.name}
                 </h3>
               </div>
             </div>
 
-            <form onSubmit={handleCreateMilestone} className="flex flex-col gap-3 text-xs">
+            <form onSubmit={handleCreateMilestone} className="flex flex-col gap-4 text-xs">
               <div>
-                <label className="text-[11px] font-bold text-slate-700 mb-1 block">
+                <label className="text-xs font-bold text-slate-700 mb-1.5 block">
                   Nombre o Edición del Hito *
                 </label>
                 <input
@@ -2631,16 +2814,16 @@ export default function ElementsManager({
                   placeholder="Ej: Edición Primavera (18 de Octubre)"
                   value={newMilestoneForm.name}
                   onChange={e => setNewMilestoneForm({ ...newMilestoneForm, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-700 mb-1 block">
+                <label className="text-xs font-bold text-slate-700 mb-1.5 block">
                   Fondo Semilla / Inversión de Apertura (ARS)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-slate-400 font-bold">$</span>
+                  <span className="absolute left-3.5 top-2.5 text-slate-400 font-bold">$</span>
                   <input
                     type="number"
                     min="0"
@@ -2648,13 +2831,13 @@ export default function ElementsManager({
                     placeholder="0"
                     value={newMilestoneForm.initialSeedFund}
                     onChange={e => setNewMilestoneForm({ ...newMilestoneForm, initialSeedFund: e.target.value })}
-                    className="w-full pl-7 pr-3 py-2 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-700 mb-1 block">
+                <label className="text-xs font-bold text-slate-700 mb-1.5 block">
                   Objetivo o Detalle de Producción
                 </label>
                 <textarea
@@ -2662,15 +2845,15 @@ export default function ElementsManager({
                   placeholder="Ej: Producción de arepas, compras de maíz y logística de puesto."
                   value={newMilestoneForm.goalDescription}
                   onChange={e => setNewMilestoneForm({ ...newMilestoneForm, goalDescription: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white transition-all resize-none"
                 />
               </div>
 
               <button
                 type="submit"
-                className="btn mt-2 py-2.5 rounded-full font-bold text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-sm flex items-center justify-center gap-1.5"
+                className="btn mt-2 py-3 rounded-full font-bold text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 flex items-center justify-center gap-2 transition-all"
               >
-                <Check size={14} />
+                <Check size={15} />
                 <span>Crear Hito Temporal</span>
               </button>
             </form>
@@ -2683,69 +2866,69 @@ export default function ElementsManager({
       {/* ======================================================== */}
       {closingMilestone && (
         <div 
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
           style={{ overflowY: 'auto' }}
           onClick={() => setClosingMilestone(null)}
         >
           <div 
-            className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative my-auto"
-            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+            className="bg-white rounded-[32px] w-full max-w-md p-6 sm:p-8 shadow-2xl relative my-auto border border-slate-100"
+            style={{ maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
             <button 
               type="button"
               onClick={() => setClosingMilestone(null)}
-              className="top-4 right-4"
               style={{
                 position: 'absolute',
-                top: '16px',
-                right: '16px',
-                width: '32px',
-                height: '32px',
+                top: '20px',
+                right: '20px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '50%',
-                background: '#f1f5f9',
+                background: '#f8fafc',
                 border: '1px solid #e2e8f0',
                 color: '#64748b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                zIndex: 25
+                zIndex: 25,
+                transition: 'all 0.15s ease'
               }}
               title="Cerrar ventana"
             >
-              <X size={16} />
+              <X size={18} />
             </button>
 
             {(() => {
               const stats = elementsService.getMilestoneStats(closingMilestone.id);
               return (
                 <div>
-                  <div className="flex items-center gap-2.5 mb-3 pr-8">
-                    <span className="p-2.5 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-xl">
+                  <div className="flex items-center gap-3.5 mb-5 pr-12">
+                    <span className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center justify-center text-3xl shadow-sm shrink-0">
                       ⚖️
                     </span>
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-indigo-800 tracking-wider">
+                      <span className="text-[11px] uppercase font-bold text-indigo-800 tracking-wider block">
                         Liquidación de Hito
                       </span>
-                      <h3 className="text-base font-bold text-slate-900 leading-tight">
+                      <h3 className="text-xl font-black text-slate-900 leading-tight">
                         {closingMilestone.name}
                       </h3>
                     </div>
                   </div>
 
                   {/* Resumen contable neto */}
-                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 mb-3 text-xs space-y-1.5">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Total Ingresos:</span>
-                      <strong className="text-emerald-700">+{safeFormatCurrency(stats.totalIncomes)}</strong>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 mb-4 text-xs space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">Total Ingresos:</span>
+                      <strong className="text-emerald-700 font-bold">+{safeFormatCurrency(stats.totalIncomes)}</strong>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Total Egresos:</span>
-                      <strong className="text-rose-700">-{safeFormatCurrency(stats.totalExpenses)}</strong>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-medium">Total Egresos:</span>
+                      <strong className="text-rose-700 font-bold">-{safeFormatCurrency(stats.totalExpenses)}</strong>
                     </div>
-                    <div className="pt-1.5 border-t border-slate-200 flex justify-between font-black text-sm">
+                    <div className="pt-2 border-t border-slate-200/80 flex justify-between items-center font-black text-sm">
                       <span className="text-slate-800">Resultado Neto:</span>
                       <span className={stats.netResult >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
                         {stats.netResult >= 0 ? 'Superávit +' : 'Déficit '}{safeFormatCurrency(stats.netResult)}
@@ -2753,9 +2936,9 @@ export default function ElementsManager({
                     </div>
                   </div>
 
-                  <form onSubmit={handleCloseMilestone} className="flex flex-col gap-3 text-xs">
+                  <form onSubmit={handleCloseMilestone} className="flex flex-col gap-4 text-xs">
                     <div>
-                      <label className="text-[11px] font-bold text-slate-700 mb-1 block">
+                      <label className="text-xs font-bold text-slate-700 mb-1.5 block">
                         Conclusión o Informe de Cierre
                       </label>
                       <textarea
@@ -2763,15 +2946,15 @@ export default function ElementsManager({
                         value={closeMilestoneSummary}
                         onChange={e => setCloseMilestoneSummary(e.target.value)}
                         placeholder="Ej: Se completó la edición con superávit asignado al fondo de feria."
-                        className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 focus:bg-white transition-all resize-none"
                       />
                     </div>
 
                     <button
                       type="submit"
-                      className="btn py-2.5 rounded-full font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-1.5"
+                      className="btn py-3 rounded-full font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 flex items-center justify-center gap-2 transition-all"
                     >
-                      <Check size={14} />
+                      <Check size={15} />
                       <span>Confirmar Cierre y Liquidar</span>
                     </button>
                   </form>
