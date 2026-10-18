@@ -14,8 +14,9 @@ const STORAGE_ACCOUNT_KEY = 'banca_abeja_main_accounts_v2';
 const STORAGE_ELEMENT_TXS_KEY = 'banca_abeja_element_transactions_v2';
 const STORAGE_WALLETS_KEY = 'banca_abeja_wallets_v2';
 const STORAGE_ACTIVE_WALLET_KEY = 'banca_abeja_active_wallet_id_v2';
+const STORAGE_MILESTONES_KEY = 'banca_abeja_milestones_v2';
 
-// Billeteras iniciales demostrativas del sistema Multi-Billeteras
+// Billeteras iniciales demostrativas del sistema Multi-Billeteras Inteligentes con Reglas
 export const DEFAULT_WALLETS = [
   {
     id: 'wallet-elementales',
@@ -27,6 +28,13 @@ export const DEFAULT_WALLETS = [
     elementIds: ['elem-clio', 'elem-comida', 'elem-habitat', 'elem-mano-mano-cris', 'elem-feria'],
     balance: 450000,
     currency: 'ARS',
+    rules: {
+      contributionModel: 'equal', // 'equal' | 'proportional' | 'voluntary'
+      expenseApprovalThreshold: 30000, // Gastos mayores requieren acuerdo grupal
+      reservePercentage: 10, // 10% del fondo queda como resguardo
+      defaultExpenseElementId: 'elem-comida',
+      agreementSummary: 'Compras cotidianas libres hasta $30.000. Gastos mayores se consultan por WhatsApp.'
+    },
     createdAt: Date.now() - 86400000 * 5
   },
   {
@@ -39,7 +47,31 @@ export const DEFAULT_WALLETS = [
     elementIds: ['elem-huerta', 'elem-compost'],
     balance: 180000,
     currency: 'ARS',
+    rules: {
+      contributionModel: 'proportional',
+      expenseApprovalThreshold: 25000,
+      reservePercentage: 15,
+      agreementSummary: 'Fondo rotatorio de bioinsumos y reinversión del 15% de ventas.'
+    },
     createdAt: Date.now() - 86400000 * 3
+  },
+  {
+    id: 'wallet-feria',
+    name: 'Equipo Feria',
+    alias: 'feria',
+    icon: '🎪',
+    detail: 'Coordinación económica exclusiva del equipo de feria, inscripciones y logística de puestos.',
+    members: ['ramiro', 'cristian'],
+    elementIds: ['elem-feria'],
+    balance: 60000,
+    currency: 'ARS',
+    rules: {
+      contributionModel: 'voluntary',
+      expenseApprovalThreshold: 20000,
+      reservePercentage: 15,
+      agreementSummary: 'Fondo de caja para montaje de puestos y compras de insumos para la feria.'
+    },
+    createdAt: Date.now() - 86400000 * 1
   },
   {
     id: 'wallet-personal-ramiro',
@@ -51,7 +83,29 @@ export const DEFAULT_WALLETS = [
     elementIds: ['elem-personal-ramiro'],
     balance: 95000,
     currency: 'ARS',
+    rules: {
+      contributionModel: 'voluntary',
+      expenseApprovalThreshold: 100000,
+      reservePercentage: 0,
+      agreementSummary: 'Caja individual y gastos propios sin rendición grupal.'
+    },
     createdAt: Date.now() - 86400000 * 2
+  }
+];
+
+// Hitos demostrativos con temporalidad y micro-contabilidad
+export const DEFAULT_MILESTONES = [
+  {
+    id: 'milestone-feria-primavera',
+    elementId: 'elem-feria',
+    name: 'Edición Primavera (18 de Octubre)',
+    startDate: '17/10/2026',
+    endDate: null,
+    status: 'open', // 'open' | 'closed'
+    initialSeedFund: 30000,
+    goalDescription: 'Puestos de feria, arepas comunitarias, maíz y frutos secos.',
+    netResult: null,
+    createdAt: Date.now() - 86400000
   }
 ];
 
@@ -70,6 +124,10 @@ export const DEFAULT_ELEMENTS = [
     initialBalance: 0,
     currency: 'ARS',
     walletId: 'wallet-elementales',
+    costBase: [
+      { id: 'cost-clio-1', name: 'Nafta Súper YPF', unitCost: 1100, unit: 'litro', category: 'Combustible' },
+      { id: 'cost-clio-2', name: 'Nafta Infinia YPF', unitCost: 1350, unit: 'litro', category: 'Combustible' }
+    ],
     createdAt: Date.now() - 86400000 * 5
   },
   {
@@ -145,6 +203,12 @@ export const DEFAULT_ELEMENTS = [
     initialBalance: 0,
     currency: 'ARS',
     walletId: 'wallet-elementales',
+    walletIds: ['wallet-elementales', 'wallet-feria'], // Co-creado por ambas billeteras
+    costBase: [
+      { id: 'cost-feria-1', name: 'Maíz partido blanco', unitCost: 3000, unit: 'kg', category: 'Insumos Arepas' },
+      { id: 'cost-feria-2', name: 'Maíz partido amarillo', unitCost: 2000, unit: 'kg', category: 'Insumos Arepas' },
+      { id: 'cost-feria-3', name: 'Frutos secos agroecológicos', unitCost: 4500, unit: '100gr', category: 'Despensa' }
+    ],
     createdAt: Date.now() - 86400000 * 2
   },
   {
@@ -216,6 +280,7 @@ export const DEFAULT_ELEMENT_TXS = [
     targetMemberId: 'cristian',
     linkedElementId: 'elem-feria',
     linkedElementName: 'Feria Comunitaria',
+    milestoneId: 'milestone-feria-primavera',
     currency: 'ARS',
     timestamp: Date.now() - 3600000,
     date: new Date().toLocaleDateString('es-AR')
@@ -289,6 +354,7 @@ class ElementsService {
     this.elements = this.loadStoredElements();
     this.transactions = this.loadStoredTransactions();
     this.accounts = this.loadStoredAccounts();
+    this.milestones = this.loadStoredMilestones();
   }
 
   // --- PERSISTENCIA LOCAL ULTRA RESILIENTE ---
@@ -456,6 +522,38 @@ class ElementsService {
     } catch (e) {}
   }
 
+  loadStoredMilestones() {
+    try {
+      const saved = localStorage.getItem(STORAGE_MILESTONES_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const existingIds = new Set(parsed.map(m => m.id));
+          const missingDefaults = DEFAULT_MILESTONES.filter(d => !existingIds.has(d.id));
+          if (missingDefaults.length > 0) {
+            const combined = [...parsed, ...missingDefaults];
+            localStorage.setItem(STORAGE_MILESTONES_KEY, JSON.stringify(combined));
+            return combined;
+          }
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("Error leyendo hitos locales:", e);
+    }
+    return DEFAULT_MILESTONES;
+  }
+
+  saveStoredMilestones(milestones) {
+    this.milestones = Array.isArray(milestones) ? milestones : DEFAULT_MILESTONES;
+    try {
+      localStorage.setItem(STORAGE_MILESTONES_KEY, JSON.stringify(this.milestones));
+    } catch (e) {}
+    try {
+      window.dispatchEvent(new CustomEvent('banca_milestones_updated', { detail: { milestones: this.milestones } }));
+    } catch (e) {}
+  }
+
   // --- CUENTA PRINCIPAL / SALDOS ---
   getMainBalance(userId = 'ramiro') {
     if (!this.accounts || typeof this.accounts !== 'object') {
@@ -612,13 +710,20 @@ class ElementsService {
     }
   }
 
+  async updateWalletRules(walletId, rules) {
+    const target = this.getWalletById(walletId);
+    if (!target) return null;
+    const mergedRules = { ...(target.rules || {}), ...rules };
+    await this.updateWallet(walletId, { rules: mergedRules });
+    return mergedRules;
+  }
+
   getElementsByWallet(walletId) {
     const targetId = walletId || this.getActiveWalletId();
     return (this.elements || []).filter(elem => {
-      if (targetId === 'wallet-elementales') {
-        return !elem.walletId || elem.walletId === 'wallet-elementales';
-      }
-      return elem.walletId === targetId;
+      const isDirectMatch = elem.walletId === targetId || (targetId === 'wallet-elementales' && !elem.walletId);
+      const isCoOwned = Array.isArray(elem.walletIds) && elem.walletIds.includes(targetId);
+      return isDirectMatch || isCoOwned;
     });
   }
 
@@ -794,6 +899,7 @@ class ElementsService {
     memberName,
     amount,
     concept,
+    milestoneId = null,
     currency = 'ARS'
   }) {
     const numAmount = Math.abs(parseFloat(amount) || 0);
@@ -807,6 +913,7 @@ class ElementsService {
       concept: concept.trim() || 'Ingreso generado por el elemento',
       memberId,
       memberName: memberName || (memberId.charAt(0).toUpperCase() + memberId.slice(1)),
+      milestoneId: milestoneId || null,
       currency,
       timestamp: Date.now(),
       date: new Date().toLocaleDateString('es-AR')
@@ -836,6 +943,7 @@ class ElementsService {
     linkedElementId = null,
     linkedElementName = null,
     targetMemberId = null,
+    milestoneId = null,
     currency = 'ARS'
   }) {
     const numAmount = Math.abs(parseFloat(amount) || 0);
@@ -852,6 +960,7 @@ class ElementsService {
       linkedElementId: linkedElementId || null,
       linkedElementName: linkedElementName || null,
       targetMemberId: targetMemberId || null,
+      milestoneId: milestoneId || null,
       currency,
       timestamp: Date.now(),
       date: new Date().toLocaleDateString('es-AR')
@@ -869,6 +978,249 @@ class ElementsService {
     }
 
     return tx;
+  }
+
+  // --- HITOS / EVENTOS TEMPORALES (MICRO-CONTABILIDAD) ---
+  getMilestonesByElement(elementId) {
+    if (!this.milestones || !Array.isArray(this.milestones)) {
+      this.milestones = this.loadStoredMilestones();
+    }
+    return (this.milestones || []).filter(m => m && m.elementId === elementId);
+  }
+
+  getActiveMilestones(elementId) {
+    return this.getMilestonesByElement(elementId).filter(m => m.status === 'open');
+  }
+
+  getMilestoneById(milestoneId) {
+    if (!this.milestones) this.milestones = this.loadStoredMilestones();
+    return (this.milestones || []).find(m => m && m.id === milestoneId) || null;
+  }
+
+  async createMilestone({
+    elementId,
+    name,
+    initialSeedFund = 0,
+    goalDescription = '',
+    startDate = null
+  }) {
+    const newId = `milestone-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 4)}`;
+    const newMilestone = {
+      id: newId,
+      elementId,
+      name: name.trim(),
+      startDate: startDate || new Date().toLocaleDateString('es-AR'),
+      endDate: null,
+      status: 'open',
+      initialSeedFund: Number(initialSeedFund) || 0,
+      goalDescription: goalDescription.trim(),
+      netResult: null,
+      createdAt: Date.now()
+    };
+
+    const updated = [newMilestone, ...(this.milestones || [])];
+    this.saveStoredMilestones(updated);
+
+    if (db) {
+      try {
+        await setDoc(doc(db, 'banca_abeja_milestones', newId), newMilestone);
+      } catch (e) {
+        console.warn("Firestore error al crear hito:", e);
+      }
+    }
+    return newMilestone;
+  }
+
+  async closeMilestone(milestoneId, summaryReport = '') {
+    const milestone = this.getMilestoneById(milestoneId);
+    if (!milestone) return null;
+
+    const stats = this.getMilestoneStats(milestoneId);
+    const netResult = stats.netResult;
+
+    const updates = {
+      status: 'closed',
+      endDate: new Date().toLocaleDateString('es-AR'),
+      netResult,
+      summaryReport: summaryReport.trim(),
+      closedAt: Date.now()
+    };
+
+    const updatedList = (this.milestones || []).map(m => {
+      if (m.id === milestoneId) {
+        return { ...m, ...updates };
+      }
+      return m;
+    });
+    this.saveStoredMilestones(updatedList);
+
+    if (db) {
+      try {
+        await setDoc(doc(db, 'banca_abeja_milestones', milestoneId), updates, { merge: true });
+      } catch (e) {
+        console.warn("Firestore error al cerrar hito:", e);
+      }
+    }
+
+    return { ...milestone, ...updates };
+  }
+
+  getMilestoneStats(milestoneId) {
+    const mTxs = (this.transactions || []).filter(t => t && t.milestoneId === milestoneId);
+    let totalIncomes = 0;
+    let totalExpenses = 0;
+
+    mTxs.forEach(t => {
+      const amt = Number(t.amount) || 0;
+      if (t.type === 'income') totalIncomes += amt;
+      else if (t.type === 'expense') totalExpenses += amt;
+    });
+
+    const netResult = totalIncomes - totalExpenses;
+    return {
+      totalIncomes,
+      totalExpenses,
+      netResult,
+      txCount: mTxs.length,
+      transactions: mTxs
+    };
+  }
+
+  // --- BASE DE COSTOS E INSUMOS (PLANILLA VIVA) ---
+  async addCostItemToElement(elementId, { name, unitCost, unit = 'unidad', category = 'Insumos' }) {
+    const elem = (this.elements || []).find(e => e.id === elementId);
+    if (!elem) return null;
+
+    const newItem = {
+      id: `cost-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 4)}`,
+      name: name.trim(),
+      unitCost: Number(unitCost) || 0,
+      unit: (unit || 'unidad').trim(),
+      category: (category || 'Insumos').trim()
+    };
+
+    const existingCostBase = Array.isArray(elem.costBase) ? elem.costBase : [];
+    const updatedCostBase = [...existingCostBase, newItem];
+
+    const updatedElements = this.elements.map(e => {
+      if (e.id === elementId) {
+        return { ...e, costBase: updatedCostBase };
+      }
+      return e;
+    });
+    this.saveStoredElements(updatedElements);
+
+    if (db) {
+      try {
+        await setDoc(doc(db, 'banca_abeja_elements', elementId), { costBase: updatedCostBase }, { merge: true });
+      } catch (e) {
+        console.warn("Firestore error al agregar insumo de costo:", e);
+      }
+    }
+    return newItem;
+  }
+
+  async deleteCostItemFromElement(elementId, costItemId) {
+    const elem = (this.elements || []).find(e => e.id === elementId);
+    if (!elem || !Array.isArray(elem.costBase)) return;
+
+    const updatedCostBase = elem.costBase.filter(c => c.id !== costItemId);
+    const updatedElements = this.elements.map(e => {
+      if (e.id === elementId) {
+        return { ...e, costBase: updatedCostBase };
+      }
+      return e;
+    });
+    this.saveStoredElements(updatedElements);
+
+    if (db) {
+      try {
+        await setDoc(doc(db, 'banca_abeja_elements', elementId), { costBase: updatedCostBase }, { merge: true });
+      } catch (e) {
+        console.warn("Firestore error al eliminar insumo de costo:", e);
+      }
+    }
+  }
+
+  // --- GENERACIÓN DE INFORME EJECUTIVO DE BILLETERA ---
+  generateWalletReport(walletId) {
+    const targetId = walletId || this.getActiveWalletId();
+    const wallet = this.getWalletById(targetId);
+    if (!wallet) return null;
+
+    const walletElements = this.getElementsByWallet(targetId);
+    const balance = this.getWalletBalance(targetId);
+    const rules = wallet.rules || {};
+
+    const elementsSummary = walletElements.map(el => {
+      const stats = this.getElementStats(el.id);
+      const activeMilestones = this.getActiveMilestones(el.id);
+      return {
+        id: el.id,
+        name: el.name,
+        icon: el.icon || '📦',
+        type: el.type,
+        currentBalance: stats.currentBalance,
+        totalIncome: stats.totalIncome,
+        totalExpense: stats.totalExpense,
+        activeMilestonesCount: activeMilestones.length
+      };
+    });
+
+    const totalElementsBalance = elementsSummary.reduce((acc, el) => acc + (el.currentBalance || 0), 0);
+
+    const walletElemIds = new Set(walletElements.map(e => e.id));
+    const recentTxs = (this.transactions || [])
+      .filter(t => t && (walletElemIds.has(t.elementId) || walletElemIds.has(t.linkedElementId)))
+      .slice(0, 15);
+
+    const safeMoney = (v) => `$${Number(v || 0).toLocaleString('es-AR')}`;
+    let waText = `🐝 *INFORME EJECUTIVO - BANCA ABEJA*\n`;
+    waText += `💼 *Billetera:* ${wallet.name} (@${wallet.alias || wallet.name.toLowerCase()})\n`;
+    waText += `💰 *Saldo en Caja:* ${safeMoney(balance)}\n`;
+    waText += `📦 *Saldo en Elementos:* ${safeMoney(totalElementsBalance)} (${walletElements.length} elementos)\n`;
+    waText += `👥 *Integrantes:* ${(wallet.members || []).join(', ')}\n\n`;
+
+    if (rules.agreementSummary) {
+      waText += `📜 *Reglas & Acuerdos:*\n`;
+      waText += `• ${rules.agreementSummary}\n`;
+      if (rules.expenseApprovalThreshold) {
+        waText += `• Límite aprobación sin consulta: ${safeMoney(rules.expenseApprovalThreshold)}\n`;
+      }
+      if (rules.reservePercentage) {
+        waText += `• Fondo de resguardo: ${rules.reservePercentage}%\n`;
+      }
+      waText += `\n`;
+    }
+
+    waText += `📊 *Resumen de Elementos:*\n`;
+    elementsSummary.forEach(el => {
+      waText += `• ${el.icon} *${el.name}*: ${safeMoney(el.currentBalance)}`;
+      if (el.activeMilestonesCount > 0) {
+        waText += ` (${el.activeMilestonesCount} hito activo)`;
+      }
+      waText += `\n`;
+    });
+
+    if (recentTxs.length > 0) {
+      waText += `\n📝 *Últimos Movimientos:*\n`;
+      recentTxs.slice(0, 5).forEach(tx => {
+        const sign = tx.type === 'expense' ? '-' : '+';
+        waText += `• ${tx.date} | ${sign}${safeMoney(tx.amount)}: ${tx.concept} (${tx.memberName})\n`;
+      });
+    }
+
+    waText += `\n🌐 _Banca Abeja - Economía Colectiva Consciente_`;
+
+    return {
+      wallet,
+      balance,
+      totalElementsBalance,
+      elementsSummary,
+      rules,
+      recentTxs,
+      whatsAppText: waText
+    };
   }
 
   getLinkedTransactions(elementId) {

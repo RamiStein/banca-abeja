@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, Users, User, ArrowUpRight, ArrowDownLeft, 
   TrendingUp, TrendingDown, Eye, EyeOff, 
-  ChevronRight, X, Check, ArrowRight, Trash2, Info
+  ChevronRight, X, Check, ArrowRight, Trash2, Info,
+  Calendar, FileText, Sparkles, Share2, DollarSign,
+  CheckCircle2, Tag, Sliders, Shield, BookOpen, Clock
 } from 'lucide-react';
 import { elementsService, DEFAULT_ELEMENTS } from '../services/elementsService';
 import { FOUNDING_MEMBERS } from '../services/authService';
@@ -47,6 +49,7 @@ export default function ElementsManager({
     return Array.isArray(list) ? list : [];
   });
   const [wallets, setWallets] = useState(() => elementsService.getWallets());
+  const [milestones, setMilestones] = useState(() => elementsService.milestones || []);
   const [currentWalletId, setCurrentWalletId] = useState(() => propActiveWalletId || elementsService.getActiveWalletId());
 
   const currentWallet = useMemo(() => {
@@ -70,6 +73,26 @@ export default function ElementsManager({
   const [selectedElement, setSelectedElement] = useState(null);
   const [actionModal, setActionModal] = useState(null); // { type: 'deposit' | 'withdraw' | 'income' | 'expense', element: obj }
 
+  // Estados de Hitos (Micro-contabilidad por eventos)
+  const [showCreateMilestoneModal, setShowCreateMilestoneModal] = useState(false);
+  const [newMilestoneForm, setNewMilestoneForm] = useState({ name: '', initialSeedFund: '', goalDescription: '' });
+  const [closingMilestone, setClosingMilestone] = useState(null);
+  const [closeMilestoneSummary, setCloseMilestoneSummary] = useState('');
+
+  // Estados de Base de Costos (Planilla Viva)
+  const [showAddCostItem, setShowAddCostItem] = useState(false);
+  const [newCostItemForm, setNewCostItemForm] = useState({ name: '', unitCost: '', unit: 'kg', category: 'Insumos' });
+
+  // Estados de Reglas de Grupalidad e Informe Ejecutivo de Billetera
+  const [walletRulesForm, setWalletRulesForm] = useState(() => ({
+    contributionModel: currentWallet?.rules?.contributionModel || 'equal',
+    expenseApprovalThreshold: currentWallet?.rules?.expenseApprovalThreshold || 30000,
+    reservePercentage: currentWallet?.rules?.reservePercentage || 10,
+    agreementSummary: currentWallet?.rules?.agreementSummary || ''
+  }));
+  const [showExecutiveReport, setShowExecutiveReport] = useState(false);
+  const [rulesSavedNotice, setRulesSavedNotice] = useState(false);
+
   // Formulario de creación
   const [newElemForm, setNewElemForm] = useState({
     name: '',
@@ -89,7 +112,8 @@ export default function ElementsManager({
     concept: '',
     memberId: currentUser?.id || 'ramiro',
     linkedElementId: '',
-    targetMemberId: ''
+    targetMemberId: '',
+    milestoneId: ''
   });
 
   // Monto para fondear cuenta principal
@@ -102,6 +126,18 @@ export default function ElementsManager({
       setActionForm(prev => ({ ...prev, memberId: currentUser.id }));
     }
   }, [currentUser]);
+
+  // Sincronizar formulario de reglas al cambiar de billetera activa
+  useEffect(() => {
+    if (currentWallet?.rules) {
+      setWalletRulesForm({
+        contributionModel: currentWallet.rules.contributionModel || 'equal',
+        expenseApprovalThreshold: currentWallet.rules.expenseApprovalThreshold || 30000,
+        reservePercentage: currentWallet.rules.reservePercentage || 10,
+        agreementSummary: currentWallet.rules.agreementSummary || ''
+      });
+    }
+  }, [currentWallet]);
 
   // Sincronizar billetera activa prop o eventos globales
   useEffect(() => {
@@ -120,11 +156,16 @@ export default function ElementsManager({
       setWallets(elementsService.getWallets());
       refreshData();
     };
+    const handleMilestonesUpdated = () => {
+      setMilestones([...elementsService.milestones]);
+    };
     window.addEventListener('banca_wallet_changed', handleWalletChanged);
     window.addEventListener('banca_wallets_updated', handleWalletsUpdated);
+    window.addEventListener('banca_milestones_updated', handleMilestonesUpdated);
     return () => {
       window.removeEventListener('banca_wallet_changed', handleWalletChanged);
       window.removeEventListener('banca_wallets_updated', handleWalletsUpdated);
+      window.removeEventListener('banca_milestones_updated', handleMilestonesUpdated);
     };
   }, []);
 
@@ -132,6 +173,7 @@ export default function ElementsManager({
     setElements([...elementsService.elements]);
     setTransactions([...elementsService.transactions]);
     setWallets(elementsService.getWallets());
+    setMilestones([...elementsService.milestones]);
     setMainBalance(elementsService.getMainBalance(currentUser?.id || 'ramiro'));
   };
 
@@ -147,9 +189,10 @@ export default function ElementsManager({
   // Elementos filtrados pertenecientes a la billetera activa
   const filteredElements = useMemo(() => {
     return elements.filter(elem => {
-      // Filtrar por pertenencia a la billetera actual
-      const elemWallet = elem.walletId || 'wallet-elementales';
-      if (elemWallet !== currentWalletId && !(currentWalletId === 'wallet-elementales' && !elem.walletId)) {
+      // Filtrar por pertenencia a la billetera actual (soporta walletId directo o co-propiedad en walletIds)
+      const isDirect = elem.walletId === currentWalletId || (currentWalletId === 'wallet-elementales' && !elem.walletId);
+      const isCoOwned = Array.isArray(elem.walletIds) && elem.walletIds.includes(currentWalletId);
+      if (!isDirect && !isCoOwned) {
         return false;
       }
       if (filterType === 'shared' && elem.type !== 'shared') return false;
@@ -172,8 +215,9 @@ export default function ElementsManager({
     let individualFundsTotal = 0;
 
     const walletElems = elements.filter(elem => {
-      const elemWallet = elem.walletId || 'wallet-elementales';
-      return elemWallet === currentWalletId || (currentWalletId === 'wallet-elementales' && !elem.walletId);
+      const isDirect = elem.walletId === currentWalletId || (currentWalletId === 'wallet-elementales' && !elem.walletId);
+      const isCoOwned = Array.isArray(elem.walletIds) && elem.walletIds.includes(currentWalletId);
+      return isDirect || isCoOwned;
     });
 
     walletElems.forEach(elem => {
@@ -277,7 +321,8 @@ export default function ElementsManager({
         memberId: memberObj.id,
         memberName: memberObj.name,
         amount: amountNum,
-        concept: actionForm.concept || `Ingreso generado por ${elem.name}`
+        concept: actionForm.concept || `Ingreso generado por ${elem.name}`,
+        milestoneId: actionForm.milestoneId || null
       });
     } else if (actionModal.type === 'expense') {
       const linkedElem = elements.find(el => el.id === actionForm.linkedElementId);
@@ -289,13 +334,75 @@ export default function ElementsManager({
         concept: actionForm.concept || `Necesidad / Gasto de ${elem.name}`,
         linkedElementId: linkedElem ? linkedElem.id : null,
         linkedElementName: linkedElem ? linkedElem.name : null,
-        targetMemberId: actionForm.targetMemberId || null
+        targetMemberId: actionForm.targetMemberId || null,
+        milestoneId: actionForm.milestoneId || null
       });
     }
 
     refreshData();
     setActionModal(null);
-    setActionForm({ amount: '', concept: '', memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '' });
+    setActionForm({ amount: '', concept: '', memberId: currentUser?.id || 'ramiro', linkedElementId: '', targetMemberId: '', milestoneId: '' });
+  };
+
+  // Guardar reglas y acuerdos de la grupalidad en la billetera
+  const handleSaveWalletRules = async (e) => {
+    e.preventDefault();
+    if (!currentWallet) return;
+    await elementsService.updateWalletRules(currentWallet.id, walletRulesForm);
+    setRulesSavedNotice(true);
+    setTimeout(() => setRulesSavedNotice(false), 3000);
+    refreshData();
+  };
+
+  // Crear un nuevo hito temporal en el elemento seleccionado
+  const handleCreateMilestone = async (e) => {
+    e.preventDefault();
+    if (!selectedElement || !newMilestoneForm.name.trim()) return;
+    await elementsService.createMilestone({
+      elementId: selectedElement.id,
+      name: newMilestoneForm.name,
+      initialSeedFund: parseFloat(newMilestoneForm.initialSeedFund) || 0,
+      goalDescription: newMilestoneForm.goalDescription
+    });
+    setNewMilestoneForm({ name: '', initialSeedFund: '', goalDescription: '' });
+    setShowCreateMilestoneModal(false);
+    refreshData();
+  };
+
+  // Cerrar y liquidar un hito temporal
+  const handleCloseMilestone = async (e) => {
+    e.preventDefault();
+    if (!closingMilestone) return;
+    await elementsService.closeMilestone(closingMilestone.id, closeMilestoneSummary);
+    setClosingMilestone(null);
+    setCloseMilestoneSummary('');
+    refreshData();
+  };
+
+  // Agregar insumo a la base de costos del elemento
+  const handleAddCostItem = async (e) => {
+    e.preventDefault();
+    if (!selectedElement || !newCostItemForm.name.trim()) return;
+    await elementsService.addCostItemToElement(selectedElement.id, {
+      name: newCostItemForm.name,
+      unitCost: parseFloat(newCostItemForm.unitCost) || 0,
+      unit: newCostItemForm.unit || 'unidad',
+      category: newCostItemForm.category || 'Insumos'
+    });
+    setNewCostItemForm({ name: '', unitCost: '', unit: 'kg', category: 'Insumos' });
+    setShowAddCostItem(false);
+    refreshData();
+    const updated = elementsService.elements.find(el => el.id === selectedElement.id);
+    if (updated) setSelectedElement(updated);
+  };
+
+  // Eliminar insumo de la base de costos del elemento
+  const handleDeleteCostItem = async (costItemId) => {
+    if (!selectedElement) return;
+    await elementsService.deleteCostItemFromElement(selectedElement.id, costItemId);
+    refreshData();
+    const updated = elementsService.elements.find(el => el.id === selectedElement.id);
+    if (updated) setSelectedElement(updated);
   };
 
   // Recargar saldo de la billetera activa y cuenta
@@ -1375,6 +1482,34 @@ export default function ElementsManager({
                 </div>
               </div>
 
+              {/* Insumos Frecuentes / Base de Costos (Acceso Rápido) */}
+              {actionModal.element.costBase && actionModal.element.costBase.length > 0 && actionModal.type === 'expense' && (
+                <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200">
+                  <span className="text-[11px] font-bold text-slate-600 block mb-1.5">
+                    ⚡ Insumos Frecuentes (Planilla Viva del Elemento):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {actionModal.element.costBase.map(item => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setActionForm(prev => ({
+                            ...prev,
+                            amount: item.unitCost.toString(),
+                            concept: `${item.name} (${safeFormatCurrency(item.unitCost)} / ${item.unit})`
+                          }));
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-white border border-slate-300 hover:border-indigo-400 text-[11px] font-bold text-slate-700 shadow-2xs transition-colors flex items-center gap-1"
+                      >
+                        <span>{item.name}</span>
+                        <span className="text-indigo-600 font-extrabold">{safeFormatCurrency(item.unitCost)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Concepto */}
               <div>
                 <label className="text-xs font-bold text-slate-700 mb-1 block">
@@ -1392,6 +1527,35 @@ export default function ElementsManager({
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs"
                 />
               </div>
+
+              {/* Asignar a un Hito Temporal (Si el elemento tiene hitos activos) */}
+              {(actionModal.type === 'expense' || actionModal.type === 'income') && (() => {
+                const activeMilestones = elementsService.getActiveMilestones(actionModal.element.id);
+                if (activeMilestones.length === 0) return null;
+                return (
+                  <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200 flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                      <Calendar size={13} className="text-amber-700" />
+                      <span>🎪 ¿Asignar a un Hito Temporal?</span>
+                    </label>
+                    <select
+                      value={actionForm.milestoneId || ''}
+                      onChange={e => setActionForm({ ...actionForm, milestoneId: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-amber-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                    >
+                      <option value="">-- Sin hito específico (Fondo general del elemento) --</option>
+                      {activeMilestones.map(m => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} (Fondo semilla: {safeFormatCurrency(m.initialSeedFund)})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-amber-800 leading-snug">
+                      Asigna este movimiento a una edición o evento puntual para calcular su balance y liquidación neta.
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* Para quién fue el encargo o gasto en el Mano a Mano */}
               {actionModal.element.type === 'bilateral' && actionModal.type === 'expense' && (
@@ -1508,7 +1672,7 @@ export default function ElementsManager({
                 {selectedElement.icon || '📦'}
               </span>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-xl font-bold text-slate-900">
                     {selectedElement.name}
                   </h3>
@@ -1522,7 +1686,20 @@ export default function ElementsManager({
                     {selectedElement.type === 'bilateral' ? '🤝 Mano a Mano' : selectedElement.type === 'shared' ? 'Compartido' : 'Individual'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
+                {Array.isArray(selectedElement.walletIds) && selectedElement.walletIds.length > 1 && (
+                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                    <span className="text-[11px] font-bold text-slate-500">🤝 Co-creado con:</span>
+                    {selectedElement.walletIds.map(wId => {
+                      const wObj = wallets.find(wall => wall.id === wId) || { name: wId, icon: '🐝' };
+                      return (
+                        <span key={wId} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          {wObj.icon} {wObj.name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="text-xs text-slate-500 mt-1">
                   {selectedElement.description || 'Gestión económica de este elemento'}
                 </p>
               </div>
@@ -1679,6 +1856,219 @@ export default function ElementsManager({
                       </div>
                     );
                   })()}
+
+                  {/* Hitos Temporales & Eventos (Micro-contabilidad) */}
+                  <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200">
+                    <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar size={15} className="text-amber-800" />
+                        <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
+                          Hitos Temporales & Eventos
+                        </h4>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowCreateMilestoneModal(true)}
+                        className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white text-amber-900 border border-amber-300 hover:bg-amber-100 shadow-2xs flex items-center gap-1"
+                      >
+                        <Plus size={12} />
+                        <span>Nuevo Hito</span>
+                      </button>
+                    </div>
+
+                    {/* Lista de hitos para este elemento */}
+                    {(() => {
+                      const elemMilestones = elementsService.getMilestonesByElement(selectedElement.id);
+                      if (elemMilestones.length === 0) {
+                        return (
+                          <p className="text-[11px] text-amber-800/80 italic mb-0">
+                            No hay hitos cargados aún para este elemento. Creá uno para ferias, viajes o compras de insumos por ciclo.
+                          </p>
+                        );
+                      }
+                      return (
+                        <div className="space-y-2">
+                          {elemMilestones.map(m => {
+                            const mStats = elementsService.getMilestoneStats(m.id);
+                            const isOpen = m.status === 'open';
+                            const net = isOpen ? mStats.netResult : (m.netResult ?? mStats.netResult);
+
+                            return (
+                              <div key={m.id} className="p-2.5 rounded-xl bg-white border border-amber-200/90 text-xs shadow-2xs">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-slate-900">{m.name}</span>
+                                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                        isOpen ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-600'
+                                      }`}>
+                                        {isOpen ? 'En curso' : 'Liquidado / Cerrado'}
+                                      </span>
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 mt-0.5">
+                                      Inicio: {m.startDate} {m.endDate ? `• Cierre: ${m.endDate}` : ''} • Semilla: {safeFormatCurrency(m.initialSeedFund)}
+                                    </div>
+                                    {m.goalDescription && (
+                                      <p className="text-[11px] text-slate-600 mt-1 mb-0 italic">
+                                        🎯 {m.goalDescription}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <div className="text-right shrink-0">
+                                    <span className="text-[10px] text-slate-400 block">Balance Neto:</span>
+                                    <span className={`text-xs font-black ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                      {net >= 0 ? '+' : ''}{safeFormatCurrency(net)}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Acciones del Hito */}
+                                {isOpen && (
+                                  <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                    <span className="text-[10px] text-slate-500">
+                                      {mStats.txCount} movimientos asignados
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setClosingMilestone(m);
+                                        setCloseMilestoneSummary(`Cierre con balance neto de ${safeFormatCurrency(net)}.`);
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300"
+                                    >
+                                      Cerrar y Liquidar Hito
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Base de Costos e Insumos (Planilla Viva) */}
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <Tag size={14} className="text-slate-600" />
+                        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                          Base de Costos e Insumos (Planilla Viva)
+                        </h4>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddCostItem(!showAddCostItem)}
+                        className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 shadow-2xs flex items-center gap-1"
+                      >
+                        <Plus size={12} />
+                        <span>{showAddCostItem ? 'Cancelar' : 'Sumar Insumo'}</span>
+                      </button>
+                    </div>
+
+                    {/* Formulario para agregar insumo */}
+                    {showAddCostItem && (
+                      <form onSubmit={handleAddCostItem} className="p-3 bg-white rounded-xl border border-indigo-200 mb-3 space-y-2 text-xs">
+                        <div className="font-bold text-slate-800 text-[11px]">
+                          Nuevo Insumo en el Catálogo de Costos
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            required
+                            placeholder="Nombre (ej: Maíz partido)"
+                            value={newCostItemForm.name}
+                            onChange={e => setNewCostItemForm({ ...newCostItemForm, name: e.target.value })}
+                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
+                          />
+                          <div className="relative">
+                            <span className="absolute left-2 top-1.5 text-slate-400 font-bold">$</span>
+                            <input
+                              type="number"
+                              required
+                              min="1"
+                              placeholder="Costo"
+                              value={newCostItemForm.unitCost}
+                              onChange={e => setNewCostItemForm({ ...newCostItemForm, unitCost: e.target.value })}
+                              className="w-full pl-5 pr-2 py-1.5 rounded-lg border border-slate-300 text-xs font-bold"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Unidad (kg, litro, u)"
+                            value={newCostItemForm.unit}
+                            onChange={e => setNewCostItemForm({ ...newCostItemForm, unit: e.target.value })}
+                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Categoría"
+                            value={newCostItemForm.category}
+                            onChange={e => setNewCostItemForm({ ...newCostItemForm, category: e.target.value })}
+                            className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs"
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          className="btn w-full py-1.5 rounded-lg font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                        >
+                          Guardar Insumo
+                        </button>
+                      </form>
+                    )}
+
+                    {/* Lista de insumos */}
+                    {selectedElement.costBase && selectedElement.costBase.length > 0 ? (
+                      <div className="space-y-1.5">
+                        {selectedElement.costBase.map(item => (
+                          <div key={item.id} className="p-2 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between text-xs">
+                            <div>
+                              <span className="font-bold text-slate-800">{item.name}</span>
+                              <div className="text-[10px] text-slate-400">
+                                {safeFormatCurrency(item.unitCost)} / {item.unit} • {item.category || 'Insumos'}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActionModal({ type: 'expense', element: selectedElement });
+                                  setActionForm({
+                                    amount: item.unitCost.toString(),
+                                    concept: `${item.name} (${safeFormatCurrency(item.unitCost)}/${item.unit})`,
+                                    memberId: currentUser?.id || 'ramiro',
+                                    linkedElementId: '',
+                                    targetMemberId: '',
+                                    milestoneId: ''
+                                  });
+                                }}
+                                className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 shadow-2xs"
+                                title="Registrar gasto usando este insumo"
+                              >
+                                Cargar Gasto
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCostItem(item.id)}
+                                className="p-1 rounded text-slate-400 hover:text-rose-600"
+                                title="Eliminar de catálogo"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-400 italic mb-0">
+                        No hay insumos cargados en la base de costos de este elemento.
+                      </p>
+                    )}
+                  </div>
 
                   {/* Historial de Movimientos de este Elemento */}
                   <div>
@@ -1971,6 +2361,145 @@ export default function ElementsManager({
               </div>
             </div>
 
+            {/* Reglas y Acuerdos de la Grupalidad */}
+            <div className="mb-6 p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-bold text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
+                  <Shield size={14} className="text-indigo-600" />
+                  <span>Reglas y Acuerdos de la Grupalidad</span>
+                </h4>
+                {rulesSavedNotice && (
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <CheckCircle2 size={12} /> Guardado
+                  </span>
+                )}
+              </div>
+
+              <form onSubmit={handleSaveWalletRules} className="space-y-3 text-xs">
+                {/* Modelo de Contribución */}
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Modelo de Contribución / Aportes:
+                  </label>
+                  <select
+                    value={walletRulesForm.contributionModel}
+                    onChange={e => setWalletRulesForm({ ...walletRulesForm, contributionModel: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  >
+                    <option value="equal">⚖️ Partes Iguales (División equitativa entre todos)</option>
+                    <option value="proportional">📊 Proporcional a ingresos / ventas</option>
+                    <option value="voluntary">🤝 Voluntario / Libre según necesidad y capacidad</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* Umbral de aprobación */}
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      Límite sin consulta:
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-2 text-slate-400 font-bold">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1000"
+                        value={walletRulesForm.expenseApprovalThreshold}
+                        onChange={e => setWalletRulesForm({ ...walletRulesForm, expenseApprovalThreshold: parseFloat(e.target.value) || 0 })}
+                        className="w-full pl-6 pr-2.5 py-1.5 rounded-xl border border-indigo-200 text-xs font-bold bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Porcentaje de Fondo de Reserva */}
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      Fondo Resguardo:
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={walletRulesForm.reservePercentage}
+                        onChange={e => setWalletRulesForm({ ...walletRulesForm, reservePercentage: parseFloat(e.target.value) || 0 })}
+                        className="w-full pl-3 pr-6 py-1.5 rounded-xl border border-indigo-200 text-xs font-bold bg-white"
+                      />
+                      <span className="absolute right-2.5 top-2 text-slate-400 font-bold">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resumen del acuerdo */}
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Memoria del Acuerdo Colectivo:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={walletRulesForm.agreementSummary}
+                    onChange={e => setWalletRulesForm({ ...walletRulesForm, agreementSummary: e.target.value })}
+                    placeholder="Ej: Gastos cotidianos hasta $30.000 son libres. Compras mayores se acuerdan por WhatsApp grupal."
+                    className="w-full px-3 py-2 rounded-xl border border-indigo-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn w-full py-2 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-1.5"
+                >
+                  <Check size={14} />
+                  <span>Guardar Acuerdos de la Billetera</span>
+                </button>
+              </form>
+            </div>
+
+            {/* Informe Ejecutivo de Billetera y WhatsApp */}
+            <div className="mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText size={14} className="text-slate-600" />
+                    <span>Informe Ejecutivo de Billetera</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Estado procesado de saldos, elementos y reglas, listo para comunicar.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowExecutiveReport(!showExecutiveReport)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
+                >
+                  {showExecutiveReport ? 'Ocultar' : 'Ver Informe'}
+                </button>
+              </div>
+
+              {showExecutiveReport && (() => {
+                const report = elementsService.generateWalletReport(currentWallet.id);
+                if (!report) return null;
+                return (
+                  <div className="mt-3 pt-3 border-t border-slate-200 space-y-3">
+                    <div className="p-3 bg-white rounded-xl border border-slate-200 font-mono text-[11px] text-slate-700 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                      {report.whatsAppText}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = `https://wa.me/?text=${encodeURIComponent(report.whatsAppText)}`;
+                        window.open(url, '_blank');
+                      }}
+                      className="btn w-full py-2.5 rounded-full font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center justify-center gap-2"
+                    >
+                      <Share2 size={14} />
+                      <span>📲 Compartir Informe por WhatsApp</span>
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+
             {/* Listado de Elementos que contiene */}
             <div className="mb-6">
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
@@ -2034,6 +2563,221 @@ export default function ElementsManager({
                 <span>{wallets.length <= 1 ? "Billetera principal requerida (no se puede borrar)" : `Eliminar Billetera "${currentWallet.name}"`}</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 6: CREAR NUEVO HITO TEMPORAL                       */}
+      {/* ======================================================== */}
+      {showCreateMilestoneModal && selectedElement && (
+        <div 
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          style={{ overflowY: 'auto' }}
+          onClick={() => setShowCreateMilestoneModal(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative my-auto"
+            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button 
+              type="button"
+              onClick={() => setShowCreateMilestoneModal(false)}
+              className="top-4 right-4"
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 25
+              }}
+              title="Cerrar ventana"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-4 pr-8">
+              <span className="p-2.5 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 text-xl">
+                🎪
+              </span>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-amber-800 tracking-wider">
+                  Micro-contabilidad de Evento
+                </span>
+                <h3 className="text-base font-bold text-slate-900 leading-tight">
+                  Nuevo Hito en {selectedElement.name}
+                </h3>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateMilestone} className="flex flex-col gap-3 text-xs">
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 mb-1 block">
+                  Nombre o Edición del Hito *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej: Edición Primavera (18 de Octubre)"
+                  value={newMilestoneForm.name}
+                  onChange={e => setNewMilestoneForm({ ...newMilestoneForm, name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 mb-1 block">
+                  Fondo Semilla / Inversión de Apertura (ARS)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-slate-400 font-bold">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1000"
+                    placeholder="0"
+                    value={newMilestoneForm.initialSeedFund}
+                    onChange={e => setNewMilestoneForm({ ...newMilestoneForm, initialSeedFund: e.target.value })}
+                    className="w-full pl-7 pr-3 py-2 rounded-xl border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 mb-1 block">
+                  Objetivo o Detalle de Producción
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Ej: Producción de arepas, compras de maíz y logística de puesto."
+                  value={newMilestoneForm.goalDescription}
+                  onChange={e => setNewMilestoneForm({ ...newMilestoneForm, goalDescription: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="btn mt-2 py-2.5 rounded-full font-bold text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-sm flex items-center justify-center gap-1.5"
+              >
+                <Check size={14} />
+                <span>Crear Hito Temporal</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 7: CERRAR Y LIQUIDAR HITO TEMPORAL                 */}
+      {/* ======================================================== */}
+      {closingMilestone && (
+        <div 
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto py-6 sm:py-8"
+          style={{ overflowY: 'auto' }}
+          onClick={() => setClosingMilestone(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl relative my-auto"
+            style={{ maxHeight: '88vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button 
+              type="button"
+              onClick={() => setClosingMilestone(null)}
+              className="top-4 right-4"
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 25
+              }}
+              title="Cerrar ventana"
+            >
+              <X size={16} />
+            </button>
+
+            {(() => {
+              const stats = elementsService.getMilestoneStats(closingMilestone.id);
+              return (
+                <div>
+                  <div className="flex items-center gap-2.5 mb-3 pr-8">
+                    <span className="p-2.5 rounded-2xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-xl">
+                      ⚖️
+                    </span>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-indigo-800 tracking-wider">
+                        Liquidación de Hito
+                      </span>
+                      <h3 className="text-base font-bold text-slate-900 leading-tight">
+                        {closingMilestone.name}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Resumen contable neto */}
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 mb-3 text-xs space-y-1.5">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Total Ingresos:</span>
+                      <strong className="text-emerald-700">+{safeFormatCurrency(stats.totalIncomes)}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Total Egresos:</span>
+                      <strong className="text-rose-700">-{safeFormatCurrency(stats.totalExpenses)}</strong>
+                    </div>
+                    <div className="pt-1.5 border-t border-slate-200 flex justify-between font-black text-sm">
+                      <span className="text-slate-800">Resultado Neto:</span>
+                      <span className={stats.netResult >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                        {stats.netResult >= 0 ? 'Superávit +' : 'Déficit '}{safeFormatCurrency(stats.netResult)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleCloseMilestone} className="flex flex-col gap-3 text-xs">
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 mb-1 block">
+                        Conclusión o Informe de Cierre
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={closeMilestoneSummary}
+                        onChange={e => setCloseMilestoneSummary(e.target.value)}
+                        placeholder="Ej: Se completó la edición con superávit asignado al fondo de feria."
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="btn py-2.5 rounded-full font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center justify-center gap-1.5"
+                    >
+                      <Check size={14} />
+                      <span>Confirmar Cierre y Liquidar</span>
+                    </button>
+                  </form>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
