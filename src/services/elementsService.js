@@ -830,8 +830,12 @@ class ElementsService {
     const updatedTxs = [tx, ...this.transactions];
     this.saveStoredTransactions(updatedTxs);
 
-    // Descontar de la billetera y de la cuenta personal del usuario
-    await this.updateWalletBalance(targetWalletId, -numAmount);
+    // Descontar de la caja libre de la billetera si posee saldo sin asignar
+    const currentWalletBal = this.getWalletBalance(targetWalletId);
+    if (currentWalletBal > 0) {
+      const deduction = Math.min(currentWalletBal, numAmount);
+      await this.updateWalletBalance(targetWalletId, -deduction);
+    }
     await this.updateMainBalance(memberId, -numAmount);
 
     if (db) {

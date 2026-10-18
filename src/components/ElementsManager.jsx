@@ -188,15 +188,18 @@ export default function ElementsManager({
     }));
   }, []);
 
-  // Elementos filtrados pertenecientes a la billetera activa
-  const filteredElements = useMemo(() => {
+  // Todos los elementos asociados a la billetera activa
+  const activeWalletElements = useMemo(() => {
     return elements.filter(elem => {
-      // Filtrar por pertenencia a la billetera actual (soporta walletId directo o co-propiedad en walletIds)
       const isDirect = elem.walletId === currentWalletId || (currentWalletId === 'wallet-elementales' && !elem.walletId);
       const isCoOwned = Array.isArray(elem.walletIds) && elem.walletIds.includes(currentWalletId);
-      if (!isDirect && !isCoOwned) {
-        return false;
-      }
+      return isDirect || isCoOwned;
+    });
+  }, [elements, currentWalletId]);
+
+  // Elementos filtrados para la vista (por pestaña y término de búsqueda)
+  const filteredElements = useMemo(() => {
+    return activeWalletElements.filter(elem => {
       if (filterType === 'shared' && elem.type !== 'shared') return false;
       if (filterType === 'bilateral' && elem.type !== 'bilateral') return false;
       if (filterType === 'individual' && elem.type !== 'individual') return false;
@@ -208,21 +211,15 @@ export default function ElementsManager({
       }
       return true;
     });
-  }, [elements, currentWalletId, filterType, searchTerm]);
+  }, [activeWalletElements, filterType, searchTerm]);
 
-  // Totales acumulados para la billetera activa
+  // Totales acumulados para la billetera activa (Conectados transparentemente con sus elementos)
   const metrics = useMemo(() => {
     let sharedFundsTotal = 0;
     let bilateralFundsTotal = 0;
     let individualFundsTotal = 0;
 
-    const walletElems = elements.filter(elem => {
-      const isDirect = elem.walletId === currentWalletId || (currentWalletId === 'wallet-elementales' && !elem.walletId);
-      const isCoOwned = Array.isArray(elem.walletIds) && elem.walletIds.includes(currentWalletId);
-      return isDirect || isCoOwned;
-    });
-
-    walletElems.forEach(elem => {
+    activeWalletElements.forEach(elem => {
       const stats = elementsService.getElementStats(elem.id);
       if (elem.type === 'shared') {
         sharedFundsTotal += Math.max(0, stats.currentBalance);
@@ -233,13 +230,20 @@ export default function ElementsManager({
       }
     });
 
+    const totalInElements = sharedFundsTotal + bilateralFundsTotal + individualFundsTotal;
+    const unallocatedCash = Math.max(0, Number(currentWallet?.balance) || 0);
+    const totalConsolidated = totalInElements + unallocatedCash;
+
     return {
       sharedFundsTotal,
       bilateralFundsTotal,
       individualFundsTotal,
-      totalPockets: walletElems.length
+      totalInElements,
+      unallocatedCash,
+      totalConsolidated,
+      totalPockets: activeWalletElements.length
     };
-  }, [elements, currentWalletId, transactions]);
+  }, [activeWalletElements, currentWallet, transactions]);
 
   // Manejador para abrir modal de creación
   const handleOpenCreate = () => {
@@ -533,15 +537,15 @@ export default function ElementsManager({
             </div>
           </div>
 
-          {/* Saldo Principal de la Billetera Destacado */}
+          {/* Saldo Principal de la Billetera Destacado (Conectado con sus Elementos) */}
           <div>
             <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#c7d2fe', fontWeight: 700, marginBottom: '2px' }}>
-              Saldo Disponible en {currentWallet?.name || 'Billetera'}
+              Total en Billetera {currentWallet?.name || 'Elementales'}
             </div>
             <div 
               style={{ 
-                fontSize: '2.25rem', 
-                fontWeight: 800, 
+                fontSize: '2.45rem', 
+                fontWeight: 900, 
                 letterSpacing: '-0.02em', 
                 color: '#ffffff', 
                 display: 'flex', 
@@ -552,13 +556,63 @@ export default function ElementsManager({
               }}
             >
               <span style={{ color: '#ffffff' }}>
-                {showBalance ? safeFormatCurrency(currentWallet?.balance ?? mainBalance, 2) : '••••••••'}
+                {showBalance ? safeFormatCurrency(metrics.totalConsolidated, 2) : '••••••••'}
               </span>
               <span style={{ fontSize: '1rem', fontWeight: 700, color: '#c7d2fe' }}>ARS</span>
             </div>
             <p style={{ fontSize: '0.78rem', color: 'rgba(224, 231, 255, 0.85)', margin: 0, lineHeight: 1.35 }}>
-              {currentWallet?.detail || 'Monto base desde el cual fondeás los elementos económicos de esta billetera.'}
+              {currentWallet?.detail || 'Fondos totales distribuidos entre sus elementos y caja disponible.'}
             </p>
+
+            {/* Desglose Conectado: En Elementos vs Caja Libre */}
+            <div 
+              style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                alignItems: 'center', 
+                gap: '10px', 
+                marginTop: '10px',
+                marginBottom: '4px'
+              }}
+            >
+              <div 
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  padding: '6px 14px', 
+                  borderRadius: '9999px', 
+                  background: 'rgba(255, 255, 255, 0.16)', 
+                  border: '1px solid rgba(255, 255, 255, 0.22)',
+                  fontSize: '0.76rem',
+                  color: '#ffffff'
+                }}
+              >
+                <span>📦 En Elementos ({activeWalletElements.length}):</span>
+                <strong style={{ color: '#ffffff', fontWeight: 800 }}>
+                  {showBalance ? safeFormatCurrency(metrics.totalInElements, 2) : '••••••'}
+                </strong>
+              </div>
+
+              <div 
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  padding: '6px 14px', 
+                  borderRadius: '9999px', 
+                  background: 'rgba(16, 185, 129, 0.22)', 
+                  border: '1px solid rgba(16, 185, 129, 0.38)',
+                  fontSize: '0.76rem',
+                  color: '#a7f3d0'
+                }}
+              >
+                <span>💵 Caja Libre / Sin Asignar:</span>
+                <strong style={{ color: '#6ee7b7', fontWeight: 800 }}>
+                  {showBalance ? safeFormatCurrency(metrics.unallocatedCash, 2) : '••••••'}
+                </strong>
+              </div>
+            </div>
           </div>
 
           {/* Integrantes de esta Billetera */}
@@ -699,27 +753,27 @@ export default function ElementsManager({
               onClick={() => setFilterType('all')}
               className={`fintech-filter-btn ${filterType === 'all' ? 'active' : ''}`}
             >
-              Todos ({elements.length})
+              Todos ({activeWalletElements.length})
             </button>
             <button
               onClick={() => setFilterType('bilateral')}
               className={`fintech-filter-btn ${filterType === 'bilateral' ? 'active-shared' : ''}`}
             >
-              <span>🤝 Mano a Mano ({elements.filter(e => e.type === 'bilateral').length})</span>
+              <span>🤝 Mano a Mano ({activeWalletElements.filter(e => e.type === 'bilateral').length})</span>
             </button>
             <button
               onClick={() => setFilterType('shared')}
               className={`fintech-filter-btn ${filterType === 'shared' ? 'active-shared' : ''}`}
             >
               <Users size={13} />
-              <span>Colectivos ({elements.filter(e => e.type === 'shared').length})</span>
+              <span>Colectivos ({activeWalletElements.filter(e => e.type === 'shared').length})</span>
             </button>
             <button
               onClick={() => setFilterType('individual')}
               className={`fintech-filter-btn ${filterType === 'individual' ? 'active-indiv' : ''}`}
             >
               <User size={13} />
-              <span>Individuales ({elements.filter(e => e.type === 'individual').length})</span>
+              <span>Individuales ({activeWalletElements.filter(e => e.type === 'individual').length})</span>
             </button>
           </div>
         </div>
@@ -1467,20 +1521,21 @@ export default function ElementsManager({
 
               {/* Monto */}
               <div>
-                <label className="text-xs font-bold text-slate-700 mb-1 block">
+                <label className="text-xs font-bold text-slate-700 mb-1.5 block">
                   Monto (ARS) *
                 </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-slate-400 font-bold">$</span>
+                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+                  <span className="text-xl font-black text-slate-400 select-none">$</span>
                   <input
                     type="number"
                     required
                     min="1"
-                    placeholder="Ej: 25000"
+                    placeholder="0"
                     value={actionForm.amount}
                     onChange={e => setActionForm({ ...actionForm, amount: e.target.value })}
-                    className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-lg font-bold"
+                    className="w-full bg-transparent border-none text-xl font-black text-slate-900 focus:outline-none"
                   />
+                  <span className="text-xs font-bold text-slate-400 select-none">ARS</span>
                 </div>
               </div>
 
@@ -2287,7 +2342,7 @@ export default function ElementsManager({
       )}
 
       {/* ======================================================== */}
-      {/* MODAL 4: INGRESAR DINERO A LA CUENTA PRINCIPAL           */}
+      {/* MODAL 4: INGRESAR DINERO A LA BILLETERA                  */}
       {/* ======================================================== */}
       {showTopUpModal && (
         <div 
@@ -2300,6 +2355,7 @@ export default function ElementsManager({
             style={{ maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}
           >
+            {/* Botón cerrar flotante */}
             <button 
               type="button"
               onClick={() => setShowTopUpModal(false)}
@@ -2325,25 +2381,54 @@ export default function ElementsManager({
               <X size={18} />
             </button>
 
-            <div className="text-center mb-6 px-4">
-              <span className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl mx-auto mb-3 border border-emerald-100 shadow-sm">
+            {/* Cabecera */}
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem', padding: '0 0.5rem' }}>
+              <div 
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '20px',
+                  background: '#ecfdf5',
+                  border: '1px solid #a7f3d0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '2rem',
+                  margin: '0 auto 12px auto',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.15)'
+                }}
+              >
                 💵
-              </span>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                Ingresar Dinero a Cuenta Principal
+              </div>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+                Ingresar Dinero a Billetera
               </h3>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
-                Carga saldo disponible en tu billetera para fondear y distribuir en tus elementos.
+              <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '6px', lineHeight: 1.4 }}>
+                Carga saldo libre en <strong>{currentWallet?.name || 'esta billetera'}</strong> para fondear sus elementos y actividades.
               </p>
             </div>
 
-            <form onSubmit={handleTopUpMainAccount} className="flex flex-col gap-4">
+            <form onSubmit={handleTopUpMainAccount} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#334155', display: 'block', marginBottom: '6px' }}>
                   Monto a Ingresar (ARS)
                 </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-3 text-slate-400 font-bold text-lg">$</span>
+                
+                {/* Input de Monto Inline con $ sin colisiones */}
+                <div 
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    background: '#f8fafc',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '20px',
+                    padding: '12px 18px',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <span style={{ fontSize: '1.75rem', fontWeight: 900, color: '#059669', userSelect: 'none' }}>$</span>
                   <input
                     type="number"
                     required
@@ -2351,28 +2436,68 @@ export default function ElementsManager({
                     step="100"
                     value={topUpAmount}
                     onChange={e => setTopUpAmount(e.target.value)}
-                    className="w-full pl-9 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xl font-black text-slate-900 text-center bg-slate-50 focus:bg-white transition-all"
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '1.85rem',
+                      fontWeight: 900,
+                      color: '#0f172a',
+                      outline: 'none',
+                      width: '180px',
+                      textAlign: 'left'
+                    }}
+                    placeholder="0"
+                    autoFocus
                   />
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#94a3b8', userSelect: 'none' }}>ARS</span>
                 </div>
               </div>
 
-              {/* Botones de montos rápidos */}
-              <div className="grid grid-cols-3 gap-2">
-                {['50000', '100000', '250000'].map(m => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setTopUpAmount(m)}
-                    className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-all border border-slate-200/80 hover:border-slate-300"
-                  >
-                    +${(parseInt(m) / 1000)}k
-                  </button>
-                ))}
+              {/* Botones de montos rápidos con estilos fintech modernos */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                {['50000', '100000', '250000'].map(m => {
+                  const isSelected = topUpAmount === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setTopUpAmount(m)}
+                      style={{
+                        padding: '10px 8px',
+                        borderRadius: '9999px',
+                        background: isSelected ? '#ecfdf5' : '#f8fafc',
+                        border: isSelected ? '2px solid #10b981' : '1px solid #e2e8f0',
+                        color: isSelected ? '#047857' : '#334155',
+                        fontSize: '0.82rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        boxShadow: isSelected ? '0 2px 6px rgba(16, 185, 129, 0.2)' : 'none'
+                      }}
+                    >
+                      +${(parseInt(m) / 1000)}k
+                    </button>
+                  );
+                })}
               </div>
 
+              {/* Botón principal */}
               <button
                 type="submit"
-                className="btn mt-2 py-3.5 rounded-full font-bold text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition-all"
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: '9999px',
+                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                  color: '#ffffff',
+                  fontSize: '0.95rem',
+                  fontWeight: 800,
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                  transition: 'all 0.15s ease',
+                  marginTop: '6px'
+                }}
               >
                 Cargar Saldo
               </button>
@@ -2466,22 +2591,35 @@ export default function ElementsManager({
               return (
                 <div className="flex flex-col gap-6">
                   {/* Hero Balances */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                      <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider block">
-                        Saldo en Elementos
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-4 rounded-2xl bg-indigo-600 text-white shadow-sm">
+                      <span className="text-[11px] font-bold uppercase text-indigo-200 tracking-wider block">
+                        Total Billetera
                       </span>
-                      <span className="text-2xl font-black text-slate-900 block mt-1.5">
+                      <span className="text-xl sm:text-2xl font-black block mt-1">
+                        {safeFormatCurrency(totalBalance + Math.max(0, Number(currentWallet.balance) || 0))}
+                      </span>
+                      <span className="text-[10px] text-indigo-200 block mt-0.5">Consolidado total</span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+                      <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider block">
+                        En Elementos ({walletElements.length})
+                      </span>
+                      <span className="text-xl sm:text-2xl font-black text-slate-900 block mt-1">
                         {safeFormatCurrency(totalBalance)}
                       </span>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">Asignado a bolsillos</span>
                     </div>
-                    <div className="p-4 sm:p-5 rounded-2xl bg-indigo-50/60 border border-indigo-100">
-                      <span className="text-[11px] font-bold uppercase text-indigo-800 tracking-wider block">
-                        Elementos Asociados
+
+                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80">
+                      <span className="text-[11px] font-bold uppercase text-emerald-800 tracking-wider block">
+                        Caja Libre / Disponible
                       </span>
-                      <span className="text-2xl font-black text-indigo-900 block mt-1.5">
-                        {walletElements.length} elemento{walletElements.length !== 1 ? 's' : ''}
+                      <span className="text-xl sm:text-2xl font-black text-emerald-700 block mt-1">
+                        {safeFormatCurrency(Math.max(0, Number(currentWallet.balance) || 0))}
                       </span>
+                      <span className="text-[10px] text-emerald-600/80 block mt-0.5">Sin asignar a elemento</span>
                     </div>
                   </div>
 
