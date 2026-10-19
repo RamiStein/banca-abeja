@@ -26,6 +26,7 @@ export default function UserSpace({
   const [concept, setConcept] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [category, setCategory] = useState('');
+  const [fundingSource, setFundingSource] = useState('member_pocket'); // 'member_pocket' | 'common_pot' | 'reimbursement'
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successFeedback, setSuccessFeedback] = useState(null);
 
@@ -108,7 +109,8 @@ export default function UserSpace({
         concept: concept.trim() || (targetElem ? `Gasto en ${targetElem.name}` : `Gasto de ${targetWallet?.name || 'Billetera'}`),
         date,
         milestoneId: selectedMilestoneId || null,
-        category: category || (targetElem ? targetElem.category : 'General')
+        category: category || (targetElem ? targetElem.category : 'General'),
+        fundingSource
       });
 
       // Feedback visual enriquecido
@@ -116,7 +118,8 @@ export default function UserSpace({
         tx,
         walletName: targetWallet?.name || 'Billetera',
         elementName: targetElem?.name || null,
-        amount: numAmount
+        amount: numAmount,
+        fundingSource
       });
 
       // Resetear campos principales de entrada
@@ -655,6 +658,133 @@ export default function UserSpace({
             )}
           </div>
 
+          {/* ======================================================== */}
+          {/* PASO 3: MODALIDAD DEL GASTO / ORIGEN DE LOS FONDOS       */}
+          {/* ======================================================== */}
+          <div style={{ background: '#f8fafc', padding: '18px 20px', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Shield size={15} color="#4f46e5" />
+                <span>3. ¿Quién paga / De dónde sale el dinero? *</span>
+              </label>
+              <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                Define si computa como tu aporte propio o descuenta de la caja común
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+              
+              {/* Opción 1: Aporte Propio (Por defecto) */}
+              <button
+                type="button"
+                onClick={() => setFundingSource('member_pocket')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '14px 16px',
+                  borderRadius: '16px',
+                  backgroundColor: fundingSource === 'member_pocket' ? '#ecfdf5' : '#ffffff',
+                  border: fundingSource === 'member_pocket' ? '2px solid #10b981' : '1px solid #cbd5e1',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  boxShadow: fundingSource === 'member_pocket' ? '0 4px 14px rgba(16, 185, 129, 0.15)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span style={{ fontSize: '1.4rem' }}>🙋‍♂️</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: fundingSource === 'member_pocket' ? '#065f46' : '#0f172a' }}>
+                      Aporte Propio (Mi Bolsillo)
+                    </span>
+                    {fundingSource === 'member_pocket' && (
+                      <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#047857', background: '#d1fae5', padding: '1px 6px', borderRadius: '9999px' }}>
+                        Seleccionado
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block', lineHeight: 1.35 }}>
+                    Pagué de mi dinero. Se computa como <strong>mi aporte económico</strong> en la billetera/elemento. No resta fondos de la caja común.
+                  </span>
+                </div>
+              </button>
+
+              {/* Opción 2: Caja Común */}
+              <button
+                type="button"
+                onClick={() => setFundingSource('common_pot')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '14px 16px',
+                  borderRadius: '16px',
+                  backgroundColor: fundingSource === 'common_pot' ? '#eef2ff' : '#ffffff',
+                  border: fundingSource === 'common_pot' ? '2px solid #4f46e5' : '1px solid #cbd5e1',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  boxShadow: fundingSource === 'common_pot' ? '0 4px 14px rgba(79, 70, 229, 0.15)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span style={{ fontSize: '1.4rem' }}>🏦</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: fundingSource === 'common_pot' ? '#1e1b4b' : '#0f172a' }}>
+                      Caja Común Billetera
+                    </span>
+                    {fundingSource === 'common_pot' && (
+                      <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#4338ca', background: '#e0e7ff', padding: '1px 6px', borderRadius: '9999px' }}>
+                        Seleccionado
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block', lineHeight: 1.35 }}>
+                    Se pagó con dinero que ya estaba en la billetera. <strong>Descuenta del saldo líquido</strong> de la caja común.
+                  </span>
+                </div>
+              </button>
+
+              {/* Opción 3: Adelanto a Reembolsar */}
+              <button
+                type="button"
+                onClick={() => setFundingSource('reimbursement')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '14px 16px',
+                  borderRadius: '16px',
+                  backgroundColor: fundingSource === 'reimbursement' ? '#fef3c7' : '#ffffff',
+                  border: fundingSource === 'reimbursement' ? '2px solid #f59e0b' : '1px solid #cbd5e1',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  boxShadow: fundingSource === 'reimbursement' ? '0 4px 14px rgba(245, 158, 11, 0.15)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span style={{ fontSize: '1.4rem' }}>🔄</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: fundingSource === 'reimbursement' ? '#78350f' : '#0f172a' }}>
+                      Adelanto a Reembolsar
+                    </span>
+                    {fundingSource === 'reimbursement' && (
+                      <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#b45309', background: '#fef3c7', padding: '1px 6px', borderRadius: '9999px' }}>
+                        Seleccionado
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block', lineHeight: 1.35 }}>
+                    Pagué yo provisoriamente, pero la billetera <strong>me devolverá el dinero</strong> cuando disponga de fondos.
+                  </span>
+                </div>
+              </button>
+
+            </div>
+          </div>
+
           {/* Fila Inferior: Botón de Envío y Feedback */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <button
@@ -899,6 +1029,21 @@ export default function UserSpace({
                       {tx.milestoneId && (
                         <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#fef3c7', color: '#92400e', padding: '2px 7px', borderRadius: '8px', border: '1px solid #fde68a' }}>
                           🎪 Hito asignado
+                        </span>
+                      )}
+
+                      {/* Badge de Modalidad / Origen del dinero */}
+                      {tx.fundingSource === 'common_pot' ? (
+                        <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#e0f2fe', color: '#0369a1', padding: '2px 7px', borderRadius: '8px', border: '1px solid #bae6fd' }}>
+                          🏦 Caja Común
+                        </span>
+                      ) : tx.fundingSource === 'reimbursement' ? (
+                        <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#fef3c7', color: '#b45309', padding: '2px 7px', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                          🔄 A reembolsar
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.68rem', fontWeight: 700, background: '#d1fae5', color: '#047857', padding: '2px 7px', borderRadius: '8px', border: '1px solid #a7f3d0' }}>
+                          🙋‍♂️ Aporte Propio
                         </span>
                       )}
                     </div>

@@ -45,7 +45,7 @@ export default function CreateWalletModal({
       setIsAliasManual(false);
       setIcon('🐝');
       setDetail('');
-      setSelectedMembers(currentUser?.id ? [currentUser.id, 'agustina', 'cristian'] : ['ramiro', 'agustina', 'cristian']);
+      setSelectedMembers(currentUser?.id ? [currentUser.id] : ['ramiro']);
       setSelectedElementIds([]);
       setNewElementInputs([]);
       setCurrentNewElemText('');
@@ -75,7 +75,6 @@ export default function CreateWalletModal({
   const handleToggleMember = (memberId) => {
     setSelectedMembers(prev => {
       if (prev.includes(memberId)) {
-        if (prev.length <= 1) return prev; // Mantener al menos un integrante
         return prev.filter(id => id !== memberId);
       }
       return [...prev, memberId];
@@ -234,8 +233,22 @@ export default function CreateWalletModal({
                 <Tag size={14} className="text-indigo-600" />
                 Alias corto
               </label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs select-none">@</span>
+              <div style={{ position: 'relative', width: '100%' }}>
+                <span 
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#94a3b8',
+                    fontWeight: 800,
+                    fontSize: '0.85rem',
+                    pointerEvents: 'none',
+                    userSelect: 'none'
+                  }}
+                >
+                  @
+                </span>
                 <input
                   type="text"
                   value={alias}
@@ -244,7 +257,30 @@ export default function CreateWalletModal({
                     setIsAliasManual(true);
                   }}
                   placeholder="alias"
-                  className="w-full pl-7 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  style={{
+                    width: '100%',
+                    paddingLeft: '32px',
+                    paddingRight: '12px',
+                    paddingTop: '10px',
+                    paddingBottom: '10px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    fontSize: '0.82rem',
+                    fontFamily: 'monospace',
+                    fontWeight: 600,
+                    color: '#1e293b',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={e => {
+                    e.target.style.backgroundColor = '#ffffff';
+                    e.target.style.borderColor = '#6366f1';
+                  }}
+                  onBlur={e => {
+                    e.target.style.backgroundColor = '#f8fafc';
+                    e.target.style.borderColor = '#e2e8f0';
+                  }}
                 />
               </div>
             </div>
@@ -292,10 +328,15 @@ export default function CreateWalletModal({
           {/* Integrantes de la Billetera */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Users size={14} className="text-indigo-600" />
-                Integrantes de la Billetera ({selectedMembers.length})
-              </label>
+              <div>
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Users size={14} className="text-indigo-600" />
+                  Integrantes de la Billetera ({selectedMembers.length})
+                </label>
+                <span className="text-[10px] text-slate-500 block">
+                  Haz clic para sumar o quitar integrantes de esta billetera.
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowAddMember(!showAddMember)}
@@ -314,14 +355,16 @@ export default function CreateWalletModal({
                     key={m.id}
                     type="button"
                     onClick={() => handleToggleMember(m.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                        ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 border border-slate-200'
                     }`}
+                    title={isSelected ? `Quitar a ${m.name}` : `Sumar a ${m.name}`}
                   >
-                    {isSelected ? <Check size={12} strokeWidth={3} /> : <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />}
+                    {isSelected ? <Check size={12} strokeWidth={3} /> : <Plus size={12} />}
                     <span>{m.name}</span>
+                    {isSelected && <X size={11} className="opacity-70 ml-0.5 hover:opacity-100" />}
                   </button>
                 );
               })}

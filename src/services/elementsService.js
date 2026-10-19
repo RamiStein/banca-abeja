@@ -1171,7 +1171,8 @@ class ElementsService {
     concept,
     date = null,
     milestoneId = null,
-    category = null
+    category = null,
+    fundingSource = 'member_pocket' // 'member_pocket' | 'common_pot' | 'reimbursement'
   }) {
     const numAmount = Math.abs(parseFloat(amount) || 0);
     if (numAmount <= 0) return null;
@@ -1195,16 +1196,22 @@ class ElementsService {
       milestoneId: milestoneId || null,
       category: category || (elem ? elem.category : 'General'),
       currency: wallet?.currency || 'ARS',
+      fundingSource: fundingSource || 'member_pocket',
       timestamp: Date.now(),
       date: txDate
     };
 
-    // Si es un gasto directo a la billetera (sin elemento), descontar de la caja libre de la billetera
-    if (!elem && wallet) {
+    // Si se pagó con dinero de la caja común (o fue gasto directo a billetera con caja común), descontar saldo de billetera
+    if (fundingSource === 'common_pot') {
+      if (wallet) {
+        await this.updateWalletBalance(wallet.id, -numAmount);
+      }
+    } else if (!elem && wallet && fundingSource !== 'member_pocket') {
       await this.updateWalletBalance(wallet.id, -numAmount);
     }
 
-    const updatedTxs = [tx, ...this.transactions];
+    const currentTxs = Array.isArray(this.transactions) ? this.transactions : this.loadStoredTransactions();
+    const updatedTxs = [tx, ...currentTxs];
     this.saveStoredTransactions(updatedTxs);
 
     if (db) {
@@ -1214,6 +1221,10 @@ class ElementsService {
         console.warn("Firestore error al guardar gasto direccionado:", e);
       }
     }
+
+    try {
+      window.dispatchEvent(new CustomEvent('banca_transactions_updated', { detail: { tx } }));
+    } catch (e) {}
 
     return tx;
   }
@@ -1237,8 +1248,8 @@ class ElementsService {
     const tx = (this.transactions || []).find(t => t.id === txId);
     if (!tx) return false;
 
-    // Si fue un gasto directo de billetera, restaurar el saldo
-    if (!tx.elementId && tx.walletId && tx.type === 'expense') {
+    // Si fue un gasto que afectó la caja común de la billetera, restaurar el saldo
+    if (tx.walletId && tx.type === 'expense' && (tx.fundingSource === 'common_pot' || (!tx.elementId && tx.fundingSource !== 'member_pocket'))) {
       await this.updateWalletBalance(tx.walletId, tx.amount);
     }
 
@@ -1256,6 +1267,11 @@ class ElementsService {
         console.warn("Firestore error al eliminar transacción:", e);
       }
     }
+
+    try {
+      window.dispatchEvent(new CustomEvent('banca_transactions_updated', { detail: { txId } }));
+    } catch (e) {}
+
     return true;
   }
 
@@ -1269,11 +1285,11 @@ class ElementsService {
     const newWallet = this.wallets.find(w => w.id === newWalletId) || this.wallets[0];
     const newElem = newElementId ? this.elements.find(e => e.id === newElementId) : null;
 
-    // Manejar balances de billetera si aplica
-    if (!oldTx.elementId && oldTx.walletId && oldTx.type === 'expense') {
+    // Manejar balances de billetera si aplica a caja común
+    if (oldTx.walletId && oldTx.type === 'expense' && (oldTx.fundingSource === 'common_pot' || (!oldTx.elementId && oldTx.fundingSource !== 'member_pocket'))) {
       await this.updateWalletBalance(oldTx.walletId, oldTx.amount); // Revertir en la anterior
     }
-    if (!newElem && newWallet && oldTx.type === 'expense') {
+    if (newWallet && oldTx.type === 'expense' && (oldTx.fundingSource === 'common_pot' || (!newElem && oldTx.fundingSource !== 'member_pocket'))) {
       await this.updateWalletBalance(newWallet.id, -oldTx.amount); // Descontar en la nueva
     }
 
@@ -1287,6 +1303,10 @@ class ElementsService {
 
     this.transactions[txIndex] = updatedTx;
     this.saveStoredTransactions(this.transactions);
+
+    try {
+      window.dispatchEvent(new CustomEvent('banca_transactions_updated', { detail: { updatedTx } }));
+    } catch (e) {}
 
     return updatedTx;
   }
@@ -1548,17 +1568,23 @@ class ElementsService {
     let totalExpense = 0;
     let totalDeposits = 0;
     let totalWithdrawals = 0;
+    let memberExpensesCovered = 0;
     const memberContributions = {};
 
     elemTxs.forEach(t => {
       const amt = Number(t?.amount) || 0;
+      const m = t.memberId || 'amigo';
       if (t.type === 'income') {
         totalIncome += amt;
       } else if (t.type === 'expense') {
         totalExpense += amt;
+        // Si el gasto fue solventado por un integrante (de su propio bolsillo), cuenta como aporte económico del integrante
+        if (t.fundingSource !== 'common_pot') {
+          memberContributions[m] = (memberContributions[m] || 0) + amt;
+          memberExpensesCovered += amt;
+        }
       } else if (t.type === 'deposit') {
         totalDeposits += amt;
-        const m = t.memberId || 'amigo';
         memberContributions[m] = (memberContributions[m] || 0) + amt;
       } else if (t.type === 'withdraw') {
         totalWithdrawals += amt;
@@ -1573,6 +1599,7 @@ class ElementsService {
       totalExpense: isNaN(totalExpense) ? 0 : totalExpense,
       totalDeposits: isNaN(totalDeposits) ? 0 : totalDeposits,
       totalWithdrawals: isNaN(totalWithdrawals) ? 0 : totalWithdrawals,
+      memberExpensesCovered,
       memberContributions,
       txCount: elemTxs.length,
       recentTxs: elemTxs.slice(0, 10)

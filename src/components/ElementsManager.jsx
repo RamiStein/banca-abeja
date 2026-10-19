@@ -177,11 +177,13 @@ export default function ElementsManager({
     window.addEventListener('banca_wallets_updated', handleWalletsUpdated);
     window.addEventListener('banca_milestones_updated', handleMilestonesUpdated);
     window.addEventListener('banca_transfer_completed', handleWalletsUpdated);
+    window.addEventListener('banca_transactions_updated', handleWalletsUpdated);
     return () => {
       window.removeEventListener('banca_wallet_changed', handleWalletChanged);
       window.removeEventListener('banca_wallets_updated', handleWalletsUpdated);
       window.removeEventListener('banca_milestones_updated', handleMilestonesUpdated);
       window.removeEventListener('banca_transfer_completed', handleWalletsUpdated);
+      window.removeEventListener('banca_transactions_updated', handleWalletsUpdated);
     };
   }, []);
 
@@ -258,6 +260,18 @@ export default function ElementsManager({
       totalPockets: activeWalletElements.length
     };
   }, [activeWalletElements, currentWallet, transactions]);
+
+  // Movimientos recientes asociados a esta billetera y sus elementos
+  const walletTransactions = useMemo(() => {
+    const activeElemIds = new Set(activeWalletElements.map(e => e.id));
+    return (transactions || []).filter(t => {
+      if (!t) return false;
+      if (t.walletId === currentWalletId) return true;
+      if (t.elementId && activeElemIds.has(t.elementId)) return true;
+      if (t.transferDetails && (t.transferDetails.sourceWalletId === currentWalletId || t.transferDetails.destWalletId === currentWalletId)) return true;
+      return false;
+    }).slice(0, 10);
+  }, [transactions, currentWalletId, activeWalletElements]);
 
   // Manejador para abrir modal de creación
   const handleOpenCreate = () => {
@@ -1032,7 +1046,7 @@ export default function ElementsManager({
                     title="Registrar un gasto o necesidad económica"
                   >
                     <ArrowUpRight size={14} color="#e11d48" />
-                    <span>- Gasto</span>
+                    <span>Gasto</span>
                   </button>
 
                   {/* Botón Detalle */}
@@ -1079,6 +1093,123 @@ export default function ElementsManager({
             >
               + Crear Elemento en {currentWallet?.name}
             </button>
+          </div>
+        )}
+      </div>
+
+      {/* ======================================================== */}
+      {/* 3. SECCIÓN: ACTIVIDAD Y MOVIMIENTOS RECIENTES DE BILLETERA */}
+      {/* ======================================================== */}
+      <div 
+        style={{
+          marginTop: '6px',
+          background: '#ffffff',
+          borderRadius: '24px',
+          padding: '22px 24px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Clock size={16} color="#4f46e5" />
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              Movimientos Recientes en {currentWallet?.name}
+            </h3>
+            <span style={{ fontSize: '0.72rem', background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '9999px', fontWeight: 700 }}>
+              {walletTransactions.length}
+            </span>
+          </div>
+
+          <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
+            Aportes, gastos y transferencias
+          </span>
+        </div>
+
+        {walletTransactions.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '24px 16px', color: '#94a3b8', fontSize: '0.82rem' }}>
+            <span>Sin movimientos registrados recientemente en esta billetera.</span>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {walletTransactions.map(tx => {
+              const isExpense = tx.type === 'expense';
+              const isIncome = tx.type === 'income';
+              const isDeposit = tx.type === 'deposit';
+              const isTransferOut = tx.type === 'transfer_out';
+              const isTransferIn = tx.type === 'transfer_in';
+              const targetElem = elements.find(el => el.id === tx.elementId);
+
+              return (
+                <div
+                  key={tx.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 14px',
+                    borderRadius: '16px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #f1f5f9',
+                    fontSize: '0.82rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                    <div
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.1rem',
+                        background: isExpense ? '#fff1f2' : (isIncome || isTransferIn) ? '#ecfdf5' : '#eef2ff',
+                        color: isExpense ? '#e11d48' : (isIncome || isTransferIn) ? '#047857' : '#4338ca',
+                        flexShrink: 0
+                      }}
+                    >
+                      {targetElem?.icon || (isTransferIn || isTransferOut ? '⚡' : (isDeposit ? '↙' : '📦'))}
+                    </div>
+
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <strong style={{ color: '#0f172a', fontSize: '0.85rem' }}>
+                          {tx.concept}
+                        </strong>
+                        {targetElem && (
+                          <span style={{ fontSize: '0.7rem', color: '#4338ca', background: '#e0e7ff', padding: '1px 6px', borderRadius: '6px', fontWeight: 600 }}>
+                            {targetElem.name}
+                          </span>
+                        )}
+                        {tx.fundingSource === 'member_pocket' && (
+                          <span style={{ fontSize: '0.68rem', color: '#047857', background: '#d1fae5', padding: '1px 6px', borderRadius: '6px', fontWeight: 700 }}>
+                            Aporte propio
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                        <span>{tx.date}</span>
+                        <span>•</span>
+                        <span>Por <strong>{tx.memberName || 'Ramiro'}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right', flexShrink: 0, paddingLeft: '12px' }}>
+                    <span 
+                      style={{ 
+                        fontSize: '0.95rem', 
+                        fontWeight: 900,
+                        color: (isExpense || isTransferOut) ? '#e11d48' : '#047857'
+                      }}
+                    >
+                      {(isExpense || isTransferOut) ? '-' : '+'}{safeFormatCurrency(tx.amount)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -2134,8 +2265,9 @@ export default function ElementsManager({
                             {selectedElement.members?.map(mId => {
                               const mObj = availableMembers.find(m => m.id === mId) || { name: mId };
                               const contributed = stats.memberContributions[mId] || 0;
-                              const totalDep = stats.totalDeposits > 0 ? stats.totalDeposits : 1;
-                              const pct = stats.totalDeposits > 0 ? Math.min(100, Math.round((contributed / totalDep) * 100)) : 0;
+                              const totalContributionsAll = Object.values(stats.memberContributions || {}).reduce((acc, v) => acc + (Number(v) || 0), 0);
+                              const totalDep = totalContributionsAll > 0 ? totalContributionsAll : 1;
+                              const pct = totalContributionsAll > 0 ? Math.min(100, Math.round((contributed / totalDep) * 100)) : 0;
 
                               return (
                                 <div 
