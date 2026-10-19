@@ -983,6 +983,7 @@ class ElementsService {
     memberName,
     amount,
     concept = 'Depósito en elemento',
+    milestoneId = null,
     currency = 'ARS'
   }) {
     const numAmount = Math.abs(parseFloat(amount) || 0);
@@ -999,6 +1000,7 @@ class ElementsService {
       concept: concept.trim() || 'Depósito en elemento',
       memberId,
       memberName: memberName || (memberId.charAt(0).toUpperCase() + memberId.slice(1)),
+      milestoneId: milestoneId || null,
       currency,
       timestamp: Date.now(),
       date: new Date().toLocaleDateString('es-AR')
@@ -1023,6 +1025,10 @@ class ElementsService {
       }
     }
 
+    try {
+      window.dispatchEvent(new CustomEvent('banca_transactions_updated', { detail: { tx } }));
+    } catch (e) {}
+
     return tx;
   }
 
@@ -1034,6 +1040,7 @@ class ElementsService {
     memberName,
     amount,
     concept = 'Retiro / Distribución de elemento',
+    milestoneId = null,
     currency = 'ARS'
   }) {
     const numAmount = Math.abs(parseFloat(amount) || 0);
@@ -1050,6 +1057,7 @@ class ElementsService {
       concept: concept.trim() || 'Retiro de elemento',
       memberId,
       memberName: memberName || (memberId.charAt(0).toUpperCase() + memberId.slice(1)),
+      milestoneId: milestoneId || null,
       currency,
       timestamp: Date.now(),
       date: new Date().toLocaleDateString('es-AR')
@@ -1069,6 +1077,10 @@ class ElementsService {
         console.warn("Firestore error al guardar retiro:", e);
       }
     }
+
+    try {
+      window.dispatchEvent(new CustomEvent('banca_transactions_updated', { detail: { tx } }));
+    } catch (e) {}
 
     return tx;
   }
@@ -1329,6 +1341,7 @@ class ElementsService {
   async createMilestone({
     elementId,
     name,
+    targetAmount = 0,
     initialSeedFund = 0,
     goalDescription = '',
     startDate = null
@@ -1341,7 +1354,8 @@ class ElementsService {
       startDate: startDate || new Date().toLocaleDateString('es-AR'),
       endDate: null,
       status: 'open',
-      initialSeedFund: Number(initialSeedFund) || 0,
+      targetAmount: Math.abs(parseFloat(targetAmount) || 0),
+      initialSeedFund: Math.abs(parseFloat(initialSeedFund) || 0),
       goalDescription: goalDescription.trim(),
       netResult: null,
       createdAt: Date.now()
@@ -1358,6 +1372,61 @@ class ElementsService {
       }
     }
     return newMilestone;
+  }
+
+  // --- ACTUALIZAR META ECONÓMICA DE UN HITO ---
+  async updateMilestoneTarget(milestoneId, targetAmount) {
+    if (!this.milestones) this.milestones = this.loadStoredMilestones();
+    const numTarget = Math.abs(parseFloat(targetAmount) || 0);
+    const updatedList = (this.milestones || []).map(m => {
+      if (m.id === milestoneId) {
+        return { ...m, targetAmount: numTarget };
+      }
+      return m;
+    });
+    this.saveStoredMilestones(updatedList);
+
+    if (db) {
+      try {
+        await setDoc(doc(db, 'banca_abeja_milestones', milestoneId), { targetAmount: numTarget }, { merge: true });
+      } catch (e) {
+        console.warn("Firestore error al actualizar meta de hito:", e);
+      }
+    }
+
+    try {
+      window.dispatchEvent(new CustomEvent('banca_transactions_updated', { detail: { milestoneId, targetAmount: numTarget } }));
+    } catch (e) {}
+
+    return updatedList.find(m => m.id === milestoneId);
+  }
+
+  // --- VINCULAR O REASIGNAR MOVIMIENTO EXISTENTE A UN HITO ---
+  async assignTransactionToMilestone(txId, milestoneId) {
+    if (!this.transactions) this.transactions = this.loadStoredTransactions();
+    const idx = this.transactions.findIndex(t => t.id === txId);
+    if (idx === -1) return null;
+
+    this.transactions[idx] = { ...this.transactions[idx], milestoneId: milestoneId || null };
+    this.saveStoredTransactions(this.transactions);
+
+    if (db) {
+      try {
+        const q = query(collection(db, 'banca_abeja_element_transactions'), where('id', '==', txId));
+        const snap = await getDocs(q);
+        snap.forEach(async docSnap => {
+          await updateDoc(docSnap.ref, { milestoneId: milestoneId || null });
+        });
+      } catch (e) {
+        console.warn("Firestore error al actualizar milestone en transacción:", e);
+      }
+    }
+
+    try {
+      window.dispatchEvent(new CustomEvent('banca_transactions_updated', { detail: { txId, milestoneId } }));
+    } catch (e) {}
+
+    return this.transactions[idx];
   }
 
   async closeMilestone(milestoneId, summaryReport = '') {
@@ -1395,21 +1464,64 @@ class ElementsService {
   }
 
   getMilestoneStats(milestoneId) {
+    if (!this.transactions || !Array.isArray(this.transactions)) {
+      this.transactions = this.loadStoredTransactions();
+    }
+    const milestone = this.getMilestoneById(milestoneId);
     const mTxs = (this.transactions || []).filter(t => t && t.milestoneId === milestoneId);
+    
     let totalIncomes = 0;
     let totalExpenses = 0;
+    let totalDeposits = 0;
+    let totalWithdrawals = 0;
+    const memberContributions = {};
 
     mTxs.forEach(t => {
       const amt = Number(t.amount) || 0;
-      if (t.type === 'income') totalIncomes += amt;
-      else if (t.type === 'expense') totalExpenses += amt;
+      const m = t.memberId || 'ramiro';
+      if (t.type === 'income') {
+        totalIncomes += amt;
+      } else if (t.type === 'expense') {
+        totalExpenses += amt;
+        if (t.fundingSource === 'member_pocket') {
+          memberContributions[m] = (memberContributions[m] || 0) + amt;
+        }
+      } else if (t.type === 'deposit') {
+        totalDeposits += amt;
+        memberContributions[m] = (memberContributions[m] || 0) + amt;
+      } else if (t.type === 'withdraw') {
+        totalWithdrawals += amt;
+      }
     });
 
-    const netResult = totalIncomes - totalExpenses;
+    const initialSeedFund = Number(milestone?.initialSeedFund) || 0;
+    const targetAmount = Number(milestone?.targetAmount) || 0;
+    
+    // Total juntado entre todos los integrantes (depósitos + ingresos + fondo semilla)
+    const totalGathered = totalDeposits + totalIncomes + initialSeedFund;
+    // Saldo disponible en el hito (fondos juntados menos egresos/compras)
+    const currentBalance = totalGathered - totalExpenses - totalWithdrawals;
+    const netResult = (totalIncomes + totalDeposits) - totalExpenses;
+    
+    // Progreso hacia la meta colectiva
+    const progressPct = targetAmount > 0 
+      ? Math.min(100, Math.round((totalGathered / targetAmount) * 100)) 
+      : (totalGathered > 0 ? 100 : 0);
+    const remainingAmount = Math.max(0, targetAmount - totalGathered);
+
     return {
       totalIncomes,
       totalExpenses,
+      totalDeposits,
+      totalWithdrawals,
+      totalGathered,
+      currentBalance,
       netResult,
+      initialSeedFund,
+      targetAmount,
+      progressPct,
+      remainingAmount,
+      memberContributions,
       txCount: mTxs.length,
       transactions: mTxs
     };

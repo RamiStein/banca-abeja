@@ -89,7 +89,9 @@ export default function ElementsManager({
 
   // Estados de Hitos (Micro-contabilidad por eventos)
   const [showCreateMilestoneModal, setShowCreateMilestoneModal] = useState(false);
-  const [newMilestoneForm, setNewMilestoneForm] = useState({ name: '', initialSeedFund: '', goalDescription: '' });
+  const [newMilestoneForm, setNewMilestoneForm] = useState({ name: '', targetAmount: '', initialSeedFund: '', goalDescription: '' });
+  const [editingTargetMilestoneId, setEditingTargetMilestoneId] = useState(null);
+  const [milestoneTargetInput, setMilestoneTargetInput] = useState('');
   const [closingMilestone, setClosingMilestone] = useState(null);
   const [closeMilestoneSummary, setCloseMilestoneSummary] = useState('');
 
@@ -339,7 +341,8 @@ export default function ElementsManager({
         memberId: memberObj.id,
         memberName: memberObj.name,
         amount: amountNum,
-        concept: actionForm.concept || `Depósito de ${memberObj.name}`
+        concept: actionForm.concept || `Depósito de ${memberObj.name}`,
+        milestoneId: actionForm.milestoneId || null
       });
     } else if (actionModal.type === 'withdraw') {
       await elementsService.withdrawFromElement({
@@ -347,7 +350,8 @@ export default function ElementsManager({
         memberId: memberObj.id,
         memberName: memberObj.name,
         amount: amountNum,
-        concept: actionForm.concept || `Retiro / Reintegro a ${memberObj.name}`
+        concept: actionForm.concept || `Retiro / Reintegro a ${memberObj.name}`,
+        milestoneId: actionForm.milestoneId || null
       });
     } else if (actionModal.type === 'income') {
       await elementsService.addIncomeToElement({
@@ -388,18 +392,35 @@ export default function ElementsManager({
     refreshData();
   };
 
-  // Crear un nuevo hito temporal en el elemento seleccionado
+  // Crear un nuevo hito temporal en el elemento seleccionado con meta colectiva
   const handleCreateMilestone = async (e) => {
     e.preventDefault();
     if (!selectedElement || !newMilestoneForm.name.trim()) return;
     await elementsService.createMilestone({
       elementId: selectedElement.id,
       name: newMilestoneForm.name,
+      targetAmount: parseFloat(newMilestoneForm.targetAmount) || 0,
       initialSeedFund: parseFloat(newMilestoneForm.initialSeedFund) || 0,
       goalDescription: newMilestoneForm.goalDescription
     });
-    setNewMilestoneForm({ name: '', initialSeedFund: '', goalDescription: '' });
+    setNewMilestoneForm({ name: '', targetAmount: '', initialSeedFund: '', goalDescription: '' });
     setShowCreateMilestoneModal(false);
+    refreshData();
+  };
+
+  // Actualizar la meta de un hito existente
+  const handleUpdateMilestoneTarget = async (milestoneId) => {
+    if (!milestoneId) return;
+    const num = parseFloat(milestoneTargetInput);
+    await elementsService.updateMilestoneTarget(milestoneId, num || 0);
+    setEditingTargetMilestoneId(null);
+    setMilestoneTargetInput('');
+    refreshData();
+  };
+
+  // Asignar un movimiento previo sin hito al hito seleccionado
+  const handleAssignTxToMilestone = async (txId, milestoneId) => {
+    await elementsService.assignTransactionToMilestone(txId, milestoneId);
     refreshData();
   };
 
@@ -1618,8 +1639,8 @@ export default function ElementsManager({
       {/* ======================================================== */}
       {actionModal && (
         <div 
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
-          style={{ overflowY: 'auto' }}
+          className="fixed inset-0 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
+          style={{ overflowY: 'auto', zIndex: 70 }}
           onClick={() => setActionModal(null)}
         >
           <div 
@@ -1744,7 +1765,7 @@ export default function ElementsManager({
                 <input
                   type="text"
                   placeholder={
-                    actionModal.type === 'deposit' ? 'Ej: Nafta para viaje a Bariloche' :
+                    actionModal.type === 'deposit' ? 'Ej: Aporte para compra de alimento' :
                     actionModal.type === 'expense' ? 'Ej: Maíz partido blanco y amarillo' :
                     actionModal.type === 'income' ? 'Ej: Cobro de viaje / flete' : 'Ej: Reintegro'
                   }
@@ -1754,15 +1775,19 @@ export default function ElementsManager({
                 />
               </div>
 
-              {/* Asignar a un Hito Temporal (Si el elemento tiene hitos activos) */}
-              {(actionModal.type === 'expense' || actionModal.type === 'income') && (() => {
+              {/* Asignar a un Hito / Objetivo Colectivo (Si el elemento tiene hitos activos) */}
+              {(() => {
                 const activeMilestones = elementsService.getActiveMilestones(actionModal.element.id);
                 if (activeMilestones.length === 0) return null;
                 return (
                   <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200 flex flex-col gap-1.5">
                     <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
                       <Calendar size={13} className="text-amber-700" />
-                      <span>🎪 ¿Asignar a un Hito Temporal?</span>
+                      <span>
+                        {actionModal.type === 'deposit' 
+                          ? '🎯 ¿Asignar este aporte a un Hito / Meta Colectiva?' 
+                          : '🎪 ¿Asignar a un Hito Temporal?'}
+                      </span>
                     </label>
                     <select
                       value={actionForm.milestoneId || ''}
@@ -1772,12 +1797,14 @@ export default function ElementsManager({
                       <option value="">-- Sin hito específico (Fondo general del elemento) --</option>
                       {activeMilestones.map(m => (
                         <option key={m.id} value={m.id}>
-                          {m.name} (Fondo semilla: {safeFormatCurrency(m.initialSeedFund)})
+                          {m.name} {m.targetAmount > 0 ? `(Meta: ${safeFormatCurrency(m.targetAmount)})` : `(Semilla: ${safeFormatCurrency(m.initialSeedFund)})`}
                         </option>
                       ))}
                     </select>
                     <p className="text-[11px] text-amber-800 leading-snug">
-                      Asigna este movimiento a una edición o evento puntual para calcular su balance y liquidación neta.
+                      {actionModal.type === 'deposit' 
+                        ? 'Suma este aporte al pozo común del hito para llegar a la meta financiera entre todos.'
+                        : 'Asigna este movimiento al ciclo o evento puntual para computar sus costos y balance.'}
                     </p>
                   </div>
                 );
@@ -2461,13 +2488,15 @@ export default function ElementsManager({
                           {elemMilestones.map(m => {
                             const mStats = elementsService.getMilestoneStats(m.id);
                             const isOpen = m.status === 'open';
-                            const net = isOpen ? mStats.netResult : (m.netResult ?? mStats.netResult);
+                            const hasTarget = Number(m.targetAmount) > 0;
+                            const unassignedTxs = (elementsService.transactions || []).filter(t => t.elementId === selectedElement.id && !t.milestoneId);
 
                             return (
-                              <div key={m.id} className="p-4 sm:p-5 rounded-2xl bg-white border border-amber-200/90 shadow-sm text-xs">
+                              <div key={m.id} className="p-4 sm:p-5 rounded-2xl bg-white border border-amber-200/90 shadow-sm text-xs flex flex-col gap-3">
+                                {/* Cabecera del Hito */}
                                 <div className="flex items-start justify-between gap-3 flex-wrap">
                                   <div className="flex-1 min-w-[200px]">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                       <span className="font-extrabold text-slate-900 text-sm">{m.name}</span>
                                       <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                                         isOpen ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-600'
@@ -2476,7 +2505,7 @@ export default function ElementsManager({
                                       </span>
                                     </div>
                                     <div className="text-[11px] text-slate-500 mt-1">
-                                      Inicio: <strong>{m.startDate}</strong> {m.endDate ? `• Cierre: ${m.endDate}` : ''} • Semilla: <strong>{safeFormatCurrency(m.initialSeedFund)}</strong>
+                                      Inicio: <strong>{m.startDate}</strong> {m.endDate ? `• Cierre: ${m.endDate}` : ''} {m.initialSeedFund > 0 ? `• Semilla: ${safeFormatCurrency(m.initialSeedFund)}` : ''}
                                     </div>
                                     {m.goalDescription && (
                                       <p className="text-xs text-slate-600 mt-2 italic bg-slate-50 p-2 rounded-xl border border-slate-100">
@@ -2486,23 +2515,293 @@ export default function ElementsManager({
                                   </div>
 
                                   <div className="text-right sm:text-right">
-                                    <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Balance Neto</span>
-                                    <span className={`text-base font-black ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                      {net >= 0 ? '+' : ''}{safeFormatCurrency(net)}
+                                    <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Saldo Disponible</span>
+                                    <span className={`text-base font-black ${mStats.currentBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                      {safeFormatCurrency(mStats.currentBalance)}
                                     </span>
                                   </div>
                                 </div>
 
+                                {/* SECCIÓN META COLECTIVA / POZO COMÚN DEL HITO */}
+                                {hasTarget ? (
+                                  <div style={{ background: '#fefce8', border: '1.5px solid #fef08a', borderRadius: '16px', padding: '12px 14px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '1.05rem' }}>🎯</span>
+                                        <strong style={{ fontSize: '0.82rem', color: '#854d0e' }}>
+                                          Meta Colectiva: {safeFormatCurrency(m.targetAmount)}
+                                        </strong>
+                                      </div>
+                                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: mStats.progressPct >= 100 ? '#15803d' : '#a16207' }}>
+                                        {safeFormatCurrency(mStats.totalGathered)} recaudados ({mStats.progressPct}%)
+                                      </span>
+                                    </div>
+
+                                    {/* Barra de Progreso */}
+                                    <div style={{ width: '100%', height: '8px', backgroundColor: '#fef9c3', borderRadius: '9999px', overflow: 'hidden', border: '1px solid #fde047' }}>
+                                      <div 
+                                        style={{
+                                          width: `${mStats.progressPct}%`,
+                                          height: '100%',
+                                          background: mStats.progressPct >= 100 ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)' : 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)',
+                                          borderRadius: '9999px',
+                                          transition: 'width 0.4s ease'
+                                        }}
+                                      />
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.72rem', color: '#713f12', flexWrap: 'wrap', gap: '4px' }}>
+                                      <span>
+                                        {mStats.remainingAmount > 0 
+                                          ? `Faltan ${safeFormatCurrency(mStats.remainingAmount)} para cubrir el objetivo entre todos` 
+                                          : '🎉 ¡Meta económica alcanzada! Costos cubiertos'}
+                                      </span>
+
+                                      {/* Editar meta si se desea */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingTargetMilestoneId(m.id);
+                                          setMilestoneTargetInput(m.targetAmount.toString());
+                                        }}
+                                        style={{ background: 'none', border: 'none', color: '#b45309', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700 }}
+                                      >
+                                        Cambiar meta
+                                      </button>
+                                    </div>
+
+                                    {/* Aportes por Integrante a este Hito */}
+                                    {Object.keys(mStats.memberContributions || {}).length > 0 && (
+                                      <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #fef08a' }}>
+                                        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#854d0e', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
+                                          Aportes recibidos para este hito:
+                                        </span>
+                                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                          {Object.entries(mStats.memberContributions).map(([mId, amt]) => {
+                                            const mObj = availableMembers.find(mem => mem.id === mId) || { name: mId };
+                                            const pctMember = mStats.totalGathered > 0 ? Math.round((amt / mStats.totalGathered) * 100) : 0;
+                                            return (
+                                              <span 
+                                                key={mId}
+                                                style={{
+                                                  padding: '2px 8px',
+                                                  borderRadius: '8px',
+                                                  background: '#ffffff',
+                                                  border: '1px solid #fde047',
+                                                  fontSize: '0.72rem',
+                                                  fontWeight: 700,
+                                                  color: '#713f12'
+                                                }}
+                                              >
+                                                {mObj.name}: <strong>{safeFormatCurrency(amt)}</strong> ({pctMember}%)
+                                              </span>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  /* Si el hito aún no tiene meta definida */
+                                  <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '14px', padding: '10px 14px' }}>
+                                    {editingTargetMilestoneId === m.id ? (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#334155' }}>🎯 Fijar meta final (ARS):</span>
+                                        <div style={{ position: 'relative', width: '130px' }}>
+                                          <span style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontWeight: 700 }}>$</span>
+                                          <input
+                                            type="number"
+                                            min="1"
+                                            step="1000"
+                                            placeholder="100000"
+                                            value={milestoneTargetInput}
+                                            onChange={e => setMilestoneTargetInput(e.target.value)}
+                                            style={{ width: '100%', padding: '4px 8px 4px 20px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.75rem', fontWeight: 700 }}
+                                          />
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleUpdateMilestoneTarget(m.id)}
+                                          style={{ padding: '4px 10px', borderRadius: '8px', background: '#047857', color: '#ffffff', border: 'none', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer' }}
+                                        >
+                                          Guardar Meta
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditingTargetMilestoneId(null)}
+                                          style={{ padding: '4px 8px', borderRadius: '8px', background: '#f1f5f9', color: '#64748b', border: 'none', fontSize: '0.72rem', cursor: 'pointer' }}
+                                        >
+                                          Cancelar
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                                        <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                                          🎯 ¿Querés definir una meta colectiva para juntar entre todos (ej: $100.000)?
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingTargetMilestoneId(m.id);
+                                            setMilestoneTargetInput('100000');
+                                          }}
+                                          style={{
+                                            padding: '4px 10px',
+                                            borderRadius: '8px',
+                                            background: '#fef3c7',
+                                            color: '#92400e',
+                                            border: '1px solid #fde68a',
+                                            fontSize: '0.72rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          + Fijar Meta Colectiva
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Formulario para editar meta si editingTargetMilestoneId === m.id */}
+                                {hasTarget && editingTargetMilestoneId === m.id && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', background: '#fef9c3', borderRadius: '10px' }}>
+                                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#713f12' }}>Nueva meta (ARS):</span>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      value={milestoneTargetInput}
+                                      onChange={e => setMilestoneTargetInput(e.target.value)}
+                                      style={{ width: '120px', padding: '4px 8px', borderRadius: '6px', border: '1px solid #fde047', fontSize: '0.75rem', fontWeight: 700 }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateMilestoneTarget(m.id)}
+                                      style={{ padding: '4px 10px', borderRadius: '6px', background: '#d97706', color: '#ffffff', border: 'none', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer' }}
+                                    >
+                                      Actualizar
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingTargetMilestoneId(null)}
+                                      style={{ padding: '4px 8px', borderRadius: '6px', background: 'transparent', color: '#713f12', border: 'none', fontSize: '0.72rem', cursor: 'pointer' }}
+                                    >
+                                      Cancelar
+                                    </button>
+                                  </div>
+                                )}
+
+                                {/* VINCULACIÓN DIRECTA DE MOVIMIENTOS EXISTENTES DEL ELEMENTO */}
+                                {isOpen && unassignedTxs.length > 0 && (
+                                  <div style={{ padding: '10px 12px', borderRadius: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span>💡</span>
+                                      <span style={{ fontSize: '0.74rem', color: '#1e40af' }}>
+                                        Hay <strong>{unassignedTxs.length} movimiento(s)</strong> en este elemento sin hito (ej: <strong>{unassignedTxs[0].concept}</strong> por <strong>{safeFormatCurrency(unassignedTxs[0].amount)}</strong>).
+                                      </span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAssignTxToMilestone(unassignedTxs[0].id, m.id)}
+                                      style={{
+                                        padding: '4px 10px',
+                                        borderRadius: '8px',
+                                        backgroundColor: '#2563eb',
+                                        color: '#ffffff',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 800,
+                                        border: 'none',
+                                        cursor: 'pointer'
+                                      }}
+                                      title="Vincular este movimiento al hito para que sume a la meta"
+                                    >
+                                      + Sumar {safeFormatCurrency(unassignedTxs[0].amount)} a este hito
+                                    </button>
+                                  </div>
+                                )}
+
+                                {/* BOTONES DE ACCIÓN DEL HITO */}
                                 {isOpen && (
-                                  <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
-                                    <span className="text-[11px] text-slate-500">
-                                      {mStats.txCount} movimiento{mStats.txCount !== 1 ? 's' : ''} asignado{mStats.txCount !== 1 ? 's' : ''}
-                                    </span>
+                                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                      {/* Botón Aportar al Hito */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActionModal({ type: 'deposit', element: selectedElement });
+                                          setActionForm({
+                                            amount: '',
+                                            concept: `Aporte para ${m.name}`,
+                                            memberId: currentUser?.id || 'ramiro',
+                                            linkedElementId: '',
+                                            targetMemberId: '',
+                                            milestoneId: m.id
+                                          });
+                                        }}
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '5px',
+                                          padding: '6px 12px',
+                                          borderRadius: '10px',
+                                          backgroundColor: '#ecfdf5',
+                                          color: '#047857',
+                                          border: '1px solid #a7f3d0',
+                                          fontSize: '0.74rem',
+                                          fontWeight: 800,
+                                          cursor: 'pointer',
+                                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                                          transition: 'all 0.15s ease'
+                                        }}
+                                        title="Aportar dinero a este hito para cubrir el objetivo común"
+                                      >
+                                        <span>💰 Aportar al Hito</span>
+                                      </button>
+
+                                      {/* Botón Registrar Gasto del Hito */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActionModal({ type: 'expense', element: selectedElement });
+                                          setActionForm({
+                                            amount: '',
+                                            concept: `Gasto de ${m.name}`,
+                                            memberId: currentUser?.id || 'ramiro',
+                                            linkedElementId: '',
+                                            targetMemberId: '',
+                                            milestoneId: m.id
+                                          });
+                                        }}
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '5px',
+                                          padding: '6px 12px',
+                                          borderRadius: '10px',
+                                          backgroundColor: '#fff1f2',
+                                          color: '#be123c',
+                                          border: '1px solid #fecdd3',
+                                          fontSize: '0.74rem',
+                                          fontWeight: 800,
+                                          cursor: 'pointer',
+                                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                                          transition: 'all 0.15s ease'
+                                        }}
+                                        title="Cargar una compra o egreso realizado para este hito"
+                                      >
+                                        <span>➖ Registrar Gasto</span>
+                                      </button>
+
+                                      <span className="text-[11px] text-slate-500">
+                                        {mStats.txCount} movimiento{mStats.txCount !== 1 ? 's' : ''} asignado{mStats.txCount !== 1 ? 's' : ''}
+                                      </span>
+                                    </div>
+
                                     <button
                                       type="button"
                                       onClick={() => {
                                         setClosingMilestone(m);
-                                        setCloseMilestoneSummary(`Cierre con balance neto de ${safeFormatCurrency(net)}.`);
+                                        setCloseMilestoneSummary(`Cierre con balance neto de ${safeFormatCurrency(mStats.currentBalance)}.`);
                                       }}
                                       className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 shadow-2xs transition-all"
                                     >
@@ -2703,6 +3002,42 @@ export default function ElementsManager({
                                           ✨ Vinculado a: {tx.linkedElementName}
                                         </span>
                                       </div>
+                                    )}
+                                    {tx.milestoneId ? (() => {
+                                      const m = elementsService.getMilestoneById(tx.milestoneId);
+                                      return (
+                                        <div className="mt-1">
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-purple-50 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-full">
+                                            🎯 Hito: {m ? m.name : 'Hito asignado'}
+                                          </span>
+                                        </div>
+                                      );
+                                    })() : (
+                                      elemMilestones.filter(m => m.status === 'open').length > 0 && (
+                                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                                          <span className="text-[10px] text-slate-400 font-bold">🎯 Sumar a:</span>
+                                          {elemMilestones.filter(m => m.status === 'open').map(m => (
+                                            <button
+                                              key={m.id}
+                                              type="button"
+                                              onClick={() => handleAssignTxToMilestone(tx.id, m.id)}
+                                              style={{
+                                                padding: '2px 8px',
+                                                borderRadius: '6px',
+                                                backgroundColor: '#f1f5f9',
+                                                color: '#4338ca',
+                                                border: '1px solid #cbd5e1',
+                                                fontSize: '0.68rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer'
+                                              }}
+                                              title={`Sumar este movimiento al hito ${m.name}`}
+                                            >
+                                              + {m.name}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )
                                     )}
                                   </div>
                                   <span className={`font-black text-sm shrink-0 ${tx.type === 'expense' ? 'text-rose-600' : 'text-emerald-600'}`}>
@@ -3358,8 +3693,8 @@ export default function ElementsManager({
       {/* ======================================================== */}
       {showCreateMilestoneModal && selectedElement && (
         <div 
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
-          style={{ overflowY: 'auto' }}
+          className="fixed inset-0 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
+          style={{ overflowY: 'auto', zIndex: 70 }}
           onClick={() => setShowCreateMilestoneModal(false)}
         >
           <div 
@@ -3398,7 +3733,7 @@ export default function ElementsManager({
               </span>
               <div>
                 <span className="text-[11px] uppercase font-bold text-amber-800 tracking-wider block">
-                  Micro-contabilidad de Evento
+                  Micro-contabilidad de Evento / Meta Colectiva
                 </span>
                 <h3 className="text-xl font-black text-slate-900 leading-tight">
                   Nuevo Hito en {selectedElement.name}
@@ -3414,7 +3749,7 @@ export default function ElementsManager({
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Edición Primavera (18 de Octubre)"
+                  placeholder="Ej: Compra semanal de alimentos (12 al 18 de octubre)"
                   value={newMilestoneForm.name}
                   onChange={e => setNewMilestoneForm({ ...newMilestoneForm, name: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white transition-all"
@@ -3423,7 +3758,28 @@ export default function ElementsManager({
 
               <div>
                 <label className="text-xs font-bold text-slate-700 mb-1.5 block">
-                  Fondo Semilla / Inversión de Apertura (ARS)
+                  🎯 Meta / Monto Final a Juntar entre Todos (ARS)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-2.5 text-slate-400 font-bold">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1000"
+                    placeholder="Ej: 100000"
+                    value={newMilestoneForm.targetAmount}
+                    onChange={e => setNewMilestoneForm({ ...newMilestoneForm, targetAmount: e.target.value })}
+                    className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white transition-all"
+                  />
+                </div>
+                <span className="text-[10px] text-slate-500 block mt-1">
+                  Monto total objetivo para que los integrantes vayan aportando hasta cubrirlo juntos (ej: $100.000).
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 mb-1.5 block">
+                  Fondo Semilla / Inversión Inicial (Opcional)
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-2.5 text-slate-400 font-bold">$</span>
@@ -3441,11 +3797,11 @@ export default function ElementsManager({
 
               <div>
                 <label className="text-xs font-bold text-slate-700 mb-1.5 block">
-                  Objetivo o Detalle de Producción
+                  Objetivo o Detalle de Producción / Costos
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Ej: Producción de arepas, compras de maíz y logística de puesto."
+                  placeholder="Ej: Juntar fondos para víveres semanales y cubrir costos de despensa."
                   value={newMilestoneForm.goalDescription}
                   onChange={e => setNewMilestoneForm({ ...newMilestoneForm, goalDescription: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-50 focus:bg-white transition-all resize-none"
@@ -3486,8 +3842,8 @@ export default function ElementsManager({
       {/* ======================================================== */}
       {closingMilestone && (
         <div 
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
-          style={{ overflowY: 'auto' }}
+          className="fixed inset-0 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-md p-3 sm:p-5 overflow-y-auto py-6 sm:py-8"
+          style={{ overflowY: 'auto', zIndex: 70 }}
           onClick={() => setClosingMilestone(null)}
         >
           <div 
