@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ArrowLeft, X, Search, Check, Copy, Share2, 
-  ArrowRight, ShieldCheck, Wallet, ChevronRight,
+  ArrowRight, ShieldCheck, Wallet, ChevronRight, ChevronDown,
   TrendingDown, TrendingUp, RefreshCw, Sparkles, CheckCircle2
 } from 'lucide-react';
 import { elementsService } from '../services/elementsService';
@@ -26,6 +26,7 @@ export default function TransferMoneyModal({
   const [errorMessage, setErrorMessage] = useState('');
   const [transferResult, setTransferResult] = useState(null);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [isChangingSource, setIsChangingSource] = useState(false);
 
   // Sincronizar billeteras cuando se abre el modal
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function TransferMoneyModal({
       setErrorMessage('');
       setTransferResult(null);
       setCopiedCode(false);
+      setIsChangingSource(false);
     }
   }, [isOpen, initialSourceWalletId]);
 
@@ -302,56 +304,129 @@ export default function TransferMoneyModal({
                   background: '#f8fafc',
                   border: '1px solid #e2e8f0',
                   borderRadius: '18px',
-                  padding: '12px 16px'
+                  padding: '12px 16px',
+                  overflow: 'hidden'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
                   <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Desde (Billetera de Origen):
                   </span>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', background: '#ecfdf5', padding: '2px 8px', borderRadius: '9999px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#047857', background: '#ecfdf5', padding: '2px 8px', borderRadius: '9999px', border: '1px solid #a7f3d0' }}>
                     Disponible: {safeMoney(sourceBalance)}
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '1.4rem' }}>{sourceWallet?.icon || '🐝'}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <strong style={{ fontSize: '0.92rem', color: '#0f172a' }}>{sourceWallet?.name}</strong>
-                      <span style={{ fontSize: '0.7rem', color: '#4f46e5', background: '#eef2ff', padding: '1px 6px', borderRadius: '9999px', fontFamily: 'monospace', fontWeight: 600 }}>
-                        @{sourceWallet?.alias}
-                      </span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                    <span style={{ fontSize: '1.4rem', flexShrink: 0 }}>{sourceWallet?.icon || '🐝'}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <strong style={{ fontSize: '0.92rem', color: '#0f172a', whiteSpace: 'nowrap' }}>
+                          {sourceWallet?.name}
+                        </strong>
+                        <span style={{ fontSize: '0.7rem', color: '#4f46e5', background: '#eef2ff', padding: '1px 6px', borderRadius: '9999px', fontFamily: 'monospace', fontWeight: 600 }}>
+                          @{sourceWallet?.alias}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
                   {wallets.length > 1 && (
-                    <select
-                      value={sourceWalletId}
-                      onChange={e => {
-                        setSourceWalletId(e.target.value);
-                        setErrorMessage('');
-                      }}
+                    <button
+                      type="button"
+                      onClick={() => setIsChangingSource(prev => !prev)}
                       style={{
-                        fontSize: '0.78rem',
+                        fontSize: '0.75rem',
                         fontWeight: 700,
-                        color: '#009ee3',
-                        background: '#ffffff',
-                        border: '1px solid #cbd5e1',
+                        color: isChangingSource ? '#0284c7' : '#009ee3',
+                        background: isChangingSource ? '#e0f2fe' : '#ffffff',
+                        border: '1px solid #bae6fd',
                         borderRadius: '10px',
-                        padding: '6px 10px',
+                        padding: '6px 12px',
                         cursor: 'pointer',
-                        outline: 'none'
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        flexShrink: 0,
+                        transition: 'all 0.15s ease'
                       }}
+                      title="Cambiar la billetera de origen"
                     >
-                      {wallets.map(w => (
-                        <option key={w.id} value={w.id}>
-                          Cambiar: {w.name} (${Number(w.balance || 0).toLocaleString('es-AR')})
-                        </option>
-                      ))}
-                    </select>
+                      <span>{isChangingSource ? 'Cerrar' : 'Cambiar'}</span>
+                      <ChevronDown 
+                        size={13} 
+                        style={{ 
+                          transform: isChangingSource ? 'rotate(180deg)' : 'none',
+                          transition: 'transform 0.2s ease'
+                        }} 
+                      />
+                    </button>
                   )}
                 </div>
+
+                {/* Menú desplegable para seleccionar otra billetera de origen */}
+                {isChangingSource && wallets.length > 1 && (
+                  <div 
+                    style={{ 
+                      marginTop: '12px', 
+                      paddingTop: '12px', 
+                      borderTop: '1px solid #e2e8f0', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '6px' 
+                    }}
+                  >
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Elegí otra billetera de origen:
+                    </span>
+                    {wallets.map(w => {
+                      const isSelected = w.id === sourceWalletId;
+                      return (
+                        <div
+                          key={w.id}
+                          onClick={() => {
+                            setSourceWalletId(w.id);
+                            setIsChangingSource(false);
+                            setErrorMessage('');
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 12px',
+                            borderRadius: '12px',
+                            backgroundColor: isSelected ? '#e0f2fe' : '#ffffff',
+                            border: isSelected ? '2px solid #009ee3' : '1px solid #e2e8f0',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                            <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{w.icon || '🐝'}</span>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <strong style={{ fontSize: '0.84rem', color: isSelected ? '#0369a1' : '#0f172a' }}>
+                                  {w.name}
+                                </strong>
+                                <span style={{ fontSize: '0.66rem', color: '#64748b', background: '#f1f5f9', padding: '1px 5px', borderRadius: '6px', fontFamily: 'monospace' }}>
+                                  @{w.alias}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{ textAlign: 'right', flexShrink: 0, paddingLeft: '8px' }}>
+                            <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block' }}>Saldo</span>
+                            <strong style={{ fontSize: '0.82rem', color: '#047857' }}>
+                              {safeMoney(w.balance)}
+                            </strong>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Buscador de Destinatario / Alias */}
@@ -490,7 +565,7 @@ export default function TransferMoneyModal({
                           e.currentTarget.style.backgroundColor = '#ffffff';
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
                           <div 
                             style={{
                               width: '42px',
@@ -500,13 +575,14 @@ export default function TransferMoneyModal({
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontSize: '1.3rem'
+                              fontSize: '1.3rem',
+                              flexShrink: 0
                             }}
                           >
                             {w.icon || '🐝'}
                           </div>
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                               <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{w.name}</strong>
                               <span 
                                 style={{ 
@@ -522,13 +598,23 @@ export default function TransferMoneyModal({
                                 @{w.alias || w.id}
                               </span>
                             </div>
-                            <span style={{ fontSize: '0.74rem', color: '#64748b', display: 'block', marginTop: '2px' }}>
-                              {(w.members || []).length} integrantes • {w.detail?.slice(0, 48) || 'Billetera del sistema'}
+                            <span 
+                              style={{ 
+                                fontSize: '0.74rem', 
+                                color: '#64748b', 
+                                display: 'block', 
+                                marginTop: '2px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {(w.members || []).length} integrantes • {w.detail || 'Billetera del sistema'}
                             </span>
                           </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0, marginLeft: '10px' }}>
                           <div style={{ textAlign: 'right' }}>
                             <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block' }}>Saldo</span>
                             <strong style={{ fontSize: '0.85rem', color: '#334155' }}>
